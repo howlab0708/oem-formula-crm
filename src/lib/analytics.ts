@@ -98,31 +98,68 @@ export function topSubIngredients(products: Product[], limit = 8): CountItem[] {
   return toCountItems(counts, products.length, limit)
 }
 
-/** 인기 부원료 '조합'(동시 등장 쌍). 상담에서 실제로 팔리는 단위는 단일 성분이 아니라 조합이다. */
+const PER_PRODUCT_CAP = 10
+/** 쌍 키를 하나의 정수로 접기 위한 자릿수. 고유 부원료가 이 수를 넘지 않는다고 본다. */
+const PAIR_BASE = 1_000_000
+
+/**
+ * 인기 부원료 '조합'(동시 등장 쌍). 상담에서 실제로 팔리는 단위는 단일 성분이 아니라 조합이다.
+ *
+ * 4만 건 데이터에서 쌍은 200만 개까지 나온다. 이름을 정수로 바꿔 세고 상위 N 만
+ * 남기는 이유는, 문자열 키와 전체 정렬로는 필터를 만질 때마다 화면이 멈추기 때문이다.
+ */
 export function topSubCombos(products: Product[], limit = 6): CountItem[] {
-  const counts = new Map<string, number>()
-  const perProductCap = 10
+  const ids = new Map<string, number>()
+  const names: string[] = []
+  const counts = new Map<number, number>()
+  const buffer: number[] = []
 
   for (const product of products) {
-    const subs = [
-      ...new Set(
-        product.subIngredients
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0 && !isExcipient(s)),
-      ),
-    ]
-      .slice(0, perProductCap)
-      .sort((a, b) => a.localeCompare(b, 'ko'))
+    buffer.length = 0
+    for (const raw of product.subIngredients) {
+      const name = raw.trim()
+      if (!name || isExcipient(name)) continue
+      let id = ids.get(name)
+      if (id === undefined) {
+        id = names.length
+        ids.set(name, id)
+        names.push(name)
+      }
+      if (!buffer.includes(id)) buffer.push(id)
+      if (buffer.length >= PER_PRODUCT_CAP) break
+    }
 
-    for (let i = 0; i < subs.length; i += 1) {
-      for (let j = i + 1; j < subs.length; j += 1) {
-        const key = `${subs[i]} + ${subs[j]}`
+    if (buffer.length < 2) continue
+    buffer.sort((a, b) => a - b)
+    for (let i = 0; i < buffer.length; i += 1) {
+      for (let j = i + 1; j < buffer.length; j += 1) {
+        const key = buffer[i] * PAIR_BASE + buffer[j]
         counts.set(key, (counts.get(key) ?? 0) + 1)
       }
     }
   }
 
-  return toCountItems(counts, products.length, limit).filter((item) => item.count > 1)
+  // 전체를 정렬하지 않고 상위 limit 개만 훑어 담는다(오름차순 유지, 맨 앞이 최소).
+  const top: Array<{ key: number; count: number }> = []
+  for (const [key, count] of counts) {
+    if (count < 2) continue
+    if (top.length < limit) {
+      top.push({ key, count })
+      top.sort((a, b) => a.count - b.count)
+    } else if (count > top[0].count) {
+      top[0] = { key, count }
+      top.sort((a, b) => a.count - b.count)
+    }
+  }
+
+  const total = products.length
+  return top
+    .sort((a, b) => b.count - a.count)
+    .map(({ key, count }) => ({
+      label: `${names[Math.floor(key / PAIR_BASE)]} + ${names[key % PAIR_BASE]}`,
+      count,
+      share: total > 0 ? count / total : 0,
+    }))
 }
 
 export type MarkerSummary = {

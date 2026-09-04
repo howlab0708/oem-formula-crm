@@ -26,6 +26,12 @@ export function formatMg(value: number | null): string {
 }
 
 export function formatMarkerValue(value: number, unit: string): string {
+  // 유산균 수는 절대 개수로 보관하고 표시할 때만 억/조 단위로 접는다.
+  if (unit === 'CFU') {
+    if (value >= 1e12) return `${formatDecimal(value / 1e12, 1)}조 CFU`
+    if (value >= 1e8) return `${formatDecimal(value / 1e8, 0)}억 CFU`
+    return `${formatInt(value)} CFU`
+  }
   const digits = Number.isInteger(value) ? 0 : value < 10 ? 1 : 0
   return `${formatDecimal(value, digits)}${unit}`
 }

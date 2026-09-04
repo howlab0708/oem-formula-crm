@@ -41,6 +41,10 @@ export const FUNCTIONAL_KEYWORDS = [
   // 여성/남성
   '쏘팔메토', '쿠쿠르비타', '백수오', '회화나무', '석류', '이소플라본', '대두이소플라본',
   '감마리놀렌', '크랜베리', '엘-아르기닌', 'L-아르기닌', '아르기닌', '아연효모',
+  // 유산균 균주명(원본 데이터는 학명으로 적힌다)
+  'lactobacillus', 'lacticaseibacillus', 'lactiplantibacillus', 'limosilactobacillus',
+  'bifidobacterium', 'lactococcus', 'streptococcus', 'enterococcus', 'leuconostoc',
+  'weissella', 'pediococcus', 'saccharomyces', 'bacillus',
   // 면역/기타
   '베타글루칸', '클로렐라', '스피루리나', '알로에', '프로폴리스', '콜라겐', '저분자콜라겐',
   '히알루론산', '엘라스틴', '세라마이드', '타우린', '아미노산', '단백질', '분리유청단백',
@@ -66,20 +70,72 @@ export const EXCIPIENT_KEYWORDS = [
 const FUNCTIONAL_SET = FUNCTIONAL_KEYWORDS.map((k) => k.toLowerCase())
 const EXCIPIENT_SET = EXCIPIENT_KEYWORDS.map((k) => k.toLowerCase())
 
+/**
+ * 원료 이름 하나당 판정은 한 번만 한다.
+ * 사전 매칭은 이름마다 150여 번의 부분문자열 검사라, 수만 건 데이터에서는
+ * 캐시가 없으면 집계 한 번에 수천만 번 돌아 화면이 멈춘다.
+ */
+const functionalCache = new Map<string, boolean>()
+const excipientCache = new Map<string, boolean>()
+const CACHE_LIMIT = 200_000
+
+function cached(cache: Map<string, boolean>, key: string, compute: () => boolean): boolean {
+  const hit = cache.get(key)
+  if (hit !== undefined) return hit
+  const value = compute()
+  if (cache.size >= CACHE_LIMIT) cache.clear()
+  cache.set(key, value)
+  return value
+}
+
+/** 가장 길게 걸린 키워드의 길이. 0 이면 매칭 없음. */
+function longestMatch(haystack: string, keywords: readonly string[]): number {
+  let longest = 0
+  for (const keyword of keywords) {
+    if (keyword.length > longest && haystack.includes(keyword)) longest = keyword.length
+  }
+  return longest
+}
+
 /** 비타민/미네랄 표기 흔들림(비타민B1, 비타민 B-1, 비타민D3 …) 흡수용 */
 const VITAMIN_RE = /^비타민\s*[a-k]?\s*-?\s*\d*$/i
 
+/**
+ * 원본 데이터가 직접 달아 주는 표식. 원재료명에 '(고시형)' 또는 '(개별인정형)'이
+ * 붙어 있으면 그 자체가 기능성 원료라는 뜻이라, 사전보다 이쪽을 먼저 믿는다.
+ * (실제 식약처 데이터의 76% 가 이 표식을 갖고 있다.)
+ */
+const APPROVAL_TAG_RE = /고시형|개별인정/
+
+/**
+ * 기능성 주원료인지.
+ *
+ * 두 사전이 동시에 걸리는 이름이 많아서(스테아린산마그네슘 = 부형제이면서 '마그네슘',
+ * 난소화성말토덱스트린 = 기능성이면서 '말토덱스트린') **더 길게 걸린 쪽**을 따른다.
+ * 둘 다 안 걸릴 때에 한해 원본이 붙여 준 (고시형)/(개별인정형) 표식을 믿는다 -
+ * 표식만 우선하면 '스테아린산마그네슘(고시형)' 이 주원료로 올라온다.
+ */
 export function isFunctionalIngredient(name: string): boolean {
-  const n = name.trim().toLowerCase()
-  if (!n) return false
-  if (VITAMIN_RE.test(name.trim())) return true
-  // 부형제 사전이 먼저다. '대두유' 처럼 양쪽에 걸리는 표기를 부원료로 보낸다.
-  if (EXCIPIENT_SET.some((k) => n.includes(k))) return false
-  return FUNCTIONAL_SET.some((k) => n.includes(k))
+  const trimmed = name.trim()
+  if (!trimmed) return false
+
+  return cached(functionalCache, trimmed, () => {
+    const n = trimmed.toLowerCase()
+    const excipient = longestMatch(n, EXCIPIENT_SET)
+    const functional = Math.max(
+      longestMatch(n, FUNCTIONAL_SET),
+      VITAMIN_RE.test(trimmed) ? trimmed.length : 0,
+    )
+    if (functional > 0 || excipient > 0) return functional > excipient
+    return APPROVAL_TAG_RE.test(trimmed)
+  })
 }
 
 export function isExcipient(name: string): boolean {
-  const n = name.trim().toLowerCase()
-  if (!n) return true
-  return EXCIPIENT_SET.some((k) => n.includes(k))
+  const trimmed = name.trim()
+  if (!trimmed) return true
+  return cached(excipientCache, trimmed, () => {
+    const n = trimmed.toLowerCase()
+    return longestMatch(n, EXCIPIENT_SET) > longestMatch(n, FUNCTIONAL_SET)
+  })
 }

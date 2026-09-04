@@ -9,10 +9,13 @@
  * 파일이 그대로 열리게 한다.
  */
 
+import { formatMg } from './format'
 import {
   classifyIngredients,
   normalizeForm,
+  parseIntakeWeightMg,
   parseMarkers,
+  parseSpecification,
   parseWeightMg,
   splitIngredients,
 } from './normalize'
@@ -22,7 +25,9 @@ export type SchemaField =
   | 'name'
   | 'manufacturer'
   | 'form'
+  | 'formDetail'
   | 'weight'
+  | 'intakeMethod'
   | 'mainIngredients'
   | 'mainDetail'
   | 'subIngredients'
@@ -35,9 +40,11 @@ export const FIELD_LABELS: Record<SchemaField, string> = {
   name: '제품명',
   manufacturer: '제조원',
   form: '제형',
+  formDetail: '성상(제형 보정)',
   weight: '규격',
+  intakeMethod: '섭취방법(규격 추정)',
   mainIngredients: '주원료',
-  mainDetail: '지표성분 함량',
+  mainDetail: '기준규격 · 지표성분',
   subIngredients: '부원료',
   rawMaterials: '원재료명(자동 분류)',
   reportNo: '신고번호',
@@ -45,11 +52,17 @@ export const FIELD_LABELS: Record<SchemaField, string> = {
   primaryFunction: '주된 기능성',
 }
 
+/**
+ * 제형은 '성상'(자유 텍스트)이 아니라 '제품형태'(정제된 값)에서 읽는다.
+ * 성상은 경질/연질 구분을 메우는 보조 열(formDetail)로 따로 잡는다.
+ */
 const COLUMN_ALIASES: Record<SchemaField, string[]> = {
   name: ['제품명', '품목명', 'prdlstnm', 'productname'],
   manufacturer: ['제조원', '업소명', '제조업소명', '제조사', '업체명', '회사명', 'bsshnm', 'maker'],
-  form: ['제형', '제품형태', '성상', '형태', 'prdtshapcdnm', 'dispos'],
-  weight: ['규격', '내용량', '중량', '1회섭취량', '섭취량', '총량', 'unitweight'],
+  form: ['제형', '제품형태', '형태', 'prdtshapcdnm'],
+  formDetail: ['성상', 'dispos'],
+  weight: ['규격', '내용량', '중량', '1회섭취량', '총량', 'unitweight'],
+  intakeMethod: ['섭취방법', '섭취량', 'ntkmthd'],
   mainIngredients: ['주원료', '기능성원료', '주된기능성원료', '기능성주원료'],
   mainDetail: ['지표성분', '지표성분함량', '기준규격', 'stdrstnd'],
   subIngredients: ['부원료', '기타원료', '부재료'],
@@ -200,20 +213,32 @@ export function rowToProduct(row: string[], mapping: HeaderMapping, seq: number)
   }
 
   const formRaw = cell(row, index.form)
-  const weightLabel = cell(row, index.weight)
+  const formDetail = cell(row, index.formDetail)
+  const declaredWeight = cell(row, index.weight)
   const mainDetail = cell(row, index.mainDetail)
+
+  // 기준규격 원문에 지표성분과 1회 섭취 규격이 함께 들어 있다(원본의 78%).
+  const spec = parseSpecification(mainDetail)
+  const markers = spec.markers.length > 0 ? spec.markers : parseMarkers(mainDetail)
+
+  // 규격은 전용 열 > 기준규격의 표시량 분모 > 섭취방법 문구 순으로 찾는다.
+  const declaredWeightMg = parseWeightMg(declaredWeight)
+  const intakeWeightMg = parseIntakeWeightMg(cell(row, index.intakeMethod))
+  const weightMg = declaredWeightMg ?? spec.servingWeightMg ?? intakeWeightMg
+  const weightLabel =
+    declaredWeight || spec.servingWeightLabel || (weightMg !== null ? formatMg(weightMg) : '-')
 
   return {
     id: `csv-${seq}`,
     name,
     manufacturer: cell(row, index.manufacturer) || '미상',
-    form: normalizeForm(formRaw),
-    formRaw: formRaw || '미상',
-    weightLabel: weightLabel || '-',
-    weightMg: parseWeightMg(weightLabel),
+    form: normalizeForm(formRaw, formDetail),
+    formRaw: formRaw || formDetail || '미상',
+    weightLabel,
+    weightMg,
     mainIngredients,
     mainDetail,
-    markers: parseMarkers(mainDetail || rawMaterials),
+    markers,
     subIngredients,
     reportNo: cell(row, index.reportNo) || undefined,
     reportedAt: cell(row, index.reportedAt) || undefined,
