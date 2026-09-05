@@ -1,0 +1,2389 @@
+[
+  {
+    "id": "ingredient-01",
+    "sourceIds": [
+      "csv-01"
+    ],
+    "name": "비타민 C",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "비타민 C",
+        "recognition": "",
+        "holder": "",
+        "functionality": "결합조직 형성·철 흡수·항산화",
+        "intakes": [
+          {
+            "purpose": "결합조직 형성·철 흡수·항산화",
+            "amount": "30~1,000 mg",
+            "basis": "비타민 C"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A058/84140f95f70b2f0994370544ec79dc32ded4ded9",
+        "sourceLabel": "공전 제3. 1-14",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-02",
+    "sourceIds": [
+      "csv-02"
+    ],
+    "name": "비타민 D",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "비타민 D",
+        "recognition": "",
+        "holder": "",
+        "functionality": "칼슘·인 흡수, 뼈 형성·유지, 골다공증 발생 위험 감소",
+        "intakes": [
+          {
+            "purpose": "칼슘·인 흡수, 뼈 형성·유지, 골다공증 발생 위험 감소",
+            "amount": "3~10 μg",
+            "basis": "비타민 D"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A047/f3f75dbda83832bd8145a518c81bf6a1db20e72b",
+        "sourceLabel": "공전 제3. 1-3",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 1.5~10 μg을 현행 공전의 3~10 μg(120~400 IU)으로 정정했습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-03",
+    "sourceIds": [
+      "csv-03"
+    ],
+    "name": "비타민 A",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "비타민 A",
+        "recognition": "",
+        "holder": "",
+        "functionality": "시각 적응·피부와 점막 유지·상피세포 성장",
+        "intakes": [
+          {
+            "purpose": "시각 적응·피부와 점막 유지·상피세포 성장",
+            "amount": "210~1,000 μg RAE",
+            "basis": "비타민 A 활성당량"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A045/80372b6d79ce24f68f6a9eb518d77a07e5c125bc",
+        "sourceLabel": "공전 제3. 1-1",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 RE 표기를 현행 공전의 RAE로 정정했습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-04",
+    "sourceIds": [
+      "csv-04"
+    ],
+    "name": "비타민 B6",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "비타민 B6",
+        "recognition": "",
+        "holder": "",
+        "functionality": "단백질·아미노산 이용, 호모시스테인 수준 유지",
+        "intakes": [
+          {
+            "purpose": "단백질·아미노산 이용, 호모시스테인 수준 유지",
+            "amount": "0.45~67 mg",
+            "basis": "비타민 B6"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A054/4a745b54f038c826b40ba3bbccc41f8ab79842e1",
+        "sourceLabel": "공전 제3. 1-10",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-05",
+    "sourceIds": [
+      "csv-05"
+    ],
+    "name": "나이아신",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "나이아신",
+        "recognition": "",
+        "holder": "",
+        "functionality": "체내 에너지 생성",
+        "intakes": [
+          {
+            "purpose": "니코틴산 사용",
+            "amount": "4.5~23 mg",
+            "basis": "니코틴산"
+          },
+          {
+            "purpose": "니코틴산아미드 사용",
+            "amount": "4.5~670 mg",
+            "basis": "니코틴산아미드"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A052/4378e22b05212eb4b216a18aedcf088101905028",
+        "sourceLabel": "공전 제3. 1-8",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-06",
+    "sourceIds": [
+      "csv-06"
+    ],
+    "name": "칼슘",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "칼슘",
+        "recognition": "",
+        "holder": "",
+        "functionality": "뼈·치아 형성, 신경·근육 기능, 혈액응고, 골다공증 발생 위험 감소",
+        "intakes": [
+          {
+            "purpose": "뼈·치아 형성, 신경·근육 기능, 혈액응고, 골다공증 발생 위험 감소",
+            "amount": "210~800 mg",
+            "basis": "칼슘"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A059/e8e3cbb05f212e2f0d9d3baad753854ae1727d97",
+        "sourceLabel": "공전 제3. 1-15",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-07",
+    "sourceIds": [
+      "csv-07"
+    ],
+    "name": "마그네슘",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "마그네슘",
+        "recognition": "",
+        "holder": "",
+        "functionality": "에너지 이용·신경과 근육 기능 유지",
+        "intakes": [
+          {
+            "purpose": "에너지 이용·신경과 근육 기능 유지",
+            "amount": "94.5~250 mg",
+            "basis": "마그네슘"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A060/73181da0810adad8877b1e15c58716777c469393",
+        "sourceLabel": "공전 제3. 1-16",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-08",
+    "sourceIds": [
+      "csv-08"
+    ],
+    "name": "아연",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "아연",
+        "recognition": "",
+        "holder": "",
+        "functionality": "정상적인 면역기능·세포분열",
+        "intakes": [
+          {
+            "purpose": "정상적인 면역기능·세포분열",
+            "amount": "2.55~12 mg",
+            "basis": "아연"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A062/28d0fb20bd6d0d1b260de50c5f58582f7d42708b",
+        "sourceLabel": "공전 제3. 1-18",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-09",
+    "sourceIds": [
+      "csv-09"
+    ],
+    "name": "셀레늄(셀렌)",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "셀레늄(셀렌)",
+        "recognition": "",
+        "holder": "",
+        "functionality": "유해산소로부터 세포 보호",
+        "intakes": [
+          {
+            "purpose": "유해산소로부터 세포 보호",
+            "amount": "16.5~135 μg",
+            "basis": "셀레늄"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A064/929a1f821b7419e341e4ce1b761f139a8f99c8b6",
+        "sourceLabel": "공전 제3. 1-20",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-10",
+    "sourceIds": [
+      "csv-10"
+    ],
+    "name": "철",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "철",
+        "recognition": "",
+        "holder": "",
+        "functionality": "산소 운반·혈액 생성·에너지 생성",
+        "intakes": [
+          {
+            "purpose": "산소 운반·혈액 생성·에너지 생성",
+            "amount": "3.6~15 mg",
+            "basis": "철"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A043002003A061/fb329b86aaa77b5113c8f1462988c1abb3f58621",
+        "sourceLabel": "공전 제3. 1-17",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV에서 미기재된 일일섭취량을 공전으로 확인했습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-11",
+    "sourceIds": [
+      "csv-11",
+      "csv-12",
+      "csv-13"
+    ],
+    "name": "EPA 및 DHA 함유 유지(오메가3)",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "EPA 및 DHA 함유 유지(오메가3)",
+        "recognition": "",
+        "holder": "",
+        "functionality": "중성지질·혈행·기억력·건조한 눈 개선",
+        "intakes": [
+          {
+            "purpose": "혈중 중성지질·혈행 개선",
+            "amount": "500~2,000 mg",
+            "basis": "EPA와 DHA의 합"
+          },
+          {
+            "purpose": "기억력 개선",
+            "amount": "900~2,000 mg",
+            "basis": "EPA와 DHA의 합"
+          },
+          {
+            "purpose": "건조한 눈 개선",
+            "amount": "600~2,240 mg",
+            "basis": "EPA와 DHA의 합"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A088/1d02b3a2c4be803c6853e91539acbb91c0a5b254",
+        "sourceLabel": "공전 제3. 2-16",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "오일 전체 중량이 아닌 EPA와 DHA의 합입니다. CSV의 기능별 3개 행을 함께 정리했습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-14",
+    "sourceIds": [
+      "csv-14"
+    ],
+    "name": "글루코사민",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "글루코사민",
+        "recognition": "",
+        "holder": "",
+        "functionality": "관절·연골 건강",
+        "intakes": [
+          {
+            "purpose": "관절·연골 건강",
+            "amount": "1,500 mg",
+            "basis": "글루코사민염산염 또는 황산염"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A102/0fa3c9df3c63aa096c8603b13a85a83d9ed21fa5",
+        "sourceLabel": "공전 제3. 2-30",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 1.5~2 g을 공전의 1.5 g으로 정정했습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-15",
+    "sourceIds": [
+      "csv-15"
+    ],
+    "name": "MSM(식이유황)",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "MSM(식이유황)",
+        "recognition": "",
+        "holder": "",
+        "functionality": "관절·연골 건강",
+        "intakes": [
+          {
+            "purpose": "관절·연골 건강",
+            "amount": "1,500~2,000 mg",
+            "basis": "엠에스엠(MSM)"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A127/e1c3f86289651bedda5e15276b2fedd16c91a0ac",
+        "sourceLabel": "공전 제3. 2-55",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-16",
+    "sourceIds": [
+      "csv-16"
+    ],
+    "name": "N-아세틸글루코사민(NAG)",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "N-아세틸글루코사민(NAG)",
+        "recognition": "",
+        "holder": "",
+        "functionality": "관절·연골 건강, 피부 보습",
+        "intakes": [
+          {
+            "purpose": "관절·연골 건강",
+            "amount": "500~1,000 mg",
+            "basis": "N-아세틸글루코사민"
+          },
+          {
+            "purpose": "피부 보습",
+            "amount": "1,000 mg",
+            "basis": "N-아세틸글루코사민"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A103/d6eb23c9fb22f7d5b8e10168c8e61a567e3366f6",
+        "sourceLabel": "공전 제3. 2-31",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-17",
+    "sourceIds": [
+      "csv-17"
+    ],
+    "name": "마리골드꽃추출물(루테인)",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "마리골드꽃추출물(루테인)",
+        "recognition": "",
+        "holder": "",
+        "functionality": "황반색소밀도 유지·눈 건강",
+        "intakes": [
+          {
+            "purpose": "황반색소밀도 유지·눈 건강",
+            "amount": "10~20 mg",
+            "basis": "루테인"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A098/294f1e6c106febd0d286d706f6b6ac9efa30d0bb",
+        "sourceLabel": "공전 제3. 2-26",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-18",
+    "sourceIds": [
+      "csv-18",
+      "csv-45"
+    ],
+    "name": "밀크씨슬 추출물",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "밀크씨슬 추출물",
+        "recognition": "",
+        "holder": "",
+        "functionality": "간 건강",
+        "intakes": [
+          {
+            "purpose": "간 건강",
+            "amount": "130 mg",
+            "basis": "실리마린"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A086/85fb1e6b7333d4e1af17be5dee49046b29f82ca2",
+        "sourceLabel": "공전 제3. 2-14",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 개별 표기는 인정번호가 없어 별도 기준으로 확정하지 않았습니다. 여기서는 고시형 공전 기준을 안내합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-19",
+    "sourceIds": [
+      "csv-19"
+    ],
+    "name": "히알루론산",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "히알루론산",
+        "recognition": "",
+        "holder": "",
+        "functionality": "피부 보습·자외선으로부터 피부 건강 유지",
+        "intakes": [
+          {
+            "purpose": "피부 보습",
+            "amount": "120~240 mg",
+            "basis": "히알루론산"
+          },
+          {
+            "purpose": "자외선에 의한 피부손상으로부터 피부 건강 유지",
+            "amount": "240 mg",
+            "basis": "히알루론산"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A129/73f7ca0b23640b1b5567ed3563c9215ee4e1ab5f",
+        "sourceLabel": "공전 제3. 2-57",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "자외선 관련 기능성은 공전에 명시된 유산구균 원재료 제조기준을 충족해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-20",
+    "sourceIds": [
+      "csv-20",
+      "csv-56"
+    ],
+    "name": "저분자콜라겐펩타이드",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "저분자콜라겐펩타이드",
+        "recognition": "제2013-30호 (2013.10.17.)",
+        "holder": "(주)뉴트리",
+        "functionality": "피부 보습에 도움을 줄 수 있음 - 자외선에 의한 피부손상으로부터 피부 건강을 유지하는데 도움을 줄 수 있음 - 관절 및 연골 건강에 도움을 줄 수 있음('22년 1월 인정)",
+        "intakes": [
+          {
+            "purpose": "피부 보습·자외선 피부 건강",
+            "amount": "1,000~3,000 mg",
+            "basis": "저분자콜라겐펩타이드"
+          },
+          {
+            "purpose": "관절·연골 건강",
+            "amount": "3,000~4,000 mg",
+            "basis": "저분자콜라겐펩타이드"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21523",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영‧유아, 어린이, 임산부, 및 수유부는 섭취를 피할 것 - 알레르기 체질 등은 개인에 따라 과민반응을 나타낼 수 있음 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      },
+      {
+        "name": "저분자콜라겐펩타이드",
+        "recognition": "제2023-14호(2023.5.9.)",
+        "holder": "㈜뉴트리",
+        "functionality": "피부 보습에 도움을 줄 수 있음 - 자외선에 의한 피부손상으로부터 피부건강을 유지하는데 도움을 줄 수 있음 - 관절 건강에 도움을 줄 수 있음('24년 10월) - 모발상태(윤기·탄력) 개선에 도움을 줄 수 있음 ('25년 10월)",
+        "intakes": [
+          {
+            "purpose": "피부 보습·자외선 피부 건강",
+            "amount": "1,000~3,000 mg",
+            "basis": "저분자콜라겐펩타이드"
+          },
+          {
+            "purpose": "관절 건강",
+            "amount": "3,000~4,000 mg",
+            "basis": "저분자콜라겐펩타이드"
+          },
+          {
+            "purpose": "모발상태(윤기·탄력) 개선",
+            "amount": "3,000 mg",
+            "basis": "저분자콜라겐펩타이드"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1094546",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영‧유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 알레르게 체질 등은 개인에 따라 과민반응을 나타낼 수 있음 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      },
+      {
+        "name": "저분자콜라겐펩타이드",
+        "recognition": "제2024-35호(2024.12.20.)",
+        "holder": "(주)에이치엔아이",
+        "functionality": "피부 보습에 도움을 줄 수 있음 - 자외선에 의한 피부손상으로부터 피부건강 유지에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "피부 보습·자외선 피부 건강",
+            "amount": "1,500~3,500 mg",
+            "basis": "저분자콜라겐펩타이드"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1102282",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      }
+    ],
+    "note": "CSV의 고시형 분류를 개별인정형으로 정정했습니다. 확인한 3개 인정번호의 사례이며 다른 콜라겐 원료로 일반화할 수 없습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-21",
+    "sourceIds": [
+      "csv-21"
+    ],
+    "name": "코엔자임 Q10",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "코엔자임 Q10",
+        "recognition": "",
+        "holder": "",
+        "functionality": "항산화·높은 혈압 감소",
+        "intakes": [
+          {
+            "purpose": "항산화·높은 혈압 감소",
+            "amount": "90~100 mg",
+            "basis": "코엔자임 Q10"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A081/c16546c2b357fc7eb1b2e9251df8a30d3a1feb6b",
+        "sourceLabel": "공전 제3. 2-9",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-22",
+    "sourceIds": [
+      "csv-22"
+    ],
+    "name": "홍삼",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "홍삼",
+        "recognition": "",
+        "holder": "",
+        "functionality": "면역·피로·혈액흐름·기억력·항산화·갱년기 여성 건강",
+        "intakes": [
+          {
+            "purpose": "면역력 증진·피로 개선",
+            "amount": "3~80 mg",
+            "basis": "진세노사이드 Rg1+Rb1+Rg3 합"
+          },
+          {
+            "purpose": "혈액흐름·기억력 개선·항산화",
+            "amount": "2.4~80 mg",
+            "basis": "진세노사이드 Rg1+Rb1+Rg3 합"
+          },
+          {
+            "purpose": "갱년기 여성 건강",
+            "amount": "25~80 mg",
+            "basis": "진세노사이드 Rg1+Rb1+Rg3 합"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A074/f0e842c0e3d75c2acf89f9087b1bb2e5d093a2c0",
+        "sourceLabel": "공전 제3. 2-2",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "홍삼 원물·농축액 전체 중량이 아닙니다. 기능성마다 최소 섭취량이 다릅니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-23",
+    "sourceIds": [
+      "csv-23"
+    ],
+    "name": "프로바이오틱스",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "프로바이오틱스",
+        "recognition": "",
+        "holder": "",
+        "functionality": "유산균 증식·유해균 억제·배변활동·장 건강",
+        "intakes": [
+          {
+            "purpose": "유산균 증식·유해균 억제·배변활동·장 건강",
+            "amount": "1억~100억 CFU",
+            "basis": "프로바이오틱스 수"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A123/4561a7d24acae568abbb0eb92485977bd69ef784",
+        "sourceLabel": "공전 제3. 2-51",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CFU는 균수 단위이므로 mg으로 환산하지 않습니다. 고시형 장 건강 기준입니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-24",
+    "sourceIds": [
+      "csv-24",
+      "csv-65"
+    ],
+    "name": "프락토올리고당",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "프락토올리고당",
+        "recognition": "",
+        "holder": "",
+        "functionality": "장내 유익균 증식·배변활동",
+        "intakes": [
+          {
+            "purpose": "장내 유익균 증식·배변활동",
+            "amount": "3,000~8,000 mg",
+            "basis": "프락토올리고당"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A122/bfe23d9c368a3db9753639457b6d65b74af4540d",
+        "sourceLabel": "공전 제3. 2-50",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 개별 표기는 인정번호가 없어 별도 기준으로 확정하지 않았습니다. 여기서는 고시형 공전 기준을 안내합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-25",
+    "sourceIds": [
+      "csv-25",
+      "csv-40"
+    ],
+    "name": "가르시니아캄보지아 추출물",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "가르시니아캄보지아 추출물",
+        "recognition": "",
+        "holder": "",
+        "functionality": "탄수화물의 지방 합성 억제를 통한 체지방 감소",
+        "intakes": [
+          {
+            "purpose": "탄수화물의 지방 합성 억제를 통한 체지방 감소",
+            "amount": "750~1,500 mg",
+            "basis": "총 (-)-Hydroxycitric acid(HCA)"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A097/ff51d19bae09a1d889dc1bbc940d565f26ed0a6d",
+        "sourceLabel": "공전 제3. 2-25",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 최대 2,800 mg을 공전의 1,500 mg으로 정정했습니다. CSV의 개별 표기는 인정번호가 없어 별도 기준으로 확정하지 않았습니다. 여기서는 고시형 공전 기준을 안내합니다.",
+    "upcoming": [
+      {
+        "effectiveOn": "2027-01-01",
+        "text": "간 관련 이상사례·알코올 병용 및 체지방 감소 기능성 제품 병용에 관한 섭취 시 주의사항 추가. 원문 확인."
+      }
+    ],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-26",
+    "sourceIds": [
+      "csv-26"
+    ],
+    "name": "공액리놀레산(CLA)",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "공액리놀레산(CLA)",
+        "recognition": "",
+        "holder": "",
+        "functionality": "과체중 성인의 체지방 감소",
+        "intakes": [
+          {
+            "purpose": "과체중 성인의 체지방 감소",
+            "amount": "1,400~4,200 mg",
+            "basis": "공액리놀레산"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A096/8c309bf40ace160feaf25bae1e82946660320889",
+        "sourceLabel": "공전 제3. 2-24",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-27",
+    "sourceIds": [
+      "csv-27",
+      "csv-42"
+    ],
+    "name": "녹차추출물(카테킨)",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "녹차추출물(카테킨)",
+        "recognition": "",
+        "holder": "",
+        "functionality": "항산화·체지방 감소·혈중 콜레스테롤 개선",
+        "intakes": [
+          {
+            "purpose": "항산화·체지방 감소·혈중 콜레스테롤 개선",
+            "amount": "300~1,000 mg",
+            "basis": "카테킨"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A078/7642d1bf9c04cc38b60554f65f55c1120b681ff1",
+        "sourceLabel": "공전 제3. 2-6",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "일일섭취량 중 EGCG는 300 mg 이하입니다. 카테킨과 EGCG를 같은 기준량으로 보지 않습니다. CSV의 개별 표기는 인정번호가 없어 별도 기준으로 확정하지 않았습니다. 여기서는 고시형 공전 기준을 안내합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-28",
+    "sourceIds": [
+      "csv-28",
+      "csv-50"
+    ],
+    "name": "프로폴리스추출물",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "프로폴리스추출물",
+        "recognition": "",
+        "holder": "",
+        "functionality": "항산화·구강 항균",
+        "intakes": [
+          {
+            "purpose": "항산화",
+            "amount": "20~40 mg",
+            "basis": "총 플라보노이드"
+          },
+          {
+            "purpose": "구강 항균",
+            "amount": "섭취량 적용하지 않음",
+            "basis": "구강에 직접 접촉하는 형태에 한함"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A080/99068e479bf2047fc054a18f4955035c5d1fa44b",
+        "sourceLabel": "공전 제3. 2-8",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 개별 표기는 인정번호가 없어 별도 기준으로 확정하지 않았습니다. 여기서는 고시형 공전 기준을 안내합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-29",
+    "sourceIds": [
+      "csv-29"
+    ],
+    "name": "알로에 겔",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "알로에 겔",
+        "recognition": "",
+        "holder": "",
+        "functionality": "피부·장 건강·면역력 증진",
+        "intakes": [
+          {
+            "purpose": "피부·장 건강·면역력 증진",
+            "amount": "110~420 mg",
+            "basis": "총다당체"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A119/68e7bea1dee88b0e0a8dd1ebfebce77e9c13443c",
+        "sourceLabel": "공전 제3. 2-47",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 최소 100 mg을 공전의 110 mg으로 정정했습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-30",
+    "sourceIds": [
+      "csv-30"
+    ],
+    "name": "마늘",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "마늘",
+        "recognition": "",
+        "holder": "",
+        "functionality": "혈중 콜레스테롤 개선·혈압 조절",
+        "intakes": [
+          {
+            "purpose": "혈중 콜레스테롤 개선·혈압 조절",
+            "amount": "600~1,000 mg",
+            "basis": "마늘 분말"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A132/15eb306a14b8bd6ccbab00a7b9506659b5a555f6",
+        "sourceLabel": "공전 제3. 2-60",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "알리인 함량이 아니라 마늘 분말 중량 기준입니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-31",
+    "sourceIds": [
+      "csv-31"
+    ],
+    "name": "대두이소플라본",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "대두이소플라본",
+        "recognition": "",
+        "holder": "",
+        "functionality": "뼈 건강",
+        "intakes": [
+          {
+            "purpose": "뼈 건강",
+            "amount": "24~27 mg",
+            "basis": "대두이소플라본 비배당체"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A082/485e9d8eca6b28306dc73f0bbf721bc26f97b7cd",
+        "sourceLabel": "공전 제3. 2-10",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "검증일 현재 적용 기준입니다. 갱년기 기능성을 일괄 적용하지 않습니다.",
+    "upcoming": [
+      {
+        "effectiveOn": "2027-01-01",
+        "text": "대두이소플라본 비배당체로서 37~45 mg/일. 섭취 시 주의사항도 변경됩니다."
+      }
+    ],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-32",
+    "sourceIds": [
+      "csv-32"
+    ],
+    "name": "헤마토코쿠스 추출물",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "헤마토코쿠스 추출물",
+        "recognition": "",
+        "holder": "",
+        "functionality": "눈의 피로도 개선",
+        "intakes": [
+          {
+            "purpose": "눈의 피로도 개선",
+            "amount": "4~12 mg",
+            "basis": "아스타잔틴"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A099/d995fad7134008a7d825593a4d4b2105c4e50473",
+        "sourceLabel": "공전 제3. 2-27",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 항산화를 공전의 눈의 피로도 개선으로 정정했습니다. 6 mg 하한은 2027년 시행 예정입니다.",
+    "upcoming": [
+      {
+        "effectiveOn": "2027-01-01",
+        "text": "아스타잔틴으로서 6~12 mg/일. 섭취 시 주의사항도 변경됩니다."
+      }
+    ],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-33",
+    "sourceIds": [
+      "csv-33"
+    ],
+    "name": "레시틴",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "레시틴",
+        "recognition": "",
+        "holder": "",
+        "functionality": "혈중 콜레스테롤 개선",
+        "intakes": [
+          {
+            "purpose": "혈중 콜레스테롤 개선",
+            "amount": "1,200~18,000 mg",
+            "basis": "레시틴"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A090/d64cd42a2d92721b6db1fd851bba4696ae29dd89",
+        "sourceLabel": "공전 제3. 2-18",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "제조기준과 규격은 공전 원문을 함께 확인하세요.",
+    "upcoming": [
+      {
+        "effectiveOn": "2027-01-01",
+        "text": "레시틴으로서 18,000 mg/일. 제조기준·규격·섭취 시 주의사항도 변경됩니다."
+      }
+    ],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-34",
+    "sourceIds": [
+      "csv-34"
+    ],
+    "name": "뮤코다당·단백",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "뮤코다당·단백",
+        "recognition": "",
+        "holder": "",
+        "functionality": "관절·연골 건강",
+        "intakes": [
+          {
+            "purpose": "관절·연골 건강",
+            "amount": "1,200~1,500 mg",
+            "basis": "뮤코다당·단백"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A104/423bef983e43cdce0e081071c2910eef473a142d",
+        "sourceLabel": "공전 제3. 2-32",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "CSV의 2,000 mg은 2027년 시행 예정 기준입니다.",
+    "upcoming": [
+      {
+        "effectiveOn": "2027-01-01",
+        "text": "뮤코다당·단백으로서 2,000 mg/일. 제조기준·섭취 시 주의사항도 변경됩니다."
+      }
+    ],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-35",
+    "sourceIds": [
+      "csv-35"
+    ],
+    "name": "보스웰리아 추출물",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "보스웰리아추출물(FJH-BS)",
+        "recognition": "제2025-14호(2025.3.25.)",
+        "holder": "주식회사 프롬바이오 익산공장",
+        "functionality": "관절 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "관절 건강",
+            "amount": "800 mg",
+            "basis": "보스웰리아추출물(FJH-BS)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1104301",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      },
+      {
+        "name": "보스웰리아추출물",
+        "recognition": "제2024-32호(2024.11.19.)",
+        "holder": "코스맥스바이오(주)",
+        "functionality": "관절건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "관절 건강",
+            "amount": "500 mg",
+            "basis": "보스웰리아추출물"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1101892",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      },
+      {
+        "name": "보스웰리아추출물(SERRATRIN)",
+        "recognition": "제2022-17호(2022.4.18.)",
+        "holder": "(주)뉴트리",
+        "functionality": "관절 및 연골 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "관절·연골 건강",
+            "amount": "400 mg",
+            "basis": "보스웰리아추출물(SERRATRIN)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1089921",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취에 주의 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      },
+      {
+        "name": "보스웰리아 추출물(Boswellia serrata R.)",
+        "recognition": "제2014-23호 (2014.06.04.)",
+        "holder": "(주)프롬바이오",
+        "functionality": "관절 및 연골건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "관절·연골 건강",
+            "amount": "1,000 mg",
+            "basis": "해당 신청원료"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21496",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부 및 수유부는 섭취에 주의"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-36",
+    "sourceIds": [
+      "csv-36"
+    ],
+    "name": "콘드로이친 황산염",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "콘드로이친 황산염",
+        "recognition": "제2020-1호 (2020.02.26)",
+        "holder": "주영엔에스(주)",
+        "functionality": "관절 및 연골 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "관절·연골 건강",
+            "amount": "1,200 mg",
+            "basis": "콘드로이친"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1078249",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 특정질환 (알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 수술 전후 또는 항응고제, 항혈소판제, 비스테로이드계 항염증약 복용자는 섭취 전 전문의와 상담할 것 - 천식이 있는 사람은 섭취 전 전문의와 상담할 것"
+      },
+      {
+        "name": "콘드로이친황산염",
+        "recognition": "제2026-16호(2026.4.14.)",
+        "holder": "고려은단헬스케어 주식회사",
+        "functionality": "관절 및 연골 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "관절·연골 건강",
+            "amount": "1,200 mg",
+            "basis": "콘드로이친황산염"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1110582",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 수술 전후 또는 항응고제, 항혈소판제, 비스테로이드계 항염증약 복용자는 섭취 전 전문의와 상담할 것 - 천식이 있는 사람은 섭취 전 전문의와 상담할 것"
+      }
+    ],
+    "note": "CSV 통칭과 관련된 인정 사례입니다. 나트륨염 등 공급 원료의 동일성은 인정서로 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-37",
+    "sourceIds": [
+      "csv-37"
+    ],
+    "name": "연골 유래 원료",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "연어코연골추출물",
+        "recognition": "제2026-23호(2026.7.3.)",
+        "holder": "종근당건강(주)",
+        "functionality": "피부 보습에 도움을 줄 수 있음 - 자외선에 의한 피부손상으로부터 피부건강 유지에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "피부 보습·자외선 피부 건강",
+            "amount": "50 mg",
+            "basis": "연어코연골추출물"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1152056",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영･유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      },
+      {
+        "name": "닭가슴연골분말",
+        "recognition": "제2014-39호 (2014.08.18.)",
+        "holder": "(주)뉴트리",
+        "functionality": "관절건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "관절 건강",
+            "amount": "40 mg",
+            "basis": "닭가슴연골분말"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21480",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부, 수유부는 섭취 시 의사와 상담 - 복용중인 의약품이 있는 분은 섭취 시 의사와 상담"
+      }
+    ],
+    "note": "서로 다른 원료입니다. CSV의 1~3 g을 공통 기준으로 적용하지 않습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-38",
+    "sourceIds": [
+      "csv-38"
+    ],
+    "name": "프로바이오틱스(균주별)",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "Lactobacillus gasseri BNR17",
+        "recognition": "제2017-6호(2017.12.29)",
+        "holder": "(주)에이스바이옴",
+        "functionality": "체지방 감소에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "체지방 감소",
+            "amount": "100억 CFU",
+            "basis": "Lactobacillus gasseri BNR17"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1066528",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "산성도가 낮은 음료나 뜨거운 물과 함께 복용하는 것을 피하는 것이 좋음"
+      },
+      {
+        "name": "Lactobacillus plantarum HY7714",
+        "recognition": "제2015-1호(2015.01.05.)",
+        "holder": "(주)한국야쿠르트 평택 프로바이오틱스 플랜트",
+        "functionality": "피부 보습에 도움을 줄 수 있음 - 자외선에 의한 피부손상으로부터 피부 건강 유지에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "피부 보습·자외선 피부 건강",
+            "amount": "100억 CFU",
+            "basis": "Lactobacillus plantarum HY7714"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1047321",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "알레르기체질이거나 특정질환이 있는 분은 섭취 전 의사와 상담 ※ 제 2015-2호와 통합(2018.07.19)"
+      },
+      {
+        "name": "Lactiplantibacillus plantarum NK151과 Bifidobacterium bifidum NK175의 프로바이오틱스 복합물(LB101)",
+        "recognition": "제2026-26호(2026.8.26.)",
+        "holder": "피비엘바이오랩 주식회사",
+        "functionality": "건조한 눈을 개선하여 눈 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "건조한 눈 개선",
+            "amount": "100억 CFU",
+            "basis": "프로바이오틱스 복합물(LB101)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1152059",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영･유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정 질환(알레르기 체질, 단장 증후군 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 질환이 있거나 의약품 복용 시 전문가와 상담할 것"
+      }
+    ],
+    "note": "균주 및 복합물마다 기능성이 다릅니다. 아래 3개 인정 사례의 균수를 다른 균주에 적용하지 않습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-39",
+    "sourceIds": [
+      "csv-39"
+    ],
+    "name": "L-카르니틴 타르트레이트",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "L-카르니틴 타르트레이트",
+        "recognition": "제2010-50호 (2010.11.04)",
+        "holder": "대상주식회사",
+        "functionality": "체지방 감소에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "체지방 감소",
+            "amount": "2,000 mg",
+            "basis": "L-카르니틴"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21575",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "상세 원문에 별도 주의사항이 기재되어 있지 않습니다."
+      }
+    ],
+    "note": "L-카르니틴 타르트레이트 인정 사례이며 L-카르니틴 함량 기준입니다. 피로 회복 기능성은 이 인정서에서 확인되지 않습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-41",
+    "sourceIds": [
+      "csv-41"
+    ],
+    "name": "그린커피빈 추출물",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "그린커피빈주정추출물",
+        "recognition": "제2018-6호(2018.07.03)",
+        "holder": "대한켐텍주식회사",
+        "functionality": "체지방 감소에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "체지방 감소",
+            "amount": "500 mg",
+            "basis": "그린커피빈주정추출물"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1070099",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취에 주의 - 카페인이 함유되어 있어 초조감, 불면 등을 나타낼 수 있음"
+      },
+      {
+        "name": "그린커피빈추출물",
+        "recognition": "제2014-31호 (2014.07.17.)",
+        "holder": "주영엔에스(주)",
+        "functionality": "체지방 감소에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "체지방 감소",
+            "amount": "400 mg",
+            "basis": "해당 신청원료"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21488",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부와 수유기 여성, 유아, 어린이는 섭취에 주의 - 카페인이 함유되어 있어 초조감, 불면 등을 나타낼 수 있음"
+      }
+    ],
+    "note": "클로로겐산 함량과 추출물 중량을 혼동하지 않도록 인정 사례별 기준을 표시했습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-43",
+    "sourceIds": [
+      "csv-43"
+    ],
+    "name": "루테인·지아잔틴 복합추출물",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "루테인지아잔틴복합추출물20%",
+        "recognition": "제2013-23호(2013.07.12)",
+        "holder": "(주)노바렉스",
+        "functionality": "노화로 인해 감소될 수 있는 황반색소밀도를 유지하여 눈건강에 도움을 줄 수 있음 (생리활성기능 1등급)",
+        "intakes": [
+          {
+            "purpose": "황반색소밀도 유지·눈 건강",
+            "amount": "10~20 mg",
+            "basis": "루테인과 지아잔틴의 합"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21528",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부는 섭취 전 의사와 상담이 필요합니다. - 과다 섭취 시 일시적으로 피부가 황색으로 변할 수 있습니다."
+      },
+      {
+        "name": "루테인지아잔틴추출복합물",
+        "recognition": "제2021-21호(2021.12.28.)",
+        "holder": "주식회사 디에스엠퍼메니쉬코리아",
+        "functionality": "노화로 인해 감소될 수 있는 황반색소밀도를 유지하여 눈 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "황반색소밀도 유지·눈 건강",
+            "amount": "12 mg",
+            "basis": "루테인과 지아잔틴의 합"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1088678",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영‧유아, 어린이, 임산부 및 수유부는 섭취에 주의 - 과다 섭취 시 일시적으로 피부가 황색으로 변할 수 있음 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 흡연자는 섭취 시 전문가와 상담할 것"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-44",
+    "sourceIds": [
+      "csv-44"
+    ],
+    "name": "빌베리 추출물",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "빌베리 추출물",
+        "recognition": "",
+        "holder": "",
+        "functionality": "눈의 피로 개선",
+        "intakes": [
+          {
+            "purpose": "눈의 피로 개선",
+            "amount": "160~240 mg",
+            "basis": "빌베리 추출물(안토시아노사이드 50~108 mg)"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A131/a7b07f8102d848fa0a3abb285bc1167331a037d4",
+        "sourceLabel": "공전 제3. 2-59",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "고시형으로 정정했습니다. 추출물 중량과 안토시아노사이드 함량을 구분합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-46",
+    "sourceIds": [
+      "csv-46"
+    ],
+    "name": "강황 추출물",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "강황추출물",
+        "recognition": "제2025-54호(2025.10.16.)",
+        "holder": "㈜녹십자웰빙",
+        "functionality": "노화로 인해 저하된 인지기능 개선에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "노화로 저하된 인지기능 개선",
+            "amount": "400 mg",
+            "basis": "강황추출물"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1107637",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 질환이 있거나 의약품 복용 시 전문가와 상담할 것 - 제안된 섭취량 이상 섭취 시 소화불량, 위장장애, 메스꺼움, 위산역류 등이 있을 수 있음 - 수술 전후 섭취에 주의"
+      },
+      {
+        "name": "강황추출물",
+        "recognition": "제2023-5호(2023.03.27.)",
+        "holder": "(주)아리바이오",
+        "functionality": "근력개선에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "근력 개선",
+            "amount": "250 mg",
+            "basis": "강황추출물"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1093997",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 제안된 섭취량 이상 섭취 시 소화불량, 위장장애, 메스꺼움, 위산역류 등이 있을 수 있음 - 질환이 있거나 의약품 복용 시 전문가와 상담할 것 - 수술 전후에는 섭취에 주의"
+      },
+      {
+        "name": "강황 추출물(터마신)",
+        "recognition": "제2014-2호 (2014.01.29.)",
+        "holder": "(주)세광에스티코퍼레이션",
+        "functionality": "관절건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "관절 건강",
+            "amount": "1,000 mg",
+            "basis": "강황추출물(터마신)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21516",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영유아, 임산부, 수유부 섭취에 주의 - 강황알레르기 체질이가나 특정질환(담낭질환)등이 있는 분은 섭취에 주의 - 제안된 섭취량 이상 섭취시 소화불량, 위장장애, 메스꺼움, 위산역류 등이 있을 수 있음"
+      }
+    ],
+    "note": "공식 인정 사례별 기능성과 추출물 섭취량입니다. CSV의 간 건강·항산화 및 커큐민 100~500 mg을 공통 인정 기준으로 적용하지 않습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-47",
+    "sourceIds": [
+      "csv-47"
+    ],
+    "name": "아쉬아간다 추출물(아슈와간다)",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "아쉬아간다추출물(KSM-66 ® )",
+        "recognition": "제2025-67호(2025.12.24.)",
+        "holder": "콜마비앤에이치㈜",
+        "functionality": "스트레스로 인한 긴장완화에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "스트레스로 인한 긴장 완화",
+            "amount": "250~600 mg",
+            "basis": "아쉬아간다추출물(KSM-66®)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1108652",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영‧유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 졸음을 유발하는 약물(신경 안정제 등)과 병용섭취하지 말 것 - 과다 섭취하지 말 것"
+      },
+      {
+        "name": "아쉬아간다추출물(Sensoril®)",
+        "recognition": "제2024-30호(2024.11.19.)",
+        "holder": "(주)노바렉스",
+        "functionality": "스트레스로 인한 긴장완화에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "스트레스로 인한 긴장 완화",
+            "amount": "125 mg",
+            "basis": "아쉬아간다추출물(Sensoril®)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1101890",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 졸음을 유발하는 약물(신경 안정제 등)과 병용섭취하지 말 것"
+      },
+      {
+        "name": "아쉬아간다 추출물(ShodenⓇ)",
+        "recognition": "제2022-27호(2022.9.5.)",
+        "holder": "코스맥스엔비티㈜",
+        "functionality": "수면건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "수면 건강",
+            "amount": "120 mg",
+            "basis": "아쉬아간다추출물(Shoden®)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1091758",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 졸음을 유발하는 약물(신경 안정제 등)과 병용섭취하지 말 것"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-48",
+    "sourceIds": [
+      "csv-48"
+    ],
+    "name": "사프란추출물(Affron®)",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "사프란추출물(Affron Ⓡ )",
+        "recognition": "제2025-65호(2025.12.24.)",
+        "holder": "주식회사 현대바이오랜드 안산",
+        "functionality": "스트레스로 인한 긴장 완화에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "스트레스로 인한 긴장 완화",
+            "amount": "28 mg",
+            "basis": "사프란추출물(Affron®)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1108650",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영‧유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 출혈 장애를 가진 자는 섭취에 주의할 것 - 의약품(항응고제, 항혈소판제, 혈압강하제 등) 복용 시 전문가와 상담할 것"
+      }
+    ],
+    "note": "CSV의 30 mg을 해당 인정 사례의 28 mg으로 정리했습니다. 이 인정 사례에 수면 기능성을 추가하지 않았습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-49",
+    "sourceIds": [
+      "csv-49"
+    ],
+    "name": "GABA(가바) 함유 원료",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "L- 글루탐산발효 가바분말",
+        "recognition": "제2022-19호(2022.4.18.)",
+        "holder": "㈜아모레퍼시픽",
+        "functionality": "수면의 질 개선에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "수면의 질 개선",
+            "amount": "375 mg",
+            "basis": "L-글루탐산발효 가바분말"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1090016",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의 - 의약품(혈압약, 항우울제 등) 복용 시 섭취에 주의할 것"
+      },
+      {
+        "name": "L-글루타민산 유래 GABA 함유 분말",
+        "recognition": "제2009-1호(2009.01.28)",
+        "holder": "(주)롯데삼강",
+        "functionality": "혈압이 높은 사람에게 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "높은 혈압에 도움",
+            "amount": "20 mg",
+            "basis": "GABA"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21618",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부와 수유기 여성, 어린이는 섭취에 주의하시기 바랍니다."
+      }
+    ],
+    "note": "375 mg은 가바분말 중량, 20 mg은 GABA 함량입니다. 서로 다른 인정 원료의 기준입니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-51",
+    "sourceIds": [
+      "csv-51"
+    ],
+    "name": "매스틱 검",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "매스틱 검",
+        "recognition": "제2014-50호 (2014.10.07.)",
+        "holder": "(주)프롬바이오",
+        "functionality": "위 불편감 개선에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "위 불편감 개선",
+            "amount": "1,050 mg",
+            "basis": "매스틱 검"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21469",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부, 수유부 및 어린이는 섭취에 주의"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-52",
+    "sourceIds": [
+      "csv-52"
+    ],
+    "name": "크랜베리 추출물·분말",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "크랜베리 추출물(Cran-Max)",
+        "recognition": "제2010-39호(2010.08.30.)",
+        "holder": "(주)렉스진바이오텍",
+        "functionality": "요로에 유해균 흡착 억제로 요로 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "요로 유해균 흡착 억제를 통한 요로 건강",
+            "amount": "500 mg",
+            "basis": "크랜베리 추출물(Cran-Max)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21578",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "상세 원문에 별도 주의사항이 기재되어 있지 않습니다."
+      },
+      {
+        "name": "크랜베리(Vaccinium macrocarpon Aition)",
+        "recognition": "제2014-35호 (2014.08.01.)",
+        "holder": "(주)서흥",
+        "functionality": "요로의 유해균 흡착 억제로 요로건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "요로 건강",
+            "amount": "500~1,000 mg",
+            "basis": "해당 신청원료"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21484",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "일일섭취량 준수하여 섭취"
+      }
+    ],
+    "note": "추출물 또는 신청원료 중량 기준이며 프로안토시아니딘 함량으로 대체하지 않습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-53",
+    "sourceIds": [
+      "csv-53"
+    ],
+    "name": "쏘팔메토 열매 추출물",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "쏘팔메토 열매 추출물",
+        "recognition": "",
+        "holder": "",
+        "functionality": "전립선 건강 유지",
+        "intakes": [
+          {
+            "purpose": "전립선 건강 유지",
+            "amount": "70~115 mg",
+            "basis": "로르산"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A100/51f84311e0d93ae361edcb6851b0efe4dd263794",
+        "sourceLabel": "공전 제3. 2-28",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "고시형으로 정정했습니다. CSV의 추출물 320 mg과 달리 공전의 섭취량은 로르산 기준입니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-54",
+    "sourceIds": [
+      "csv-54"
+    ],
+    "name": "마카 젤라틴화 분말",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "마카 젤라틴화 분말",
+        "recognition": "제2011-7호 (2011.02.16.)",
+        "holder": "(주)이스터비엔에프",
+        "functionality": "정자운동성 개선에 도움을 줄 수 있음 - 갱년기 남성 건강에 도움을 줄 수 있음 ('25년 6월 인정)",
+        "intakes": [
+          {
+            "purpose": "정자운동성 개선·갱년기 남성 건강",
+            "amount": "5,000 mg",
+            "basis": "마카 젤라틴화 분말"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21571",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "상세 원문에 별도 주의사항이 기재되어 있지 않습니다."
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-55",
+    "sourceIds": [
+      "csv-55"
+    ],
+    "name": "석류 추출물",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "석류추출물",
+        "recognition": "제2015-28호(2015.11.04)",
+        "holder": "비엔지웰푸드",
+        "functionality": "갱년기 여성의 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "갱년기 여성 건강",
+            "amount": "1,500 mg",
+            "basis": "석류추출물"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1048550",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부와 수유부는 섭취를 피하는 것이 좋습니다. - 항혈전제를 복용하시는 분은 의사와 상의하시기 바랍니다. - 에스트로겐 호르몬에 민감한 사람은 섭취에 주의하시기 바랍니다."
+      },
+      {
+        "name": "석류추출물",
+        "recognition": "제2010-23호 (2010.05.31.)",
+        "holder": "(주)한일양행",
+        "functionality": "갱년기 여성의 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "갱년기 여성 건강",
+            "amount": "6,000 mg",
+            "basis": "석류추출물"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21583",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부와 수유부는 섭취를 피하는 것이 좋습니다. - 항혈전제를 복용하시는 분은 의사와 상의하시기 바랍니다. - 에스트로겐 호르몬에 민감한 사람은 섭취에 주의하시기 바랍니다."
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-57",
+    "sourceIds": [
+      "csv-57"
+    ],
+    "name": "가다랑어 엘라스틴 펩타이드",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "가다랑어 엘라스틴 펩타이드 (VGPG Elastin ® )",
+        "recognition": "제2022-38호(2022.12.20.)",
+        "holder": "대한켐텍 주식회사",
+        "functionality": "피부보습에 도움을 줄 수 있음 - 자외선에 의한 피부손상으로부터 피부건강 유지에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "피부 보습·자외선 피부 건강",
+            "amount": "100 mg",
+            "basis": "가다랑어 엘라스틴 펩타이드"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1092801",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취에 주의할 것 - 특정 질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-58",
+    "sourceIds": [
+      "csv-58"
+    ],
+    "name": "히알루론산(개별인정)",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "히알루론산",
+        "recognition": "제2025-27호(2025.5.12.)",
+        "holder": "주영엔에스㈜",
+        "functionality": "관절 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "관절 건강",
+            "amount": "240 mg",
+            "basis": "히알루론산"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1104960",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "※「건강기능식품 기능성 원료 및 기준·규격 인정에 관한 규정」 제10조제2항에 따라 「건강기능식품의 기준 및 규격」에 ‘히알루론산’로 고시 예정임"
+      }
+    ],
+    "note": "제2025-27호의 관절 건강 기준입니다. 고시형 히알루론산의 피부 기능성과 구분했습니다. 공식 상세 페이지에는 고시 예정 안내가 있습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-59",
+    "sourceIds": [
+      "csv-59"
+    ],
+    "name": "크릴오일(개별인정)",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "크릴오일(Superba ™ Boost)",
+        "recognition": "제2023-13호(2023.5.8.)",
+        "holder": "에스씨사이언스",
+        "functionality": "체지방 감소에 도움을 줄 수 있음 - 피부 보습에 도움을 줄 수 있음('24년 3월 인정) - 관절건강에 도움을 줄 수 있음('24년 5월 인정)",
+        "intakes": [
+          {
+            "purpose": "체지방 감소",
+            "amount": "1,000~2,000 mg",
+            "basis": "크릴오일(Superba™ Boost)"
+          },
+          {
+            "purpose": "피부 보습",
+            "amount": "2,000 mg",
+            "basis": "크릴오일(Superba™ Boost)"
+          },
+          {
+            "purpose": "관절 건강",
+            "amount": "1,000 mg",
+            "basis": "크릴오일(Superba™ Boost)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1094545",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취에 주의할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 의약품(항응고제, 항혈소판제 등) 복용 시 전문가와 상담할 것"
+      },
+      {
+        "name": "크릴오일(FJH-KO)",
+        "recognition": "제2022-41호(2022.12.19.)",
+        "holder": "주식회사 프롬바이오 익산공장",
+        "functionality": "관절건강에 도움을 줄 수 있음 - 혈소판 응집억제를 통한 혈행개선에 도움을 줄 수 있음('26년 7월 인정)",
+        "intakes": [
+          {
+            "purpose": "관절 건강·혈행 개선",
+            "amount": "1,500 mg",
+            "basis": "크릴오일(FJH-KO)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1092804",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취에 주의 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 질환이 있거나 의약품 복용 시 전문가와 상담할 것"
+      }
+    ],
+    "note": "크릴오일 자체 중량 기준입니다. 고시형 EPA+DHA 합계 기준과 동일하게 취급하지 않습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-60",
+    "sourceIds": [
+      "csv-60"
+    ],
+    "name": "폴리코사놀(사탕수수왁스알코올)",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "폴리코사놀-사탕수수왁스알코올",
+        "recognition": "제2006-4호(2006.04.03)",
+        "holder": "(주)레이델코리아",
+        "functionality": "혈중 콜레스테롤 수치 개선에 도움을 줄 수 있음 - 혈압조절에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "혈중 콜레스테롤 수치 개선",
+            "amount": "5~20 mg",
+            "basis": "폴리코사놀-사탕수수왁스알코올"
+          },
+          {
+            "purpose": "혈압 조절",
+            "amount": "20 mg",
+            "basis": "폴리코사놀-사탕수수왁스알코올"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21651",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부, 수유부, 청소년 및 어린이는 섭취를 피할 것 - 심혈관약 등 복용, 혈액응고장애가 있거나 수술예정인 사람은 전문가와 상담할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      },
+      {
+        "name": "사탕수수왁스알코올(폴리코사놀)",
+        "recognition": "제2025-19호(2025.5.12.)",
+        "holder": "㈜네이처스원",
+        "functionality": "혈중 콜레스테롤 개선에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "혈중 콜레스테롤 개선",
+            "amount": "20 mg",
+            "basis": "사탕수수왁스알코올(폴리코사놀)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1104952",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 심혈관약 등 복용, 혈액응고장애가 있거나 수술예정인 사람은 전문가와 상담할 것"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-61",
+    "sourceIds": [
+      "csv-61"
+    ],
+    "name": "피크노제놀-프랑스해안송껍질추출물",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "피크노제놀-프랑스해안송껍질추출물",
+        "recognition": "제2006-1호(2006.2.13)",
+        "holder": "(주)주피터인터내셔널",
+        "functionality": "인체에 유해한 활성산소를 제거하는데 도움을 줄 수 있음 - 혈액의 흐름을 방해할 수 있는 혈소판응집을 억제하는데 도움을 줄 수 있음 - 갱년기 여성의 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "활성산소 제거",
+            "amount": "50~200 mg",
+            "basis": "피크노제놀-프랑스해안송껍질추출물"
+          },
+          {
+            "purpose": "혈소판응집 억제",
+            "amount": "100~200 mg",
+            "basis": "피크노제놀-프랑스해안송껍질추출물"
+          },
+          {
+            "purpose": "갱년기 여성 건강",
+            "amount": "60~200 mg",
+            "basis": "피크노제놀-프랑스해안송껍질추출물"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21652",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부 및 수유부와 12세 이하의 어린이는 섭취를 피할 것 - 수술 전후, 질환이 있거나 의약품 복용 시 전문가와 상담할 것 - 식사 후 또는 식사와 함께 할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-62",
+    "sourceIds": [
+      "csv-62"
+    ],
+    "name": "L-아르기닌",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "L-아르기닌",
+        "recognition": "제2015-19호(2015.06.18)",
+        "holder": "대상(주)군산공장",
+        "functionality": "혈관이완을 통해 혈행 개선에 도움을 줄 수 있음 - 피로 개선에 도움을 줄 수 있음('26년 4월 인정)",
+        "intakes": [
+          {
+            "purpose": "혈관이완을 통한 혈행 개선·피로 개선",
+            "amount": "6,000 mg",
+            "basis": "L-아르기닌"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1047339",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "임산부 및 수유부는 섭취에 주의 - 저단백질 식사를 하고 있을 경우 또는 천식, 심장계 질환이 있을 경우 의사와 상의하여 섭취할 것을 권장"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-63",
+    "sourceIds": [
+      "csv-63"
+    ],
+    "name": "유단백추출물",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "유단백추출물",
+        "recognition": "제2015-16호(2015.04.30.)",
+        "holder": "주영엔에스(주)",
+        "functionality": "뼈 건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "뼈 건강",
+            "amount": "40 mg",
+            "basis": "유단백추출물"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1047336",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "우유에 알레르기를 나타내는 사람은 섭취 시 주의"
+      }
+    ],
+    "note": "CSV의 MBP 관련 조회를 위한 유단백추출물 인정 사례입니다. 보유한 MBP 원료가 해당 인정 원료와 동일한지는 인정서·공급사 규격 확인이 필요합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-64",
+    "sourceIds": [
+      "csv-64"
+    ],
+    "name": "난소화성말토덱스트린",
+    "category": "notified",
+    "standards": [
+      {
+        "name": "난소화성말토덱스트린",
+        "recognition": "",
+        "holder": "",
+        "functionality": "식후 혈당상승 억제·중성지질 개선·배변활동",
+        "intakes": [
+          {
+            "purpose": "식후 혈당상승 억제",
+            "amount": "4,000~30,000 mg",
+            "basis": "식이섬유(액상원료 4,000~44,000 mg)"
+          },
+          {
+            "purpose": "혈중 중성지질 개선",
+            "amount": "5,000~30,000 mg",
+            "basis": "식이섬유(액상원료 5,000~44,000 mg)"
+          },
+          {
+            "purpose": "배변활동",
+            "amount": "4,200~30,000 mg",
+            "basis": "식이섬유(액상원료 4,200~44,000 mg)"
+          }
+        ],
+        "sourceUrl": "https://various.foodsafetykorea.go.kr/fsd/api/object-storage/download/pubtlgr_iem_pdf/FF_202643_FF0A044002003A108/3f495ba58a2c7db7ae6c1148ee8332ceda78f4f2",
+        "sourceLabel": "공전 제3. 2-36",
+        "caution": "섭취 시 주의사항과 제조·규격 조건은 공전 원문을 확인하세요."
+      }
+    ],
+    "note": "고시형으로 정정했습니다. 원료 전체 중량이 아니라 난소화성말토덱스트린 식이섬유 기준입니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-66",
+    "sourceIds": [
+      "csv-66"
+    ],
+    "name": "갈락토올리고당",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "갈락토올리고당분말(네오고스-P70)",
+        "recognition": "제2021-8호(2021.8.31.)",
+        "holder": "㈜네오크레마 익산공장",
+        "functionality": "자외선에 의한 피부손상으로부터 피부건강에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "자외선으로부터 피부 건강",
+            "amount": "2,000 mg",
+            "basis": "갈락토올리고당(네오고스-P70)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1085384",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "과다섭취 시 복부팽만을 일으켜 소화장애 또는 설사를 유발할 수 있음 - 영·유아, 어린이, 임산부 및 수유부는 섭취에 주의 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것"
+      },
+      {
+        "name": "갈락토올리고당 분말(Bimuno® GOS Powder)",
+        "recognition": "제2020-13호(2020.10.28.)",
+        "holder": "(주)비티씨",
+        "functionality": "장내 유익균 증식에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "장내 유익균 증식",
+            "amount": "5,500 mg",
+            "basis": "갈락토올리고당 분말(Bimuno® GOS Powder)"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1081682",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영·유아, 어린이, 임산부 및 수유부는 섭취에 주의 - 특정질환(알레르기 체질 등)이 있는 분은 섭취에 주의 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 과다 섭취 시 설사, 복부 불편감이 발생할 수 있음 - 유당불내증이 있는 분은 섭취에 주의"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-67",
+    "sourceIds": [
+      "csv-67"
+    ],
+    "name": "자일로올리고당",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "자일로올리고당(Xylooligosaccharide) 분말",
+        "recognition": "제2009-80호(2009.10.21.)",
+        "holder": "HCN(제2009-80호)",
+        "functionality": "장내 유익균 증식, 유해균 억제 도움을 줄 수 있음 - 배변활동에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "장내 유익균 증식·유해균 억제·배변활동",
+            "amount": "700~7,500 mg",
+            "basis": "자일로올리고당"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21595",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "과량으로 섭취 시 설사를 유발할 수도 있습니다."
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-68",
+    "sourceIds": [
+      "csv-68"
+    ],
+    "name": "이소말토올리고당",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "이소말토올리고당",
+        "recognition": "제2005-10호(2005.06.07), 제2005-11호(2005.06.07), 제2006-2호(2006.02.10)",
+        "holder": "(유한회사 사조씨피케이(제2005-10호), 대상(주)군산공장(제2005-11호), 대상(주)(제2006-2호)",
+        "functionality": "장내 유익균의 증식과 유해균의 억제에 도움을 줄 수 있습니다. - 배변활동을 원활히 하는데 도움을 줄 수 있습니다.",
+        "intakes": [
+          {
+            "purpose": "장내 유익균 증식·유해균 억제·배변활동",
+            "amount": "8,000~12,000 mg",
+            "basis": "이소말토올리고당"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21656",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "과량으로 섭취 시에는 설사를 유발할 수 있습니다."
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-69",
+    "sourceIds": [
+      "csv-69"
+    ],
+    "name": "타가토스",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "타가토스",
+        "recognition": "제2011-37호 (2011.10.25.)",
+        "holder": "CJ제일제당 주식회사",
+        "functionality": "식후 혈당조절에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "식후 혈당 조절",
+            "amount": "5,000~7,500 mg",
+            "basis": "D-tagatose"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21562",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "과량 섭취시 위장장애가 발생 할 수 있음"
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-70",
+    "sourceIds": [
+      "csv-70"
+    ],
+    "name": "난소화성 전분",
+    "category": "unresolved",
+    "standards": [],
+    "note": "난소화성 전분이라는 명칭만으로 인정 원료를 특정할 수 없습니다. 밀전분유래 난소화성말토덱스트린과 임의로 동일시하지 않았습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-71",
+    "sourceIds": [
+      "csv-71"
+    ],
+    "name": "차가버섯 추출물",
+    "category": "unresolved",
+    "standards": [],
+    "note": "검토한 식품안전나라 원료 목록에서 이 명칭에 대응하는 인정번호를 확인하지 못했습니다. 인정 여부를 단정하지 않으며 원료 인정서가 필요합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-72",
+    "sourceIds": [
+      "csv-72"
+    ],
+    "name": "영지버섯균사체추출분말",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "영지버섯균사체추출분말",
+        "recognition": "제2024-8호(2024.04.19.)",
+        "holder": "크림슨파마",
+        "functionality": "면역기능 증진에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "면역기능 증진",
+            "amount": "200 mg",
+            "basis": "영지버섯균사체추출분말"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1099301",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "영‧유아, 어린이, 임산부, 및 수유부는 섭취를 피할 것 - 특정질환(알레르기 체질 등)이 있는 분은 섭취 시 주의할 것 - 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것 - 의약품(당뇨병 치료제, 항응고제, 항혈소판제 등) 복용 시 전문가와 상담할 것"
+      }
+    ],
+    "note": "균사체 인정 원료입니다. 공전의 영지버섯 자실체 추출물과는 다른 원료입니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-73",
+    "sourceIds": [
+      "csv-73"
+    ],
+    "name": "아가리쿠스 추출물",
+    "category": "unresolved",
+    "standards": [],
+    "note": "검토한 식품안전나라 원료 목록에서 이 명칭에 대응하는 인정번호를 확인하지 못했습니다. 원료 인정서 확인이 필요합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-74",
+    "sourceIds": [
+      "csv-74"
+    ],
+    "name": "유산균 발효물 (개별 균주)",
+    "category": "unresolved",
+    "standards": [],
+    "note": "유산균 발효물은 균주·발효기질·가공방법에 따라 달라집니다. 생균수(CFU)를 모든 발효물의 섭취량으로 적용할 수 없습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-75",
+    "sourceIds": [
+      "csv-75"
+    ],
+    "name": "효모베타글루칸",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "효모베타글루칸",
+        "recognition": "제2013-34호 (2013.11.29.)",
+        "holder": "(주)내츄럴엔도텍",
+        "functionality": "면역기능 증진에 도음을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "면역기능 증진",
+            "amount": "250 mg",
+            "basis": "효모베타글루칸"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=21521",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "상세 원문에 별도 주의사항이 기재되어 있지 않습니다."
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-76",
+    "sourceIds": [
+      "csv-76"
+    ],
+    "name": "표고버섯균사체 AHCC",
+    "category": "recognized",
+    "standards": [
+      {
+        "name": "표고버섯균사체 AHCC",
+        "recognition": "제2008-78호(2008.12.08)",
+        "holder": "(주)케이씨에프코리아",
+        "functionality": "면역기능 증진에 도움을 줄 수 있음",
+        "intakes": [
+          {
+            "purpose": "면역기능 증진",
+            "amount": "1,800~3,600 mg",
+            "basis": "표고버섯균사체 AHCC"
+          }
+        ],
+        "sourceUrl": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=2660&bbs_no=bbs987&ntctxt_no=1092510",
+        "sourceLabel": "식품안전나라 인정 원료 상세",
+        "caution": "상세 원문에 별도 주의사항이 기재되어 있지 않습니다."
+      }
+    ],
+    "note": "확인한 인정 사례입니다. 같은 통칭의 모든 원료에 적용되는 기준이 아니며 인정번호·인정업체·제조규격을 확인해야 합니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-77",
+    "sourceIds": [
+      "csv-77"
+    ],
+    "name": "밀크씨슬+강황 복합",
+    "category": "unresolved",
+    "standards": [],
+    "note": "혼합 원료의 정식 명칭과 인정번호가 없어 개별인정 여부 및 일일섭취량을 확정할 수 없습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  },
+  {
+    "id": "ingredient-78",
+    "sourceIds": [
+      "csv-78"
+    ],
+    "name": "프로바이오틱스 복합 (장+면역+체지방 등)",
+    "category": "unresolved",
+    "standards": [],
+    "note": "균주 구성과 인정번호가 없어 다중 기능 및 균수 범위를 공통 기준으로 확정할 수 없습니다.",
+    "upcoming": [],
+    "reviewedOn": "2026-09-05"
+  }
+]

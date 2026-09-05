@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { WorkspaceTabs, type WorkspaceTab } from '@/components/WorkspaceTabs'
 import { ActiveFilters } from '@/components/ActiveFilters'
 import { BriefingDashboard } from '@/components/BriefingDashboard'
 import { DatasetImporter } from '@/components/DatasetImporter'
@@ -28,6 +30,10 @@ import { mainIngredientKey, uniqueMainIngredients } from '@/lib/ingredientNames'
 import { REFERENCE_PAGE_SIZE } from '@/lib/pagination'
 import { SEED_PRODUCTS } from '@/lib/seed'
 import type { FormType, Product } from '@/lib/types'
+
+const FunctionalIngredientLibrary = dynamic(() => import('@/components/FunctionalIngredientLibrary'), {
+  loading: () => <p role="status" className="p-6 text-[13px] text-ink-2">기능성 원료 자료를 불러오는 중…</p>,
+})
 
 export default function ConsultingWorkspace() {
   const [dataset, setDataset] = useState<StoredDataset | null>(null)
@@ -97,6 +103,8 @@ function LoadedConsultingWorkspace({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [railOpen, setRailOpen] = useState(false)
   const [verifyNote, setVerifyNote] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>('consulting')
+  const [ingredientsVisited, setIngredientsVisited] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -253,13 +261,13 @@ function LoadedConsultingWorkspace({
     <div className="h-workspace flex flex-col overflow-hidden">
       <header className="z-30 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-3 lg:px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <button
+          {activeTab === 'consulting' ? <button
             type="button"
             onClick={() => setRailOpen((prev) => !prev)}
             className="rounded-md border border-line px-2.5 py-1.5 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken lg:hidden"
           >
             조건 {activeCount > 0 ? `(${activeCount})` : ''}
-          </button>
+          </button> : null}
           <div className="min-w-0">
             <h1 className="truncate text-[15px] leading-5 font-semibold text-ink">
               OEM 처방 상담 콘솔
@@ -271,10 +279,16 @@ function LoadedConsultingWorkspace({
           </div>
         </div>
 
-        <ExportActions briefing={briefing} disabled={filtered.length === 0} />
+        {activeTab === 'consulting' ? <ExportActions briefing={briefing} disabled={filtered.length === 0} /> : null}
       </header>
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <WorkspaceTabs value={activeTab} onChange={(tab) => {
+        setActiveTab(tab)
+        if (tab === 'ingredients') setIngredientsVisited(true)
+      }} />
+
+      <div id="workspace-panel-consulting" role="tabpanel" aria-labelledby="workspace-tab-consulting"
+        hidden={activeTab !== 'consulting'} className={activeTab === 'consulting' ? 'flex min-h-0 flex-1 overflow-hidden' : 'hidden'}>
         {railOpen ? (
           <button
             type="button"
@@ -361,7 +375,12 @@ function LoadedConsultingWorkspace({
         </main>
       </div>
 
-      <DetailPanel
+      <div id="workspace-panel-ingredients" role="tabpanel" aria-labelledby="workspace-tab-ingredients"
+        hidden={activeTab !== 'ingredients'} className={activeTab === 'ingredients' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
+        {ingredientsVisited ? <FunctionalIngredientLibrary /> : null}
+      </div>
+
+      {activeTab === 'consulting' ? <DetailPanel
         product={selectedProduct}
         position={selectedIndex}
         total={filtered.length}
@@ -369,7 +388,7 @@ function LoadedConsultingWorkspace({
         onStep={step}
         onFilterBySub={toggleSub}
         onMatchFormula={matchFormula}
-      />
+      /> : null}
     </div>
   )
 }
