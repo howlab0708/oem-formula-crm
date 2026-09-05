@@ -10,6 +10,7 @@
  */
 
 import { formatMg } from './format'
+import { parseUnitWeightMg } from './unitWeight'
 import {
   classifyIngredients,
   normalizeForm,
@@ -27,6 +28,7 @@ export type SchemaField =
   | 'form'
   | 'formDetail'
   | 'weight'
+  | 'unitWeight'
   | 'intakeMethod'
   | 'mainIngredients'
   | 'mainDetail'
@@ -42,6 +44,7 @@ export const FIELD_LABELS: Record<SchemaField, string> = {
   form: '제형',
   formDetail: '성상(제형 보정)',
   weight: '규격',
+  unitWeight: '1알 중량(mg)',
   intakeMethod: '섭취방법(규격 추정)',
   mainIngredients: '주원료',
   mainDetail: '기준규격 · 지표성분',
@@ -62,6 +65,7 @@ const COLUMN_ALIASES: Record<SchemaField, string[]> = {
   form: ['제형', '제품형태', '형태', 'prdtshapcdnm'],
   formDetail: ['성상', 'dispos'],
   weight: ['규격', '내용량', '중량', '1회섭취량', '총량', 'unitweight'],
+  unitWeight: ['1알중량mg', '1알중량', '1정중량', '개당중량', 'unitweightmg'],
   intakeMethod: ['섭취방법', '섭취량', 'ntkmthd'],
   mainIngredients: ['주원료', '기능성원료', '주된기능성원료', '기능성주원료'],
   mainDetail: ['지표성분', '지표성분함량', '기준규격', 'stdrstnd'],
@@ -214,6 +218,8 @@ export function rowToProduct(row: string[], mapping: HeaderMapping, seq: number)
 
   const formRaw = cell(row, index.form)
   const formDetail = cell(row, index.formDetail)
+  const form = normalizeForm(formRaw, formDetail)
+  const intakeMethod = cell(row, index.intakeMethod)
   const declaredWeight = cell(row, index.weight)
   const mainDetail = cell(row, index.mainDetail)
 
@@ -232,10 +238,12 @@ export function rowToProduct(row: string[], mapping: HeaderMapping, seq: number)
     id: `csv-${seq}`,
     name,
     manufacturer: cell(row, index.manufacturer) || '미상',
-    form: normalizeForm(formRaw, formDetail),
+    form,
     formRaw: formRaw || formDetail || '미상',
     weightLabel,
     weightMg,
+    intakeMethod,
+    unitWeightMg: parseUnitWeightMg({ form, intakeMethod, declaredWeight, unitWeight: cell(row, index.unitWeight) }),
     mainIngredients,
     mainDetail,
     markers,

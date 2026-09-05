@@ -72,7 +72,7 @@ test('each read checks latest metadata; same-row-count updates invalidate cached
   assert.equal(calls[0].cache, 'no-store')
   active = metadata('two')
   assert.equal((await client.fetchStoredDataset()).products[0].name, 'two')
-  assert.match(calls.at(-1).url, /generation=two&format=snapshot-v1/)
+  assert.equal(calls.at(-1).url, `/api/products?generation=two&format=${codec.SNAPSHOT_FORMAT}`)
   active = null
   assert.equal((await client.fetchStoredDataset()).products, null)
 })

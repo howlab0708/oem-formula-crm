@@ -43,8 +43,12 @@ export type Product = {
   /** 원본 제형 표기(정규화 전). 상세 패널에서 그대로 보여준다. */
   formRaw: string
   weightLabel: string
-  /** 1회 섭취 규격을 mg 로 환산한 값. 범위 검색용. */
+  /** 기존 규격 원문에서 추출한 중량. 섭취 기준이 혼재하므로 1알 통계에는 사용하지 않는다. */
   weightMg: number | null
+  /** 원본 섭취방법. 1알 중량 환산 근거를 보존한다. */
+  intakeMethod?: string
+  /** 명시된 중량과 알 수로만 환산한 1알 중량(mg). 불명확하거나 비알약 제형이면 null. */
+  unitWeightMg?: number | null
   mainIngredients: string[]
   mainDetail: string
   markers: Marker[]

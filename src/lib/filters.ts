@@ -6,6 +6,7 @@
  */
 
 import type { FormType, Product } from './types'
+import { isPillForm } from './unitWeight'
 
 export type MarkerFilter = {
   name: string
@@ -85,9 +86,10 @@ export function applyFilters(products: Product[], filters: FilterState): Product
     }
 
     if (filters.weightMin !== null || filters.weightMax !== null) {
-      if (product.weightMg === null) return false
-      if (filters.weightMin !== null && product.weightMg < filters.weightMin) return false
-      if (filters.weightMax !== null && product.weightMg > filters.weightMax) return false
+      const weight = product.unitWeightMg
+      if (!isPillForm(product.form) || typeof weight !== 'number' || !Number.isFinite(weight) || weight <= 0) return false
+      if (filters.weightMin !== null && weight < filters.weightMin) return false
+      if (filters.weightMax !== null && weight > filters.weightMax) return false
     }
 
     if (filters.marker) {

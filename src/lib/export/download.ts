@@ -100,13 +100,13 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-const CSV_HEADER = ['제품명', '제조원', '제형', '규격', '주원료', '지표성분 함량', '부원료']
+const CSV_HEADER = ['제품명', '제조원', '제형', '규격', '주원료', '지표성분 함량', '부원료', '1알 중량(mg)', '섭취방법']
 
 function escapeCsv(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 }
 
-/** 현재 필터 결과를 이 도구가 다시 읽을 수 있는 7열 CSV 로 내보낸다. */
+/** 원본 규격과 별도로 1알 환산 중량·섭취방법을 보존하여 다시 읽을 수 있게 한다. */
 export function downloadProductsAsCsv(products: Product[], fileName: string) {
   const rows = products.map((product) =>
     [
@@ -117,6 +117,8 @@ export function downloadProductsAsCsv(products: Product[], fileName: string) {
       product.mainIngredients.join(' | '),
       product.mainDetail,
       product.subIngredients.join(' | '),
+      product.unitWeightMg == null ? '' : String(product.unitWeightMg),
+      product.intakeMethod ?? '',
     ]
       .map((cell) => escapeCsv(cell ?? ''))
       .join(','),

@@ -8,7 +8,7 @@
  * 한글 폰트/레이아웃이 브라우저마다 어긋나는 것을 피하기 위해서다.
  */
 
-import { formatDecimal, formatInt, formatMarkerValue, formatMg, formatPercent } from '../format'
+import { formatDecimal, formatInt, formatMarkerValue, formatMilligrams, formatPercent } from '../format'
 import type { Briefing } from './briefing'
 
 const WIDTH = 1080
@@ -210,10 +210,10 @@ export async function renderBriefingCard(briefing: Briefing): Promise<HTMLCanvas
   }
 
   if (briefing.medianWeightMg !== null) {
-    y = drawSectionLabel(ctx, palette, '표준 규격(1회 섭취 중량)', PADDING, y)
+    y = drawSectionLabel(ctx, palette, '1알 중량', PADDING, y)
     ctx.fillStyle = palette.ink
     ctx.font = font(20, 600)
-    ctx.fillText(`${formatMg(briefing.medianWeightMg)} (중앙값)`, PADDING, (y += 30))
+    ctx.fillText(`${formatMilligrams(briefing.medianWeightMg)} (중앙값) · 환산 가능 ${formatInt(briefing.weightSampleSize)}건`, PADDING, (y += 30))
     y += 30
   }
 

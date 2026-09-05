@@ -7,6 +7,7 @@
 
 import { isExcipient } from './dictionary'
 import type { FormType, Product } from './types'
+import { isPillForm } from './unitWeight'
 
 export type CountItem = {
   label: string
@@ -253,11 +254,12 @@ export function topManufacturers(products: Product[], limit = 6): CountItem[] {
   return toCountItems(counts, products.length, limit)
 }
 
-/** 규격(1회 섭취 중량) 통계. */
+/** 알 단위 제품에서 근거가 확인된 1알 중량만 집계한다. */
 export function weightSummary(products: Product[]): { median: number; sampleSize: number } | null {
   const values = products
-    .map((product) => product.weightMg)
-    .filter((value): value is number => value !== null && value > 0)
+    .filter((product) => isPillForm(product.form))
+    .map((product) => product.unitWeightMg)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0)
   if (values.length === 0) return null
   const sorted = values.sort((a, b) => a - b)
   return { median: percentile(sorted, 0.5), sampleSize: sorted.length }

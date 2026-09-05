@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { formatInt, formatMg } from '@/lib/format'
+import { formatInt, formatMilligrams } from '@/lib/format'
 import type { Product } from '@/lib/types'
 
 type Props = {
@@ -136,11 +136,10 @@ export function DetailPanel({
               sub={
                 rendered.formRaw && rendered.formRaw !== rendered.form
                   ? `원본 표기: ${rendered.formRaw}`
-                  : rendered.weightMg !== null
-                    ? `환산 ${formatMg(rendered.weightMg)}`
-                    : undefined
+                  : undefined
               }
             />
+            <Row label="1알 중량" value={formatMilligrams(rendered.unitWeightMg)} sub={rendered.intakeMethod || undefined} />
 
             <Block label="기능성 주원료">
               {rendered.mainIngredients.length ? (

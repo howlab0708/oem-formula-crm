@@ -177,12 +177,12 @@ export function FilterRail({
 
       <Section>
         <RangeFields
-          label="규격 (1회 섭취 중량)"
+          label="규격 (1알 중량)"
           unit="mg"
           min={filters.weightMin}
           max={filters.weightMax}
           onChange={(weightMin, weightMax) => patch({ weightMin, weightMax })}
-          hint="액상은 비중 1로 환산합니다. 규격 표기가 없는 제품은 제외됩니다."
+          hint="1알 중량이 확인된 정제·캡슐·환만 포함합니다."
         />
       </Section>
 

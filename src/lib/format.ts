@@ -25,6 +25,12 @@ export function formatMg(value: number | null): string {
   return `${formatDecimal(value, value % 1 === 0 ? 0 : 1)}mg`
 }
 
+/** 1알 중량은 크기에 상관없이 mg 단위를 유지한다. */
+export function formatMilligrams(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return '-'
+  return `${value.toLocaleString('ko-KR', { maximumFractionDigits: 3 })}mg`
+}
+
 export function formatMarkerValue(value: number, unit: string): string {
   // 유산균 수는 절대 개수로 보관하고 표시할 때만 억/조 단위로 접는다.
   if (unit === 'CFU') {

@@ -15,7 +15,7 @@ import {
   type MarkerSummary,
 } from '../analytics'
 import { filterChips, type FilterState } from '../filters'
-import { formatDecimal, formatInt, formatMarkerValue, formatMg, formatPercent, formatToday } from '../format'
+import { formatDecimal, formatInt, formatMarkerValue, formatMilligrams, formatPercent, formatToday } from '../format'
 import type { Product } from '../types'
 
 export type Briefing = {
@@ -31,6 +31,7 @@ export type Briefing = {
   topCombos: CountItem[]
   marker: MarkerSummary | null
   medianWeightMg: number | null
+  weightSampleSize: number
   topManufacturers: CountItem[]
 }
 
@@ -60,6 +61,7 @@ export function buildBriefing(
     topCombos: topSubCombos(products, 6),
     marker,
     medianWeightMg: weight?.median ?? null,
+    weightSampleSize: weight?.sampleSize ?? 0,
     topManufacturers: topManufacturers(products, 5),
   }
 }
@@ -95,7 +97,7 @@ export function briefingToText(briefing: Briefing): string {
   if (formMix) lines.push(`· 제형 분포: ${formMix}`)
 
   if (briefing.medianWeightMg !== null) {
-    lines.push(`· 표준 규격(중앙값): ${formatMg(briefing.medianWeightMg)}`)
+    lines.push(`· 1알 중량(중앙값): ${formatMilligrams(briefing.medianWeightMg)} (환산 가능 ${formatInt(briefing.weightSampleSize)}건 기준)`)
   }
 
   if (briefing.marker) {

@@ -6,7 +6,7 @@ import { HorizontalBars } from '@/components/charts/HorizontalBars'
 import { StatTile } from '@/components/StatTile'
 import type { Briefing } from '@/lib/export/briefing'
 import type { MarkerFilter } from '@/lib/filters'
-import { formatDecimal, formatInt, formatMarkerValue, formatPercent } from '@/lib/format'
+import { formatDecimal, formatInt, formatMarkerValue, formatMilligrams, formatPercent } from '@/lib/format'
 import type { FormType } from '@/lib/types'
 
 type Props = {
@@ -75,17 +75,10 @@ export function BriefingDashboard({
           }
         />
         <StatTile
-          label="표준 규격 (중앙값)"
-          value={
-            briefing.medianWeightMg === null || !Number.isFinite(briefing.medianWeightMg)
-              ? '-'
-              : `${formatDecimal(
-                  briefing.medianWeightMg,
-                  Number.isInteger(briefing.medianWeightMg) ? 0 : 1,
-                )}mg`
-          }
+          label="1알 중량 (중앙값)"
+          value={formatMilligrams(briefing.medianWeightMg)}
           context={
-            briefing.medianWeightMg === null ? '규격 표기 없음' : '1회 섭취 중량 기준'
+            briefing.medianWeightMg === null ? '1알 중량을 확인할 수 없습니다.' : `환산 가능 ${formatInt(briefing.weightSampleSize)}건 기준`
           }
         />
       </div>
