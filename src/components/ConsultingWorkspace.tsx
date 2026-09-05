@@ -9,7 +9,7 @@ import { ExportActions } from '@/components/ExportActions'
 import { FilterRail } from '@/components/FilterRail'
 import { ReferenceGrid } from '@/components/ReferenceGrid'
 import { useCsvImport } from '@/hooks/useCsvImport'
-import { fetchStoredDataset } from '@/lib/api/products'
+import { fetchStoredDataset, type StoredDataset } from '@/lib/api/products'
 import { markerCatalog } from '@/lib/analytics'
 import { downloadProductsAsCsv } from '@/lib/export/download'
 import { buildBriefing } from '@/lib/export/briefing'
@@ -28,8 +28,69 @@ import { SEED_PRODUCTS } from '@/lib/seed'
 import type { FormType, Product } from '@/lib/types'
 
 export default function ConsultingWorkspace() {
-  const [products, setProducts] = useState<Product[]>(SEED_PRODUCTS)
-  const [source, setSource] = useState<'seed' | 'csv' | 'db'>('seed')
+  const [dataset, setDataset] = useState<StoredDataset | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
+
+  // 저장 여부를 확인하기 전에는 예시 데이터로 콘솔을 그리지 않는다.
+  useEffect(() => {
+    let cancelled = false
+    fetchStoredDataset()
+      .then((result) => {
+        if (cancelled) return
+        if (result.error) throw new Error(result.error)
+        setDataset(result)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        console.error('[ConsultingWorkspace] 저장된 데이터셋을 불러오지 못했습니다.', error)
+        setLoadError('저장된 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [loadAttempt])
+
+  if (!dataset) {
+    return (
+      <main className="h-workspace flex flex-col items-center justify-center gap-3 px-4">
+        <h1 className="text-[15px] font-semibold text-ink">OEM 처방 상담 콘솔</h1>
+        <p role={loadError ? 'alert' : 'status'} className="text-[13px] text-ink-2">
+          {loadError ?? '저장된 데이터를 불러오는 중…'}
+        </p>
+        {loadError ? (
+          <button
+            type="button"
+            onClick={() => {
+              setLoadError(null)
+              setLoadAttempt((attempt) => attempt + 1)
+            }}
+            className="rounded-md border border-line bg-surface px-3 py-2 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken"
+          >
+            다시 시도
+          </button>
+        ) : null}
+      </main>
+    )
+  }
+
+  return (
+    <LoadedConsultingWorkspace
+      initialProducts={dataset.products ?? SEED_PRODUCTS}
+      initialSource={dataset.products ? 'db' : 'seed'}
+    />
+  )
+}
+
+function LoadedConsultingWorkspace({
+  initialProducts,
+  initialSource,
+}: {
+  initialProducts: Product[]
+  initialSource: 'seed' | 'db'
+}) {
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [source, setSource] = useState<'seed' | 'csv' | 'db'>(initialSource)
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [railOpen, setRailOpen] = useState(false)
@@ -47,28 +108,6 @@ export default function ConsultingWorkspace() {
   }, [setVerifyNote])
 
   const { status, saveStatus, importFile, reset: resetImport } = useCsvImport({ onLoaded: handleLoaded })
-
-  /**
-   * 처음 화면을 열 때 서버(Postgres)에 저장된 데이터셋이 있으면 그걸로 바꿔 낀다.
-   * 이전에는 새로고침하면 항상 예시 데이터로 돌아갔다 - 이제는 누군가 CSV 를
-   * 올려둔 적이 있으면 그 결과가 모두에게 그대로 보인다. 예시 데이터가 먼저
-   * 즉시 보이고, 로드가 끝나면 있을 경우에만 조용히 교체한다(깜빡임 없음).
-   */
-  useEffect(() => {
-    let cancelled = false
-    fetchStoredDataset()
-      .then((result) => {
-        if (cancelled || !result.products || result.products.length === 0) return
-        setProducts(result.products)
-        setSource('db')
-      })
-      .catch((error) => {
-        console.error('[ConsultingWorkspace] 저장된 데이터셋을 불러오지 못했습니다.', error)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   /**
    * 저장(`saveStatus.phase === 'saved'`)이 끝난 직후, 방금 저장한 게 실제로
