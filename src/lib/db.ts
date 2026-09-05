@@ -205,3 +205,56 @@ export async function getProductsPage(
   `
   return rows.map((row) => row.payload)
 }
+
+/** 한 세대를 한 번에 읽어 재사용 가능한 전송용 묶음을 만든다. */
+export async function getSnapshotProducts(generation: string): Promise<Product[]> {
+  const sql = await withSchema()
+  const rows = await sql<{ payload: Product }[]>`
+    select payload from products where generation = ${generation} order by seq asc
+  `
+  return rows.map((row) => row.payload)
+}
+
+let snapshotSchemaReady: Promise<void> | null = null
+
+async function snapshotSql() {
+  const sql = await withSchema()
+  if (!snapshotSchemaReady) {
+    snapshotSchemaReady = (async () => {
+      // 공개 Data API에 노출하지 않는 전용 스키마. 원본 삭제 시 캐시도 함께 정리된다.
+      await sql`create schema if not exists oem_cache`
+      await sql`
+        create table if not exists oem_cache.dataset_snapshots (
+          generation text not null references public.import_status(generation) on delete cascade,
+          version integer not null,
+          payload bytea not null,
+          primary key (generation, version)
+        )
+      `
+      await sql`alter table oem_cache.dataset_snapshots enable row level security`
+    })().catch((error) => {
+      snapshotSchemaReady = null
+      throw error
+    })
+  }
+  await snapshotSchemaReady
+  return sql
+}
+
+export async function readDatasetSnapshot(generation: string, version: number): Promise<Buffer | null> {
+  const sql = await snapshotSql()
+  const [row] = await sql<{ payload: Buffer }[]>`
+    select payload from oem_cache.dataset_snapshots
+    where generation = ${generation} and version = ${version}
+  `
+  return row?.payload ?? null
+}
+
+export async function writeDatasetSnapshot(generation: string, version: number, payload: Buffer): Promise<void> {
+  const sql = await snapshotSql()
+  await sql`
+    insert into oem_cache.dataset_snapshots (generation, version, payload)
+    values (${generation}, ${version}, ${payload})
+    on conflict (generation, version) do nothing
+  `
+}

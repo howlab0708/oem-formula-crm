@@ -6,6 +6,7 @@
  */
 
 import type { Product } from '@/lib/types'
+import { SNAPSHOT_FORMAT, unpackSnapshot, type DatasetSnapshot } from '../datasetSnapshot'
 
 export type DatasetMeta = {
   generation: string
@@ -42,6 +43,9 @@ type PageBody = ErrorBody & { configured: boolean; products: Product[] }
 type StartImportBody = ErrorBody & { generation: string }
 type FinishImportBody = ErrorBody & { status: DatasetMeta }
 
+let loadedDataset: StoredDataset | null = null
+let pendingLoad: Promise<StoredDataset> | null = null
+
 async function parseJsonOrThrow<T extends ErrorBody>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => null)) as T | null
   if (!response.ok) {
@@ -54,18 +58,45 @@ async function parseJsonOrThrow<T extends ErrorBody>(response: Response): Promis
 /**
  * 서버에 저장된 데이터셋을 가져온다. 저장된 게 없으면 products 는 null.
  *
- * 먼저 가벼운 메타데이터만 받아 전체 건수를 확인한 뒤, 상품 목록은 여러 개의
- * 작은 페이지로 나눠(동시에 몇 개씩) 받아 합친다 - 한 응답에 다 담으면 배포
- * 환경(Vercel)에서 응답 크기 제한에 걸려 항상 실패하기 때문이다.
+ * 최신 세대를 확인하고, 그 세대의 압축된 묶음을 한 번에 받는다.
+ * 이미 받은 세대는 브라우저 캐시를 재사용한다. 스냅샷을 사용할 수 없는
+ * 경우에만 기존 분할 조회로 복구한다.
  */
-export async function fetchStoredDataset(): Promise<StoredDataset> {
+export function fetchStoredDataset(): Promise<StoredDataset> {
+  if (!pendingLoad) {
+    pendingLoad = loadStoredDataset().finally(() => { pendingLoad = null })
+  }
+  return pendingLoad
+}
+
+async function loadStoredDataset(): Promise<StoredDataset> {
   const metaResponse = await fetch('/api/products', { cache: 'no-store' })
   const metaBody = await parseJsonOrThrow<MetaBody>(metaResponse)
-  if (!metaBody.configured) return { configured: false, products: null, meta: null }
-  if (!metaBody.meta) return { configured: true, products: null, meta: null, error: metaBody.error }
+  if (!metaBody.configured || !metaBody.meta) {
+    loadedDataset = null
+    return { configured: metaBody.configured, products: null, meta: null, error: metaBody.error }
+  }
 
   const meta = metaBody.meta
   const total = meta.imported_rows
+  // 매번 최신 세대를 확인한 뒤에만 메모리/브라우저 캐시를 사용한다.
+  if (loadedDataset?.meta?.generation === meta.generation && loadedDataset.products?.length === total) {
+    return { ...loadedDataset, meta }
+  }
+
+  try {
+    const response = await fetch(
+      `/api/products?generation=${encodeURIComponent(meta.generation)}&format=${SNAPSHOT_FORMAT}`,
+      { cache: 'force-cache' },
+    )
+    if (!response.ok) throw new Error('전송용 데이터를 불러오지 못했습니다.')
+    const snapshot = (await response.json()) as DatasetSnapshot
+    loadedDataset = { configured: true, products: unpackSnapshot(snapshot, meta), meta }
+    return loadedDataset
+  } catch {
+    // 배포 전환 중이거나 캐시를 읽지 못하면 기존 분할 조회로 복구한다.
+  }
+
   const products: Product[] = new Array(total)
 
   const offsets: number[] = []
@@ -101,7 +132,8 @@ export async function fetchStoredDataset(): Promise<StoredDataset> {
     }
   }
 
-  return { configured: true, products, meta }
+  loadedDataset = { configured: true, products, meta }
+  return loadedDataset
 }
 
 export type SaveProgress = { sent: number; total: number }

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getDatasetMeta, getProductsPage, isDatabaseConfigured } from '@/lib/db'
+import { SNAPSHOT_FORMAT } from '@/lib/datasetSnapshot'
+import { snapshotResponse } from '@/lib/server/datasetSnapshot'
 
 /**
  * 저장된 레퍼런스 데이터셋을 돌려준다.
@@ -11,6 +13,7 @@ import { getDatasetMeta, getProductsPage, isDatabaseConfigured } from '@/lib/db'
  * 그래서 이제는 CSV 업로드 때와 같은 방식으로 나눠서 내려준다:
  *
  *  - `generation` 쿼리 파라미터가 없으면: 메타데이터만(가벼움, 상품 목록 없음)
+ *  - `generation`+`format=snapshot-v1`: 재사용 가능한 압축 묶음을 스트리밍
  *  - `generation`+`offset`+`limit` 이 있으면: 그 구간의 상품만(작은 페이지)
  */
 export const dynamic = 'force-dynamic'
@@ -44,6 +47,17 @@ export async function GET(request: Request) {
     if (!generation) {
       const meta = await getDatasetMeta()
       return NextResponse.json({ configured: true, meta }, { headers: NO_STORE_HEADERS })
+    }
+
+    if (searchParams.get('format') === SNAPSHOT_FORMAT) {
+      const meta = await getDatasetMeta()
+      if (!meta || meta.generation !== generation) {
+        return NextResponse.json(
+          { error: '데이터가 갱신되었습니다. 다시 불러와 주세요.' },
+          { status: 409, headers: NO_STORE_HEADERS },
+        )
+      }
+      return await snapshotResponse(meta, request)
     }
 
     const offset = Math.max(0, Number(searchParams.get('offset') ?? '0') || 0)
