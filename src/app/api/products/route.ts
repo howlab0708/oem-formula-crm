@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server'
-import { getActiveDataset, isDatabaseConfigured } from '@/lib/db'
+import { getDatasetMeta, getProductsPage, isDatabaseConfigured } from '@/lib/db'
 
 /**
- * 저장된 레퍼런스 데이터셋을 통째로 돌려준다.
+ * 저장된 레퍼런스 데이터셋을 돌려준다.
  *
- * 이 앱은 필터/집계를 전부 브라우저 메모리에서 계산하므로(수만 건 규모에서는
- * 이 편이 검색어를 칠 때마다 지연이 없다), 여기서도 "서버가 걸러서 조금씩" 이
- * 아니라 완료된 데이터셋 전체를 한 번에 내려준다. 응답은 gzip 압축되어 실제
- * 전송량은 이 크기보다 훨씬 작다.
+ * 예전에는 완료된 데이터셋 전체(4만 건 넘는 상품 payload)를 한 응답에 실어
+ * 보냈는데, 이러면 응답이 수십 MB 가 되어 Vercel 서버리스 함수의 응답 크기
+ * 제한(약 4.5MB)을 넘겨 배포 환경에서는 항상 조용히 실패했다 - 로컬
+ * `next dev` 에는 이런 제한이 없어서 테스트에서는 재현되지 않았던 원인이다.
+ * 그래서 이제는 CSV 업로드 때와 같은 방식으로 나눠서 내려준다:
+ *
+ *  - `generation` 쿼리 파라미터가 없으면: 메타데이터만(가벼움, 상품 목록 없음)
+ *  - `generation`+`offset`+`limit` 이 있으면: 그 구간의 상품만(작은 페이지)
  */
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'force-no-store'
 export const runtime = 'nodejs'
 export const maxDuration = 30
+
+/** 페이지당 최대 상품 수 - 업로드 배치 크기와 맞춰, 실제로 크기 제한을 넘지 않는다고 확인된 값. */
+const MAX_PAGE_SIZE = 1500
 
 /**
  * 어떤 캐시 레이어도 이 응답을 붙잡아 두지 못하게 명시적으로 못박는다.
@@ -25,20 +32,33 @@ const NO_STORE_HEADERS = {
   Pragma: 'no-cache',
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!isDatabaseConfigured()) {
-    return NextResponse.json({ configured: false, dataset: null }, { headers: NO_STORE_HEADERS })
+    return NextResponse.json({ configured: false, meta: null }, { headers: NO_STORE_HEADERS })
   }
 
+  const { searchParams } = new URL(request.url)
+  const generation = searchParams.get('generation')
+
   try {
-    const dataset = await getActiveDataset()
-    return NextResponse.json({ configured: true, dataset }, { headers: NO_STORE_HEADERS })
+    if (!generation) {
+      const meta = await getDatasetMeta()
+      return NextResponse.json({ configured: true, meta }, { headers: NO_STORE_HEADERS })
+    }
+
+    const offset = Math.max(0, Number(searchParams.get('offset') ?? '0') || 0)
+    const requestedLimit = Number(searchParams.get('limit') ?? String(MAX_PAGE_SIZE)) || MAX_PAGE_SIZE
+    const limit = Math.min(Math.max(1, requestedLimit), MAX_PAGE_SIZE)
+
+    const products = await getProductsPage(generation, offset, limit)
+    return NextResponse.json({ configured: true, products }, { headers: NO_STORE_HEADERS })
   } catch (error) {
     console.error('[api/products] failed to load dataset', error)
     return NextResponse.json(
       {
         configured: true,
-        dataset: null,
+        meta: null,
+        products: null,
         error: error instanceof Error ? error.message : '데이터를 불러오지 못했습니다.',
       },
       { status: 500, headers: NO_STORE_HEADERS },

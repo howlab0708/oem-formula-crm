@@ -168,3 +168,40 @@ export async function getActiveDataset(): Promise<ActiveDataset | null> {
   `
   return { meta: status, products: rows.map((row) => row.payload) }
 }
+
+/**
+ * 완료된 최신 세대의 메타데이터만 가볍게 가져온다(상품 본문은 포함하지 않음).
+ *
+ * `getActiveDataset` 처럼 4만 건 넘는 상품 payload 를 한 번에 다 실어 보내면
+ * 응답이 수십 MB 가 되어 Vercel 서버리스 함수의 응답 크기 제한을 넘겨 매번
+ * 조용히 실패한다(로컬 `next dev` 에서는 이 제한이 없어서 재현되지 않았다).
+ * 그래서 목록은 `getProductsPage` 로 나눠 받는다.
+ */
+export async function getDatasetMeta(): Promise<ImportStatusRow | null> {
+  const sql = await withSchema()
+  const [status] = await sql<ImportStatusRow[]>`
+    select generation, status, file_name, total_rows, imported_rows,
+           started_at::text, finished_at::text
+    from import_status
+    where status = 'complete'
+    order by finished_at desc
+    limit 1
+  `
+  return status ?? null
+}
+
+/** 한 세대의 상품 목록 중 일부(offset~offset+limit)만 가져온다. 응답 크기를 작게 유지하기 위함. */
+export async function getProductsPage(
+  generation: string,
+  offset: number,
+  limit: number,
+): Promise<Product[]> {
+  const sql = await withSchema()
+  const rows = await sql<{ payload: Product }[]>`
+    select payload from products
+    where generation = ${generation}
+    order by seq asc
+    offset ${offset} limit ${limit}
+  `
+  return rows.map((row) => row.payload)
+}
