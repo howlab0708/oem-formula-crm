@@ -316,6 +316,7 @@ function LoadedConsultingWorkspace({
 
             <BriefingDashboard
               briefing={briefing}
+              selectedMarker={filters.marker}
               onToggleForm={toggleForm}
               onToggleSub={toggleSub}
               onSelectCombo={selectCombo}

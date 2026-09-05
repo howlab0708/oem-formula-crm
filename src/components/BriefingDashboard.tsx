@@ -5,11 +5,13 @@ import { ColumnHistogram } from '@/components/charts/ColumnHistogram'
 import { HorizontalBars } from '@/components/charts/HorizontalBars'
 import { StatTile } from '@/components/StatTile'
 import type { Briefing } from '@/lib/export/briefing'
+import type { MarkerFilter } from '@/lib/filters'
 import { formatDecimal, formatInt, formatMarkerValue, formatPercent } from '@/lib/format'
 import type { FormType } from '@/lib/types'
 
 type Props = {
   briefing: Briefing
+  selectedMarker: MarkerFilter | null
   onToggleForm: (form: FormType) => void
   onToggleSub: (name: string) => void
   onSelectCombo: (names: string[]) => void
@@ -17,6 +19,7 @@ type Props = {
 
 export function BriefingDashboard({
   briefing,
+  selectedMarker,
   onToggleForm,
   onToggleSub,
   onSelectCombo,
@@ -194,47 +197,47 @@ export function BriefingDashboard({
         </ChartCard>
       </div>
 
-      <ChartCard
-        title={
-          marker ? `${marker.name} 함량 분포` : '지표성분 함량 분포'
-        }
-        caption={
-          marker
-            ? `표본 ${formatInt(marker.sampleSize)}건 · 중앙값 ${formatMarkerValue(
-                marker.median,
-                marker.unit,
-              )} · 사분위 ${formatMarkerValue(marker.p25, marker.unit)}~${formatMarkerValue(
-                marker.p75,
-                marker.unit,
-              )}`
-            : '지표성분 함량을 읽을 수 있는 레퍼런스가 부족합니다.'
-        }
-        note="왼쪽 조건에서 지표성분을 지정하면 해당 성분 기준으로 다시 그립니다."
-        isEmpty={!marker || markerBins.length === 0}
-        emptyMessage="함량 표기를 해석할 수 있는 레퍼런스가 2건 미만입니다."
-        table={{
-          columns: [`구간 (${marker?.unit ?? ''})`, '건수'],
-          rows: markerBins.map((bin) => [bin.label, formatInt(bin.count)]),
-        }}
-      >
-        <ColumnHistogram
-          ariaLabel={`${marker?.name ?? '지표성분'} 함량 분포`}
-          data={markerBins.map((bin) => ({
-            key: bin.label,
-            label: bin.label,
-            value: bin.count,
-            hint: `${bin.label}${marker?.unit ?? ''} · ${formatInt(bin.count)}건`,
-          }))}
-          reference={
-            markerReference !== null && marker
-              ? {
-                  position: markerReference,
-                  label: `중앙값 ${formatMarkerValue(marker.median, marker.unit)}`,
-                }
-              : undefined
+      {selectedMarker ? (
+        <ChartCard
+          title={`${selectedMarker.name} 함량 분포`}
+          caption={
+            marker
+              ? `표본 ${formatInt(marker.sampleSize)}건 · 중앙값 ${formatMarkerValue(
+                  marker.median,
+                  marker.unit,
+                )} · 사분위 ${formatMarkerValue(marker.p25, marker.unit)}~${formatMarkerValue(
+                  marker.p75,
+                  marker.unit,
+                )}`
+              : '지표성분 함량을 읽을 수 있는 레퍼런스가 부족합니다.'
           }
-        />
-      </ChartCard>
+          note="왼쪽 조건에서 지표성분을 지정하면 해당 성분 기준으로 다시 그립니다."
+          isEmpty={!marker || markerBins.length === 0}
+          emptyMessage="함량 표기를 해석할 수 있는 레퍼런스가 2건 미만입니다."
+          table={{
+            columns: [`구간 (${selectedMarker.unit})`, '건수'],
+            rows: markerBins.map((bin) => [bin.label, formatInt(bin.count)]),
+          }}
+        >
+          <ColumnHistogram
+            ariaLabel={`${selectedMarker.name} 함량 분포`}
+            data={markerBins.map((bin) => ({
+              key: bin.label,
+              label: bin.label,
+              value: bin.count,
+              hint: `${bin.label}${selectedMarker.unit} · ${formatInt(bin.count)}건`,
+            }))}
+            reference={
+              markerReference !== null && marker
+                ? {
+                    position: markerReference,
+                    label: `중앙값 ${formatMarkerValue(marker.median, marker.unit)}`,
+                  }
+                : undefined
+            }
+          />
+        </ChartCard>
+      ) : null}
     </section>
   )
 }

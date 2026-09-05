@@ -5,7 +5,6 @@
 
 import {
   formDistribution,
-  markerCatalog,
   markerSummary,
   subIngredientCountStats,
   topManufacturers,
@@ -46,7 +45,7 @@ export function buildBriefing(
 
   const marker = filters.marker
     ? markerSummary(products, filters.marker.name, filters.marker.unit)
-    : pickDefaultMarker(products)
+    : null
 
   return {
     generatedAt: formatToday(),
@@ -63,31 +62,6 @@ export function buildBriefing(
     medianWeightMg: weight?.median ?? null,
     topManufacturers: topManufacturers(products, 5),
   }
-}
-
-/**
- * 지표성분을 고르지 않았을 때 대신 보여줄 성분.
- *
- * 단순히 가장 흔한 성분을 쓰면 "아연 8.5mg" 처럼 전 제품이 같은 값이라
- * 막대 한 칸짜리 차트가 나온다. 상위 후보 중 함량이 실제로 갈리는 성분을 고른다.
- */
-function pickDefaultMarker(products: Product[]): MarkerSummary | null {
-  const candidates = markerCatalog(products, 8)
-  let best: MarkerSummary | null = null
-  let bestScore = -1
-
-  for (const candidate of candidates) {
-    const summary = markerSummary(products, candidate.name, candidate.unit)
-    if (!summary) continue
-    const spread = summary.histogram.filter((bin) => bin.count > 0).length
-    const score = spread * 1000 + summary.sampleSize
-    if (score > bestScore) {
-      bestScore = score
-      best = summary
-    }
-  }
-
-  return best
 }
 
 /** 고객에게 그대로 붙여 넣을 수 있는 텍스트. 메신저 폭을 고려해 한 줄을 짧게 유지한다. */
