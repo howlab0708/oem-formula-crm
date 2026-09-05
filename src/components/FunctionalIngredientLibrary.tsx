@@ -1,9 +1,11 @@
 'use client'
 
 import { Fragment, useRef, useState } from 'react'
+import { IngredientSourceLink } from '@/components/IngredientSourceLink'
+import { referencePageButtons } from '@/lib/pagination'
 import {
   findFunctionalIngredients, functionalIngredients, ingredientCategoryLabels, ingredientOriginals,
-  ingredientSourceRows, ingredientStandardsForQuery, INGREDIENT_PAGE_SIZE, INGREDIENT_REVIEW_DATE, INGREDIENT_SOURCES,
+  ingredientAudit, ingredientStandardsForQuery, INGREDIENT_PAGE_SIZE, INGREDIENT_REVIEW_DATE, INGREDIENT_SOURCES,
   type FunctionalIngredient, type IngredientCategory, type IngredientStandard,
 } from '@/lib/functionalIngredients'
 
@@ -17,6 +19,10 @@ function StandardIntakes({ standard, compact = false }: { standard: IngredientSt
   return (
     <div className="space-y-2">
       {standard.recognition ? <p className="text-[11px] font-medium text-ink-2">{standard.recognition}</p> : null}
+      {!standard.intakes.length ? <div>
+        <p className="text-[13px] font-medium text-ink-2">현행 섭취 기준 확인 필요</p>
+        {standard.recordedIntake ? <p className="mt-1 text-[11px] leading-5 text-ink-3">I-0040 기재: {standard.recordedIntake}</p> : null}
+      </div> : null}
       {standard.intakes.map((intake, index) => (
         <div key={index}>
           <p className="text-[14px] font-semibold text-ink tnum">{intake.amount}</p>
@@ -40,9 +46,7 @@ function IngredientDetails({ ingredient }: { ingredient: FunctionalIngredient })
               {standard.holder ? <p className="mt-1 text-[12px] text-ink-2">인정업체: {standard.holder}</p> : null}
               <div className="my-3"><StandardIntakes standard={standard} /></div>
               <p className="mb-3 text-[11px] leading-5 text-ink-2">섭취 시 참고: {standard.caution}</p>
-              <a href={standard.sourceUrl} target="_blank" rel="noopener noreferrer" className={`${linkClass} text-[12px]`}>
-                {standard.sourceLabel} ↗<span className="sr-only"> (새 창)</span>
-              </a>
+              <IngredientSourceLink url={standard.sourceUrl} pageUrl={standard.sourcePageUrl} label={standard.sourceLabel} className={`${linkClass} text-[12px]`} />
             </section>
           ))}
         </div>
@@ -55,16 +59,30 @@ function IngredientDetails({ ingredient }: { ingredient: FunctionalIngredient })
         </p>
       ))}
       <details className="text-[12px] text-ink-2">
-        <summary className="w-fit cursor-pointer py-1">첨부 CSV 원문 보기 (검증 전 표기)</summary>
+        <summary className="w-fit cursor-pointer py-1">대조한 CSV 원문 보기 ({ingredient.sourceIds.length}행)</summary>
         <ul className="mt-2 space-y-2">
           {ingredientOriginals(ingredient).map((row) => (
             <li key={row.id} className="rounded border border-line bg-surface px-3 py-2 leading-6">
+              <strong>{row.sourceFile} · 데이터 {row.row}행</strong><br />
               {row.name} · CSV 분류: {row.category}<br />
-              CSV 기능성: {row.functionality}<br />CSV 섭취량: {row.dailyIntake}
+              {row.recognition ? <>인정번호: {row.recognition}<br /></> : null}
+              {row.holder ? <>업체: {row.holder}<br /></> : null}
+              CSV 기능성: {row.functionality || '공란'}<br />CSV 섭취량: {row.dailyIntake || '공란'}
+              {Object.keys(row.raw).length ? <details className="mt-1">
+                <summary className="w-fit cursor-pointer">원본 전체 필드</summary>
+                <dl className="mt-2 space-y-1 break-words">
+                  {Object.entries(row.raw).map(([key, value]) => <div key={key}><dt className="font-medium">{key}</dt><dd className="whitespace-pre-line">{value || '공란'}</dd></div>)}
+                </dl>
+              </details> : null}
             </li>
           ))}
         </ul>
       </details>
+      <p className="text-[11px] leading-5 text-ink-3">
+        C003 제품 원료란의 인정번호 일치: {ingredient.productEvidence.count.toLocaleString('ko-KR')}개 제품
+        {ingredient.productEvidence.examples.length ? ` · 품목보고번호 예: ${ingredient.productEvidence.examples.join(', ')}` : ''}.
+        원료 사용 이력의 참고 자료이며, 제품 섭취방법을 원료의 법정 섭취량으로 사용하지 않습니다. 번호가 충돌하는 사례는 집계에서 제외했습니다.
+      </p>
       <p className="text-[11px] text-ink-3">검토일 {ingredient.reviewedOn} · 첨부 자료와 확인한 공식 자료의 대조 결과입니다.</p>
     </div>
   )
@@ -89,7 +107,7 @@ export default function FunctionalIngredientLibrary() {
         <div>
           <h2 className="text-[20px] font-semibold tracking-tight text-ink">기능성 원료 조회</h2>
           <p className="mt-1.5 text-[13px] leading-6 text-ink-2">원료 종류와 기능성, 기준 성분별 일일 섭취량을 확인하세요.</p>
-          <p className="mt-1 text-[11px] leading-5 text-ink-3">첨부 CSV {ingredientSourceRows.length}개 항목 기반 · {functionalIngredients.length}개 조회 항목 · 검토일 {INGREDIENT_REVIEW_DATE}</p>
+          <p className="mt-1 text-[11px] leading-5 text-ink-3">인정 CSV {ingredientAudit.approvalCsvRows.toLocaleString('ko-KR')}행 · C003 {ingredientAudit.uniqueProductReports.toLocaleString('ko-KR')}개 제품 대조 · {functionalIngredients.length}개 조회 항목 · 검토일 {INGREDIENT_REVIEW_DATE}</p>
         </div>
         <div className="flex flex-wrap gap-3 py-1 text-[12px]">
           <a className={linkClass} href={INGREDIENT_SOURCES.codex} target="_blank" rel="noopener noreferrer">건강기능식품공전 ↗<span className="sr-only"> (새 창)</span></a>
@@ -117,8 +135,8 @@ export default function FunctionalIngredientLibrary() {
       </div>
 
       <p className="text-[12px] leading-6 text-ink-2">
-        섭취량은 <strong>하루 기준</strong>이며 원료·지표성분·균수 등 표시된 기준을 따릅니다. 개별인정형은 확인한 인정 사례만 수록했습니다.
-        식약처 전체 원료 목록이나 식사를 포함한 영양소 권장량(KDRIs)과는 범위가 다릅니다.
+        섭취량은 <strong>하루 기준</strong>이며 원료·지표성분·균수 등 표시된 기준을 따릅니다. 첨부 인정 CSV의 전체 행을 대조했습니다.
+        과거 인정 이력과 현행 공전 기준을 구분하며, 공개 자료가 부족한 항목은 기준 재확인으로 표시합니다.
       </p>
 
       <div ref={resultsRef} className="scroll-mt-4">
@@ -142,17 +160,18 @@ export default function FunctionalIngredientLibrary() {
                 const matchingStandards = ingredientStandardsForQuery(ingredient, query)
                 const first = matchingStandards[0]
                 const isOpen = expanded === ingredient.id
-                const purposes = [...new Set(ingredient.standards.flatMap((standard) => standard.intakes.map((intake) => intake.purpose)))]
+                const purposes = [...new Set(matchingStandards.flatMap((standard) => standard.intakes.map((intake) => intake.purpose)))]
                 return (
                   <Fragment key={ingredient.id}>
                     <tr className="border-t border-line align-top">
                       <th scope="row" className="px-4 py-3 font-normal">
                         <span className={`mb-1 inline-block rounded px-2 py-0.5 text-[11px] ${ingredient.category === 'unresolved' ? 'bg-surface-sunken text-ink-2' : 'bg-accent-soft text-accent-strong'}`}>{ingredientCategoryLabels[ingredient.category]}</span>
                         <p className="keep-all text-[13px] font-semibold leading-6 text-ink">{ingredient.name}</p>
+                        {ingredient.evidenceStatus === 'registry' ? <p className="mt-1 text-[11px] text-ink-3">CSV 인정 이력 · 기준 재확인</p> : null}
                         {ingredient.upcoming.length ? <p className="mt-1 text-[11px] text-accent-strong">2027년 시행 예정 변경 있음</p> : null}
                       </th>
                       <td className="keep-all px-4 py-3 text-[12px] leading-6 text-ink-2">
-                        {ingredient.category === 'notified' ? first?.functionality : purposes.length ? purposes.join(' / ') : '정식 인정 원료 확인 후 기능성 확정'}
+                        {ingredient.category === 'notified' ? first?.functionality : purposes.length ? purposes.join(' / ') : first?.functionality || '정식 인정 원료 확인 후 기능성 확정'}
                         {ingredient.category === 'recognized' ? <p className="mt-2 text-[11px] text-ink-3">인정번호별 기능성은 상세에서 확인</p> : null}
                       </td>
                       <td className="px-4 py-3">
@@ -160,9 +179,8 @@ export default function FunctionalIngredientLibrary() {
                         {ingredient.standards.length > 1 ? <p className="mt-3 text-[11px] font-medium text-accent-strong">외 {ingredient.standards.length - 1}개 인정 사례 · 상세 비교</p> : null}
                       </td>
                       <td className="px-4 py-3 text-[11px] leading-5">
-                        <a className={linkClass} href={first?.sourceUrl ?? INGREDIENT_SOURCES.search} target="_blank" rel="noopener noreferrer">
-                          {first ? '공식 원문' : '공식 목록 검색'} ↗<span className="sr-only"> (새 창)</span>
-                        </a>
+                        <IngredientSourceLink className={linkClass} url={first?.sourceUrl ?? INGREDIENT_SOURCES.search} pageUrl={first?.sourcePageUrl}
+                          label={first ? '공식 원문' : '공식 목록 검색'} />
                         <button type="button" aria-expanded={isOpen} aria-controls={`ingredient-detail-${ingredient.id}`}
                           aria-label={`${ingredient.name} 상세 ${isOpen ? '닫기' : '보기'}`} onClick={() => setExpanded(isOpen ? null : ingredient.id)}
                           className="mt-1.5 block rounded border border-line px-2.5 py-1 text-[12px] text-ink-2 hover:bg-surface-sunken">
@@ -180,9 +198,9 @@ export default function FunctionalIngredientLibrary() {
             </tbody>
           </table>
         </div>
-        <nav aria-label="기능성 원료 페이지" className="mt-4 flex justify-center gap-2">
+        <nav aria-label="기능성 원료 페이지" className="mt-4 flex flex-wrap justify-center gap-2">
           <button type="button" disabled={currentPage === 1} className={buttonClass} onClick={() => { setPage(currentPage - 1); setExpanded(null); resultsRef.current?.scrollIntoView({ block: 'start' }) }}>이전</button>
-          {Array.from({ length: pages }, (_, index) => index + 1).map((value) => (
+          {referencePageButtons(currentPage, pages).map((value) => typeof value === 'string' ? <span key={value} aria-hidden="true" className="self-center text-ink-3">…</span> : (
             <button key={value} type="button" aria-label={`원료 ${value}페이지`} aria-current={currentPage === value ? 'page' : undefined}
               onClick={() => { setPage(value); setExpanded(null); resultsRef.current?.scrollIntoView({ block: 'start' }) }}
               className={`${buttonClass} ${currentPage === value ? '!border-accent-line !bg-accent-soft font-semibold !text-accent-strong' : ''}`}>{value}</button>
@@ -194,6 +212,8 @@ export default function FunctionalIngredientLibrary() {
         <summary className="cursor-pointer font-medium">자료 범위와 검증 기준</summary>
         <p className="mt-3">{INGREDIENT_REVIEW_DATE} 확인한 공전(제2026-43호) 및 식품안전나라 공개 인정 자료를 기준으로 정리했습니다. 시행 예정 변경은 해당 원료의 상세에 별도로 표시합니다. 실시간 갱신 자료는 아니므로 업무 적용 시 공식 원문과 보유 원료 인정서를 확인하세요.</p>
         <p className="mt-2">고시형은 공전의 원료·제조·규격 조건을 충족하는 경우의 기준입니다. 개별인정형은 특정 인정 원료의 기준이며, 같은 통칭의 다른 원료나 혼합물에 일괄 적용하지 않습니다. 기능성 문구는 조회를 위한 요약입니다.</p>
+        <p className="mt-2">I-0040 773행과 I-0050 447행을 모두 보존했습니다. 고시형 {ingredientAudit.counts.notified}개, 개별인정형 {ingredientAudit.counts.recognized}개(이 중 공개 상세 기준 재확인 {ingredientAudit.registryOnlyCount}개), 정식 원료 식별이 어려운 항목 {ingredientAudit.counts.unresolved}개입니다. 기존 원료 목록 {ingredientAudit.legacyRows}행도 대조 이력에 포함합니다.</p>
+        <p className="mt-2">C003은 제품의 품목보고 자료로, 기능성 원료의 법적 분류·일일섭취량을 결정하는 근거로 사용하지 않습니다. I-0050의 0·반올림된 범위·기준 성분 누락은 그대로 원문에 보존하고 공식 원문으로 확인되는 값만 확정했습니다.</p>
         <a className={linkClass} href={INGREDIENT_SOURCES.amendment} target="_blank" rel="noopener noreferrer">제2026-43호 개정 고시 ↗<span className="sr-only"> (새 창)</span></a>
       </details>
     </main>

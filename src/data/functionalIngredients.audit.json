@@ -1,0 +1,50 @@
+{
+  "reviewedOn": "2026-09-05",
+  "files": [
+    {
+      "name": "C003.csv",
+      "rows": 45996,
+      "sha256": "bc90bb06e644e23e18ebd0b2c06292caed5d6916171f722834381239aab6b0e6"
+    },
+    {
+      "name": "I-0040.csv",
+      "rows": 773,
+      "sha256": "440dc62cddc9fc377dbcf47643c421957a6d144d1adc7f837381caa40863eb7f"
+    },
+    {
+      "name": "I-0050.csv",
+      "rows": 447,
+      "sha256": "be743c1ebc80e28030f30f918dd9eb2ab9a5ae8e8ae21af5946f1e67f4622815"
+    }
+  ],
+  "legacyRows": 78,
+  "approvalCsvRows": 1220,
+  "officialBoardPosts": 655,
+  "codexCount": 96,
+  "counts": {
+    "notified": 96,
+    "recognized": 518,
+    "unresolved": 7
+  },
+  "registryOnlyCount": 68,
+  "repairs": [
+    {
+      "file": "I-0040.csv",
+      "row": 540,
+      "reason": "인정번호 공란 → 제2024-4호. 공식 원료명 및 한국씨엔에스팜 대조."
+    },
+    {
+      "file": "I-0040.csv",
+      "row": 630,
+      "reason": "원료명 공란 → 정어리펩타이드SP100N. 인정번호 2004-1 대조."
+    }
+  ],
+  "productEvidenceExcludedNumbers": [
+    "2007-10",
+    "2007-11",
+    "2007-13",
+    "2007-7",
+    "2013-5"
+  ],
+  "uniqueProductReports": 45996
+}
