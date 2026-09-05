@@ -100,7 +100,7 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-const CSV_HEADER = ['제품명', '제조원', '제형', '규격', '주원료', '지표성분 함량', '부원료', '1알 중량(mg)', '섭취방법']
+const CSV_HEADER = ['제품명', '제조원', '제형', '규격', '주원료', '지표성분 함량', '부원료', '1알 중량(mg)', '섭취방법', '브랜드명']
 
 function escapeCsv(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
@@ -119,6 +119,7 @@ export function downloadProductsAsCsv(products: Product[], fileName: string) {
       product.subIngredients.join(' | '),
       product.unitWeightMg == null ? '' : String(product.unitWeightMg),
       product.intakeMethod ?? '',
+      product.brand ?? '',
     ]
       .map((cell) => escapeCsv(cell ?? ''))
       .join(','),

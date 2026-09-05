@@ -24,6 +24,8 @@ import {
   type FilterState,
 } from '@/lib/filters'
 import { formatInt } from '@/lib/format'
+import { mainIngredientKey, uniqueMainIngredients } from '@/lib/ingredientNames'
+import { REFERENCE_PAGE_SIZE } from '@/lib/pagination'
 import { SEED_PRODUCTS } from '@/lib/seed'
 import type { FormType, Product } from '@/lib/types'
 
@@ -166,6 +168,10 @@ function LoadedConsultingWorkspace({
 
   const filtered = useMemo(() => applyFilters(products, filters), [products, filters])
 
+  // 필터·데이터가 바뀌면 새 결과의 1페이지부터 보여준다.
+  const [pagination, setPagination] = useState({ results: filtered, page: 1 })
+  const page = pagination.results === filtered ? pagination.page : 1
+
   const briefing = useMemo(
     () => buildBriefing(filtered, filters, products.length),
     [filtered, filters, products.length],
@@ -220,18 +226,23 @@ function LoadedConsultingWorkspace({
   const matchFormula = useCallback((product: Product) => {
     setFilters({
       ...EMPTY_FILTERS,
-      mains: product.mainIngredients.slice(0, 3),
+      mains: uniqueMainIngredients(product.mainIngredients).slice(0, 3).map((name) =>
+        options.mains.find((option) => mainIngredientKey(option.value) === mainIngredientKey(name))?.value ?? name,
+      ),
       mainMode: 'all',
       forms: [product.form],
     })
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [])
+  }, [options.mains])
 
   const step = useCallback(
     (delta: number) => {
       if (selectedIndex < 0) return
       const next = filtered[selectedIndex + delta]
-      if (next) setSelectedId(next.id)
+      if (next) {
+        setSelectedId(next.id)
+        setPagination({ results: filtered, page: Math.floor((selectedIndex + delta) / REFERENCE_PAGE_SIZE) + 1 })
+      }
     },
     [filtered, selectedIndex],
   )
@@ -325,6 +336,8 @@ function LoadedConsultingWorkspace({
             <ReferenceGrid
               products={filtered}
               totalCount={products.length}
+              page={page}
+              onPageChange={(next) => setPagination({ results: filtered, page: next })}
               selectedId={selectedId}
               onSelect={(product) => setSelectedId(product.id)}
               scrollRef={scrollRef}

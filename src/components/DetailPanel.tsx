@@ -130,6 +130,7 @@ export function DetailPanel({
 
           <div ref={panelRef} className="flex-1 overflow-y-auto scroll-contain px-6 py-5">
             <Row label="제조원" value={rendered.manufacturer} />
+            {rendered.brand ? <Row label="브랜드명" value={rendered.brand} /> : null}
             <Row
               label="제형 및 규격"
               value={`${rendered.form} · ${rendered.weightLabel}`}
@@ -229,7 +230,7 @@ export function DetailPanel({
               onClick={() => onMatchFormula(rendered)}
               className="w-full rounded-md bg-accent px-3 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-accent-strong"
             >
-              이 처방 기준으로 조건 맞추기
+              해당 배합비로 조건 맞추기
             </button>
             <p className="mt-2 text-[11px] leading-4 text-ink-3 keep-all">
               주원료와 제형을 이 제품과 동일하게 맞춰 유사 레퍼런스를 다시 검색합니다.

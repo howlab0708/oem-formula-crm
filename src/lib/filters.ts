@@ -7,6 +7,7 @@
 
 import type { FormType, Product } from './types'
 import { isPillForm } from './unitWeight'
+import { compactSearchText, mainIngredientKey, mainIngredientLabel } from './ingredientNames'
 
 export type MarkerFilter = {
   name: string
@@ -16,7 +17,7 @@ export type MarkerFilter = {
 }
 
 export type FilterState = {
-  /** 제품명·제조원 자유 검색 */
+  /** 제품명·브랜드명·제조원 자유 검색 */
   query: string
   mains: string[]
   /** 선택한 주원료를 모두 포함(all) / 하나라도 포함(any) */
@@ -49,7 +50,8 @@ function lower(values: string[]): Set<string> {
 
 export function applyFilters(products: Product[], filters: FilterState): Product[] {
   const query = filters.query.trim().toLowerCase()
-  const mains = lower(filters.mains)
+  const compactQuery = compactSearchText(filters.query)
+  const mains = new Set(filters.mains.map(mainIngredientKey))
   const manufacturers = lower(filters.manufacturers)
   const subInclude = lower(filters.subInclude)
   const subExclude = lower(filters.subExclude)
@@ -57,8 +59,10 @@ export function applyFilters(products: Product[], filters: FilterState): Product
 
   return products.filter((product) => {
     if (query) {
-      const haystack = `${product.name} ${product.manufacturer} ${product.mainDetail}`.toLowerCase()
-      if (!haystack.includes(query)) return false
+      const names = [product.name, product.brand ?? '', product.manufacturer]
+      const nameMatch = names.some((name) => compactSearchText(name).includes(compactQuery))
+      // 기존 지표성분 원문 검색도 유지한다.
+      if (!nameMatch && !`${product.name} ${product.manufacturer} ${product.mainDetail}`.toLowerCase().includes(query)) return false
     }
 
     if (forms.size > 0 && !forms.has(product.form)) return false
@@ -68,7 +72,7 @@ export function applyFilters(products: Product[], filters: FilterState): Product
     }
 
     if (mains.size > 0) {
-      const productMains = lower(product.mainIngredients)
+      const productMains = new Set(product.mainIngredients.map(mainIngredientKey))
       const matched = [...mains].filter((m) => productMains.has(m))
       if (filters.mainMode === 'all' ? matched.length !== mains.size : matched.length === 0) {
         return false
@@ -216,6 +220,8 @@ export function rangeLabel(min: number | null, max: number | null, unit: string)
 export type Option = {
   value: string
   count: number
+  /** 통합 전 표기로 검색해도 대표 항목을 찾을 수 있도록 한다. */
+  searchAliases?: string[]
 }
 
 function optionsFrom(
@@ -240,7 +246,22 @@ function optionsFrom(
 }
 
 export function mainIngredientOptions(products: Product[]): Option[] {
-  return optionsFrom(products, (p) => p.mainIngredients)
+  const groups = new Map<string, { value: string; count: number; aliases: Set<string> }>()
+  for (const product of products) {
+    const seen = new Set<string>()
+    for (const raw of product.mainIngredients) {
+      const key = mainIngredientKey(raw)
+      if (!key) continue
+      const group = groups.get(key) ?? { value: mainIngredientLabel(raw), count: 0, aliases: new Set<string>() }
+      group.aliases.add(raw)
+      if (!seen.has(key)) group.count += 1
+      seen.add(key)
+      groups.set(key, group)
+    }
+  }
+  return [...groups.values()]
+    .map(({ value, count, aliases }) => ({ value, count, searchAliases: [...aliases] }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, 'ko'))
 }
 
 export function manufacturerOptions(products: Product[]): Option[] {

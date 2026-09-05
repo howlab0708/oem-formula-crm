@@ -13,7 +13,7 @@ import { snapshotResponse } from '@/lib/server/datasetSnapshot'
  * 그래서 이제는 CSV 업로드 때와 같은 방식으로 나눠서 내려준다:
  *
  *  - `generation` 쿼리 파라미터가 없으면: 메타데이터만(가벼움, 상품 목록 없음)
- *  - `generation`+`format=snapshot-v2`: 재사용 가능한 압축 묶음을 스트리밍
+ *  - `generation`+`format=snapshot-v3`: 재사용 가능한 압축 묶음을 스트리밍
  *  - `generation`+`offset`+`limit` 이 있으면: 그 구간의 상품만(작은 페이지)
  */
 export const dynamic = 'force-dynamic'

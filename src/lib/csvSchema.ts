@@ -25,6 +25,7 @@ import type { Product } from './types'
 export type SchemaField =
   | 'name'
   | 'manufacturer'
+  | 'brand'
   | 'form'
   | 'formDetail'
   | 'weight'
@@ -41,6 +42,7 @@ export type SchemaField =
 export const FIELD_LABELS: Record<SchemaField, string> = {
   name: '제품명',
   manufacturer: '제조원',
+  brand: '브랜드명',
   form: '제형',
   formDetail: '성상(제형 보정)',
   weight: '규격',
@@ -62,6 +64,7 @@ export const FIELD_LABELS: Record<SchemaField, string> = {
 const COLUMN_ALIASES: Record<SchemaField, string[]> = {
   name: ['제품명', '품목명', 'prdlstnm', 'productname'],
   manufacturer: ['제조원', '업소명', '제조업소명', '제조사', '업체명', '회사명', 'bsshnm', 'maker'],
+  brand: ['브랜드명', '브랜드', 'brandname', 'brand', '상표명'],
   form: ['제형', '제품형태', '형태', 'prdtshapcdnm'],
   formDetail: ['성상', 'dispos'],
   weight: ['규격', '내용량', '중량', '1회섭취량', '총량', 'unitweight'],
@@ -238,6 +241,7 @@ export function rowToProduct(row: string[], mapping: HeaderMapping, seq: number)
     id: `csv-${seq}`,
     name,
     manufacturer: cell(row, index.manufacturer) || '미상',
+    ...(cell(row, index.brand) ? { brand: cell(row, index.brand) } : {}),
     form,
     formRaw: formRaw || formDetail || '미상',
     weightLabel,

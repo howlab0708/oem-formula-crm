@@ -1,189 +1,131 @@
 'use client'
 
-import { useVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { formatInt } from '@/lib/format'
+import { useRef, type ReactNode, type RefObject } from 'react'
+import { formatInt, formatMilligrams } from '@/lib/format'
+import { uniqueMainIngredients } from '@/lib/ingredientNames'
+import { referencePage, referencePageButtons } from '@/lib/pagination'
 import type { Product } from '@/lib/types'
 
-const ROW_HEIGHT = 88
-const GRID_TEMPLATE =
-  'grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)_minmax(0,2.2fr)_minmax(0,2.5fr)]'
+const GRID_TEMPLATE = 'md:grid-cols-[minmax(0,2fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_minmax(0,2fr)_auto]'
 
 type Props = {
   products: Product[]
   totalCount: number
+  page: number
+  onPageChange: (page: number) => void
   selectedId: string | null
   onSelect: (product: Product) => void
-  /** 대시보드와 그리드를 함께 담은 바깥 스크롤 컨테이너 */
   scrollRef: RefObject<HTMLDivElement | null>
-  /** 헤더 우측 액션 슬롯 (CSV 내보내기 등) */
   actions?: ReactNode
 }
 
-/**
- * 레퍼런스 리스트.
- *
- * 식약처 원본은 수만 행이라 전부 DOM 에 올리면 스크롤이 끊긴다.
- * 화면에 보이는 구간만 렌더하고, 행 높이를 고정해 스크롤 위치가 튀지 않게 한다.
- */
+/** 목록만 50건씩 나눈다. 통계와 CSV 내보내기는 부모의 전체 검색 결과를 사용한다. */
 export function ReferenceGrid({
-  products,
-  totalCount,
-  selectedId,
-  onSelect,
-  scrollRef,
-  actions,
+  products, totalCount, page, onPageChange, selectedId, onSelect, scrollRef, actions,
 }: Props) {
-  const listRef = useRef<HTMLDivElement>(null)
-  const [scrollMargin, setScrollMargin] = useState(0)
-  const hasRows = products.length > 0
-
-  /*
-   * 가상 목록이 스크롤 컨테이너의 맨 위가 아니라 대시보드 아래에서 시작하므로,
-   * 목록 시작점의 오프셋(scrollMargin)을 정확히 넘겨야 렌더 구간이 어긋나지 않는다.
-   * 조건이 바뀌면 위쪽 대시보드 높이도 달라지므로 크기 변화를 계속 관찰한다.
-   *
-   * useLayoutEffect 가 아니라 useEffect 인 이유: 스크롤 컨테이너 ref 는 이 컴포넌트의
-   * 부모에 달려 있어 레이아웃 이펙트 시점에는 아직 비어 있을 수 있다.
-   */
-  useEffect(() => {
-    const list = listRef.current
+  const sectionRef = useRef<HTMLElement>(null)
+  const bounds = referencePage(products.length, page)
+  const rows = products.slice(bounds.start, bounds.end)
+  const changePage = (next: number) => {
+    onPageChange(next)
+    const section = sectionRef.current
     const scroller = scrollRef.current
-    if (!list || !scroller) return
-
-    const measure = () => {
-      const offset =
-        list.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop
-      setScrollMargin((previous) => (Math.abs(previous - offset) < 0.5 ? previous : offset))
+    if (section && scroller) {
+      const top = section.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop
+      scroller.scrollTo({ top: Math.max(0, top) })
     }
-
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(scroller)
-    const content = scroller.firstElementChild
-    if (content) observer.observe(content)
-
-    return () => observer.disconnect()
-  }, [scrollRef, hasRows])
-
-  const virtualizer = useVirtualizer({
-    count: products.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 12,
-    scrollMargin,
-  })
-
-  const items = virtualizer.getVirtualItems()
+  }
 
   return (
-    <section className="rounded-lg border border-line bg-surface">
-      <div className="sticky top-0 z-20 rounded-t-lg border-b border-line bg-surface">
-        <div className="flex items-center justify-between gap-3 px-5 py-4">
-          <div className="flex items-baseline gap-3">
+    <section ref={sectionRef} aria-label="품목제조보고 레퍼런스" className="rounded-lg border border-line bg-surface">
+      <div className="rounded-t-lg border-b border-line bg-surface">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+          <div>
             <h2 className="text-[14px] font-semibold text-ink">품목제조보고 레퍼런스</h2>
-            <p className="text-[12px] text-ink-3 tnum">
-              {formatInt(products.length)}건
-              {products.length !== totalCount ? ` / 전체 ${formatInt(totalCount)}건` : ''}
+            <p className="mt-1 text-[12px] text-ink-3 tnum">
+              {formatInt(products.length)}건{products.length !== totalCount ? ` / 전체 ${formatInt(totalCount)}건` : ''}
+              <span className="ml-2">페이지당 50개 · 제품을 누르면 상세 확인</span>
             </p>
           </div>
           {actions}
         </div>
-        <div
-          className={`grid ${GRID_TEMPLATE} gap-4 border-t border-line bg-surface-muted px-5 py-2.5 text-[11px] font-medium text-ink-3`}
-        >
+        {rows.length > 0 ? <PageNavigation position="상단" total={products.length} page={bounds.page} onChange={changePage} /> : null}
+        <div className={`hidden ${GRID_TEMPLATE} gap-4 border-t border-line bg-surface-muted px-5 py-2.5 text-[11px] font-medium text-ink-3 md:grid`}>
           <span>제품명 · 제조원</span>
-          <span>제형 · 규격</span>
-          <span>지표성분 함량</span>
-          <span>부원료 배합</span>
+          <span>제형</span>
+          <span>1알 중량</span>
+          <span>주요 성분</span>
+          <span>상세</span>
         </div>
       </div>
 
-      {products.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="px-5 py-16 text-center text-[13px] text-ink-3">
           조건에 맞는 레퍼런스가 없습니다. 왼쪽에서 조건을 완화해 보세요.
         </p>
       ) : (
-        <div ref={listRef}>
-          <div
-            className="relative"
-            style={{ height: `${virtualizer.getTotalSize()}px` }}
-            role="list"
-            aria-label="레퍼런스 목록"
-          >
-            {items.map((item) => {
-              const product = products[item.index]
-              const isSelected = product.id === selectedId
-
-              return (
-                <div
-                  key={product.id}
-                  role="listitem"
-                  className="absolute inset-x-0 top-0 px-2"
-                  style={{
-                    height: `${item.size}px`,
-                    transform: `translateY(${item.start - scrollMargin}px)`,
-                  }}
+        <ul aria-label="레퍼런스 목록" className="px-2">
+          {rows.map((product, index) => {
+            const mains = uniqueMainIngredients(product.mainIngredients)
+            const selected = product.id === selectedId
+            return (
+              <li key={product.id} className="border-b border-line last:border-b-0">
+                <button
+                  type="button"
+                  onClick={() => onSelect(product)}
+                  aria-label={`${product.name} 상세보기`}
+                  aria-current={selected ? 'true' : undefined}
+                  className={`grid w-full grid-cols-[minmax(0,1fr)_auto] ${GRID_TEMPLATE} items-center gap-x-4 gap-y-2 rounded-md px-3 py-3 text-left transition-colors ${
+                    selected ? 'bg-accent-soft' : index % 2 ? 'bg-surface-muted hover:bg-surface-sunken' : 'hover:bg-surface-sunken'
+                  }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => onSelect(product)}
-                    aria-current={isSelected}
-                    className={`grid h-full w-full ${GRID_TEMPLATE} items-start gap-4 rounded-md border-b border-line px-3 py-3.5 text-left transition-colors ${
-                      isSelected
-                        ? 'bg-accent-soft'
-                        : item.index % 2 === 1
-                          ? 'bg-surface-muted hover:bg-surface-sunken'
-                          : 'hover:bg-surface-sunken'
-                    }`}
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-[13px] leading-5 font-medium text-ink">
-                        {product.name}
-                      </span>
-                      <span className="mt-0.5 block truncate text-[11px] leading-4 text-ink-3">
-                        {product.manufacturer}
-                      </span>
-                    </span>
-
-                    <span className="min-w-0">
-                      <span className="block truncate text-[13px] leading-5 text-ink-2">
-                        {product.form}
-                      </span>
-                      <span className="mt-0.5 block truncate text-[11px] leading-4 text-ink-3 tnum">
-                        {product.weightLabel}
-                      </span>
-                    </span>
-
-                    <span className="min-w-0 text-[12px] leading-5 text-ink-2">
-                      <span className="line-clamp-3 keep-all">{product.mainDetail || '-'}</span>
-                    </span>
-
-                    <span className="flex min-w-0 flex-wrap gap-1 overflow-hidden">
-                      {product.subIngredients.slice(0, 4).map((sub) => (
-                        <span
-                          key={sub}
-                          className="max-w-[10rem] truncate rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] leading-4 text-ink-2"
-                        >
-                          {sub}
-                        </span>
-                      ))}
-                      {product.subIngredients.length > 4 ? (
-                        <span className="px-1 py-0.5 text-[11px] leading-4 text-ink-3 tnum">
-                          +{product.subIngredients.length - 4}
-                        </span>
-                      ) : null}
-                      {product.subIngredients.length === 0 ? (
-                        <span className="text-[11px] leading-4 text-ink-3">-</span>
-                      ) : null}
-                    </span>
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13px] leading-5 font-medium text-ink" title={product.name}>{product.name}</span>
+                    <span className="mt-0.5 block truncate text-[11px] leading-4 text-ink-3" title={product.manufacturer}>{product.manufacturer}</span>
+                    {product.brand ? <span className="block truncate text-[11px] leading-4 text-ink-3">브랜드: {product.brand}</span> : null}
+                  </span>
+                  <span className="hidden text-[12px] text-ink-2 md:block">{product.form}</span>
+                  <span className="hidden text-[12px] text-ink-2 tnum md:block">{formatMilligrams(product.unitWeightMg)}</span>
+                  <span className="col-span-2 min-w-0 text-[12px] leading-5 text-ink-2 md:col-span-1">
+                    <span className="mb-1 block text-[11px] text-ink-3 md:hidden">{product.form} · 1알 {formatMilligrams(product.unitWeightMg)}</span>
+                    <span className="line-clamp-2 keep-all">{mains.slice(0, 3).join(' · ') || '-'}{mains.length > 3 ? ` 외 ${mains.length - 3}종` : ''}</span>
+                  </span>
+                  <span className="col-start-2 row-start-1 text-[12px] font-medium text-accent-strong md:col-auto md:row-auto" aria-hidden="true">보기 ›</span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
       )}
+      {rows.length > 0 ? <PageNavigation position="하단" total={products.length} page={bounds.page} onChange={changePage} /> : null}
     </section>
+  )
+}
+
+function PageNavigation({ position, total, page, onChange }: {
+  position: string; total: number; page: number; onChange: (page: number) => void
+}) {
+  const bounds = referencePage(total, page)
+  const buttonClass = 'min-w-8 rounded-md border border-line px-2 py-1.5 text-[12px] text-ink-2 hover:bg-surface-sunken disabled:cursor-default disabled:opacity-40'
+  return (
+    <nav aria-label={`레퍼런스 페이지 ${position}`} className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3">
+      <p aria-live={position === '상단' ? 'polite' : undefined} className="text-[11px] text-ink-3 tnum">
+        {formatInt(bounds.start + 1)}–{formatInt(bounds.end)} / {formatInt(total)}건 · {formatInt(bounds.page)}/{formatInt(bounds.pages)}페이지
+      </p>
+      <div className="flex flex-wrap items-center gap-1">
+        <button type="button" aria-label="이전 페이지" className={buttonClass} disabled={page <= 1} onClick={() => onChange(page - 1)}>이전</button>
+        {referencePageButtons(bounds.page, bounds.pages).map((item) => typeof item === 'number' ? (
+          <button
+            key={item}
+            type="button"
+            aria-label={`${item}페이지`}
+            aria-current={item === page ? 'page' : undefined}
+            onClick={() => onChange(item)}
+            className={item === page ? 'min-w-8 rounded-md border border-accent bg-accent px-2 py-1.5 text-[12px] font-medium text-white' : buttonClass}
+          >{item}</button>
+        ) : <span key={item} className="px-1 text-[12px] text-ink-3" aria-hidden="true">…</span>)}
+        <button type="button" aria-label="다음 페이지" className={buttonClass} disabled={page >= bounds.pages} onClick={() => onChange(page + 1)}>다음</button>
+      </div>
+    </nav>
   )
 }

@@ -60,14 +60,14 @@ export function FilterRail({
 
       <Section>
         <label htmlFor="query" className="text-[12px] font-semibold text-ink">
-          제품명 · 제조원 검색
+          제품명 · 브랜드명 · 제조원 검색
         </label>
         <input
           id="query"
           type="search"
           value={filters.query}
           onChange={(event) => patch({ query: event.target.value })}
-          placeholder="예: 밀크씨슬, 서흥"
+          placeholder="예: 밀크씨슬, 종근당, 서흥"
           className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-2 text-[12px] text-ink placeholder:text-ink-3"
         />
       </Section>
@@ -108,6 +108,29 @@ export function FilterRail({
             </div>
           </div>
         ) : null}
+      </Section>
+
+      <Section>
+        <TokenMultiSelect
+          label="부원료 포함"
+          options={options.subs}
+          selected={filters.subInclude}
+          onChange={(subInclude) => patch({ subInclude })}
+          searchPlaceholder="부원료 검색"
+          visibleCount={6}
+        />
+        <div className="mt-5">
+          <TokenMultiSelect
+            label="부원료 제외"
+            options={options.subs}
+            selected={filters.subExclude}
+            onChange={(subExclude) => patch({ subExclude })}
+            searchPlaceholder="제외할 부원료 검색"
+            visibleCount={4}
+            tone="danger"
+            hint="고객사 금지 원료를 빼고 레퍼런스를 볼 때 씁니다."
+          />
+        </div>
       </Section>
 
       <Section>
@@ -184,29 +207,6 @@ export function FilterRail({
           onChange={(weightMin, weightMax) => patch({ weightMin, weightMax })}
           hint="1알 중량이 확인된 정제·캡슐·환만 포함합니다."
         />
-      </Section>
-
-      <Section>
-        <TokenMultiSelect
-          label="부원료 포함"
-          options={options.subs}
-          selected={filters.subInclude}
-          onChange={(subInclude) => patch({ subInclude })}
-          searchPlaceholder="부원료 검색"
-          visibleCount={6}
-        />
-        <div className="mt-5">
-          <TokenMultiSelect
-            label="부원료 제외"
-            options={options.subs}
-            selected={filters.subExclude}
-            onChange={(subExclude) => patch({ subExclude })}
-            searchPlaceholder="제외할 부원료 검색"
-            visibleCount={4}
-            tone="danger"
-            hint="고객사 금지 원료를 빼고 레퍼런스를 볼 때 씁니다."
-          />
-        </div>
       </Section>
 
       <Section>{importer}</Section>

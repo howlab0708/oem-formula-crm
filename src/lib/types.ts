@@ -39,6 +39,8 @@ export type Product = {
   id: string
   name: string
   manufacturer: string
+  /** 별도 브랜드 열이 제공된 경우에만 저장한다. 제조원으로 추정하지 않는다. */
+  brand?: string
   form: FormType
   /** 원본 제형 표기(정규화 전). 상세 패널에서 그대로 보여준다. */
   formRaw: string

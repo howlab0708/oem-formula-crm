@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import type { Option } from '@/lib/filters'
 import { formatInt } from '@/lib/format'
+import { compactSearchText } from '@/lib/ingredientNames'
 
 type Props = {
   label: string
@@ -40,7 +41,9 @@ export function TokenMultiSelect({
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
     const matched = needle
-      ? options.filter((option) => option.value.toLowerCase().includes(needle))
+      ? options.filter((option) => option.searchAliases
+        ? [option.value, ...option.searchAliases].some((name) => compactSearchText(name).includes(compactSearchText(needle)))
+        : option.value.toLowerCase().includes(needle))
       : options
     // 선택된 항목은 검색 결과와 무관하게 항상 위에 남긴다.
     const pinned = options.filter((option) => selectedSet.has(option.value))
