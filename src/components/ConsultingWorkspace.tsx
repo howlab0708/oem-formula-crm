@@ -33,6 +33,7 @@ export default function ConsultingWorkspace() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [railOpen, setRailOpen] = useState(false)
+  const [verifyNote, setVerifyNote] = useState<string | null>(null)
 
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -41,8 +42,9 @@ export default function ConsultingWorkspace() {
     setSource('csv')
     setFilters(EMPTY_FILTERS)
     setSelectedId(null)
+    setVerifyNote(null)
     scrollRef.current?.scrollTo({ top: 0 })
-  }, [])
+  }, [setVerifyNote])
 
   const { status, saveStatus, importFile, reset: resetImport } = useCsvImport({ onLoaded: handleLoaded })
 
@@ -67,6 +69,49 @@ export default function ConsultingWorkspace() {
       cancelled = true
     }
   }, [])
+
+  /**
+   * 저장(`saveStatus.phase === 'saved'`)이 끝난 직후, 방금 저장한 게 실제로
+   * 서버에서 다시 읽힐 때까지 확인한다. 화면에 보이는 데이터는 이미 맞지만,
+   * 이 확인이 끝나기 전에 다른 사람이 새로고침하면 아직 예시 데이터를 볼 수
+   * 있다 - 그래서 몇 번 재시도해서 실제로 반영됐는지 확인하고, 오래 걸리면
+   * 조용히 넘어가지 않고 화면에 알려준다.
+   */
+  useEffect(() => {
+    if (saveStatus.phase !== 'saved') return
+    let cancelled = false
+    const expectedRows = saveStatus.meta.imported_rows
+
+    async function verify() {
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        if (cancelled) return
+        await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 700 : 2000))
+        if (cancelled) return
+        try {
+          const result = await fetchStoredDataset()
+          if (cancelled) return
+          if (result.products && result.products.length === expectedRows) {
+            setProducts(result.products)
+            setSource('db')
+            setVerifyNote(null)
+            return
+          }
+        } catch {
+          // 재시도로 넘어간다 - 마지막에도 실패하면 아래에서 알린다.
+        }
+      }
+      if (!cancelled) {
+        setVerifyNote(
+          '저장은 완료됐지만, 서버에서 다시 불러오는 데 예상보다 오래 걸리고 있습니다. 잠시 후 새로고침해서 확인해 주세요.',
+        )
+      }
+    }
+
+    verify()
+    return () => {
+      cancelled = true
+    }
+  }, [saveStatus])
 
   const options = useMemo(
     () => ({
@@ -104,8 +149,9 @@ export default function ConsultingWorkspace() {
     setSource('seed')
     setFilters(EMPTY_FILTERS)
     setSelectedId(null)
+    setVerifyNote(null)
     resetImport()
-  }, [resetImport])
+  }, [resetImport, setVerifyNote])
 
   const toggleForm = useCallback((form: FormType) => {
     setFilters((prev) => ({
@@ -204,6 +250,7 @@ export default function ConsultingWorkspace() {
               <DatasetImporter
                 status={status}
                 saveStatus={saveStatus}
+                verifyNote={verifyNote}
                 source={source}
                 productCount={products.length}
                 onFile={importFile}

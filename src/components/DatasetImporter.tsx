@@ -9,6 +9,8 @@ type Encoding = 'auto' | 'utf-8' | 'euc-kr'
 type Props = {
   status: ImportStatus
   saveStatus: SaveStatus
+  /** 저장 직후 서버에서 다시 읽히는지 확인하는 중 오래 걸리면 뜨는 안내. */
+  verifyNote?: string | null
   source: 'seed' | 'csv' | 'db'
   productCount: number
   onFile: (file: File, encoding: Encoding) => void
@@ -18,6 +20,7 @@ type Props = {
 export function DatasetImporter({
   status,
   saveStatus,
+  verifyNote,
   source,
   productCount,
   onFile,
@@ -176,6 +179,12 @@ export function DatasetImporter({
       {saveStatus.phase === 'saved' ? (
         <p className="mt-2 text-[11px] leading-4 text-ink-3 keep-all">
           서버 저장 완료 · 다음 접속에도 이 데이터가 유지됩니다.
+        </p>
+      ) : null}
+
+      {verifyNote ? (
+        <p className="mt-2 rounded-md border border-line bg-surface-sunken px-2.5 py-2 text-[11px] leading-4 text-ink-2 keep-all">
+          {verifyNote}
         </p>
       ) : null}
 
