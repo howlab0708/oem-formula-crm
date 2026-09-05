@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActiveFilters } from '@/components/ActiveFilters'
 import { BriefingDashboard } from '@/components/BriefingDashboard'
 import { DatasetImporter } from '@/components/DatasetImporter'
@@ -9,6 +9,7 @@ import { ExportActions } from '@/components/ExportActions'
 import { FilterRail } from '@/components/FilterRail'
 import { ReferenceGrid } from '@/components/ReferenceGrid'
 import { useCsvImport } from '@/hooks/useCsvImport'
+import { fetchStoredDataset } from '@/lib/api/products'
 import { markerCatalog } from '@/lib/analytics'
 import { downloadProductsAsCsv } from '@/lib/export/download'
 import { buildBriefing } from '@/lib/export/briefing'
@@ -28,7 +29,7 @@ import type { FormType, Product } from '@/lib/types'
 
 export default function ConsultingWorkspace() {
   const [products, setProducts] = useState<Product[]>(SEED_PRODUCTS)
-  const [source, setSource] = useState<'seed' | 'csv'>('seed')
+  const [source, setSource] = useState<'seed' | 'csv' | 'db'>('seed')
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [railOpen, setRailOpen] = useState(false)
@@ -43,7 +44,29 @@ export default function ConsultingWorkspace() {
     scrollRef.current?.scrollTo({ top: 0 })
   }, [])
 
-  const { status, importFile, reset: resetImport } = useCsvImport({ onLoaded: handleLoaded })
+  const { status, saveStatus, importFile, reset: resetImport } = useCsvImport({ onLoaded: handleLoaded })
+
+  /**
+   * 처음 화면을 열 때 서버(Postgres)에 저장된 데이터셋이 있으면 그걸로 바꿔 낀다.
+   * 이전에는 새로고침하면 항상 예시 데이터로 돌아갔다 - 이제는 누군가 CSV 를
+   * 올려둔 적이 있으면 그 결과가 모두에게 그대로 보인다. 예시 데이터가 먼저
+   * 즉시 보이고, 로드가 끝나면 있을 경우에만 조용히 교체한다(깜빡임 없음).
+   */
+  useEffect(() => {
+    let cancelled = false
+    fetchStoredDataset()
+      .then((result) => {
+        if (cancelled || !result.products || result.products.length === 0) return
+        setProducts(result.products)
+        setSource('db')
+      })
+      .catch((error) => {
+        console.error('[ConsultingWorkspace] 저장된 데이터셋을 불러오지 못했습니다.', error)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const options = useMemo(
     () => ({
@@ -146,8 +169,8 @@ export default function ConsultingWorkspace() {
               OEM 처방 상담 콘솔
             </h1>
             <p className="truncate text-[11px] leading-4 text-ink-3">
-              {source === 'seed' ? '예시 레퍼런스' : '업로드 데이터'} {formatInt(products.length)}건
-              · 조건 일치 {formatInt(filtered.length)}건
+              {source === 'seed' ? '예시 레퍼런스' : source === 'db' ? '저장된 데이터' : '업로드 데이터'}{' '}
+              {formatInt(products.length)}건 · 조건 일치 {formatInt(filtered.length)}건
             </p>
           </div>
         </div>
@@ -180,6 +203,7 @@ export default function ConsultingWorkspace() {
             importer={
               <DatasetImporter
                 status={status}
+                saveStatus={saveStatus}
                 source={source}
                 productCount={products.length}
                 onFile={importFile}

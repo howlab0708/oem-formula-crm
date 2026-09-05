@@ -1,14 +1,15 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import type { ImportStatus } from '@/hooks/useCsvImport'
-import { formatDuration, formatInt, formatPercent } from '@/lib/format'
+import type { ImportStatus, SaveStatus } from '@/hooks/useCsvImport'
+import { formatInt, formatDuration, formatPercent } from '@/lib/format'
 
 type Encoding = 'auto' | 'utf-8' | 'euc-kr'
 
 type Props = {
   status: ImportStatus
-  source: 'seed' | 'csv'
+  saveStatus: SaveStatus
+  source: 'seed' | 'csv' | 'db'
   productCount: number
   onFile: (file: File, encoding: Encoding) => void
   onRestoreSample: () => void
@@ -16,6 +17,7 @@ type Props = {
 
 export function DatasetImporter({
   status,
+  saveStatus,
   source,
   productCount,
   onFile,
@@ -32,12 +34,14 @@ export function DatasetImporter({
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-[12px] font-semibold text-ink">식약처 품목제조보고 연동</span>
         <span className="text-[11px] text-ink-3">
-          {source === 'seed' ? '예시 데이터' : '업로드 데이터'} · {formatInt(productCount)}건
+          {source === 'seed' ? '예시 데이터' : source === 'db' ? '저장된 데이터' : '업로드 데이터'} ·{' '}
+          {formatInt(productCount)}건
         </span>
       </div>
 
       <p className="mt-1 text-[11px] leading-4 text-ink-3 keep-all">
-        원본 CSV 를 그대로 올리세요. 파싱은 백그라운드 워커에서 처리해 화면이 멈추지 않습니다.{' '}
+        원본 CSV 를 그대로 올리세요. 파싱은 백그라운드 워커에서 처리해 화면이 멈추지 않고, 완료되면
+        서버에 자동 저장되어 다음에 접속할 때도 그대로 남아 있습니다.{' '}
         <a
           href="/sample-reference.csv"
           download
@@ -68,7 +72,7 @@ export function DatasetImporter({
         >
           {busy ? '불러오는 중…' : 'CSV 선택'}
         </button>
-        {source === 'csv' ? (
+        {source !== 'seed' ? (
           <button
             type="button"
             disabled={busy}
@@ -151,6 +155,34 @@ export function DatasetImporter({
             </dl>
           ) : null}
         </div>
+      ) : null}
+
+      {saveStatus.phase === 'saving' ? (
+        <div className="mt-2">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-surface-sunken">
+            <div
+              className="h-full bg-accent transition-[width] duration-150"
+              style={{
+                width: `${saveStatus.total > 0 ? Math.min((saveStatus.sent / saveStatus.total) * 100, 100) : 5}%`,
+              }}
+            />
+          </div>
+          <p className="mt-1.5 text-[11px] text-ink-3 tnum">
+            서버에 저장 중 · {formatInt(saveStatus.sent)}/{formatInt(saveStatus.total)}건
+          </p>
+        </div>
+      ) : null}
+
+      {saveStatus.phase === 'saved' ? (
+        <p className="mt-2 text-[11px] leading-4 text-ink-3 keep-all">
+          서버 저장 완료 · 다음 접속에도 이 데이터가 유지됩니다.
+        </p>
+      ) : null}
+
+      {saveStatus.phase === 'error' ? (
+        <p className="mt-2 rounded-md border border-danger/30 bg-danger-soft px-2.5 py-2 text-[11px] leading-4 text-danger keep-all">
+          서버 저장 실패: {saveStatus.message} (화면에는 남아 있지만, 새로고침하면 사라집니다)
+        </p>
       ) : null}
     </div>
   )
