@@ -5,7 +5,7 @@ import { ColumnHistogram } from '@/components/charts/ColumnHistogram'
 import { HorizontalBars } from '@/components/charts/HorizontalBars'
 import { StatTile } from '@/components/StatTile'
 import type { Briefing } from '@/lib/export/briefing'
-import { formatDecimal, formatInt, formatMarkerValue, formatMg, formatPercent } from '@/lib/format'
+import { formatDecimal, formatInt, formatMarkerValue, formatPercent } from '@/lib/format'
 import type { FormType } from '@/lib/types'
 
 type Props = {
@@ -73,7 +73,14 @@ export function BriefingDashboard({
         />
         <StatTile
           label="표준 규격 (중앙값)"
-          value={formatMg(briefing.medianWeightMg)}
+          value={
+            briefing.medianWeightMg === null || !Number.isFinite(briefing.medianWeightMg)
+              ? '-'
+              : `${formatDecimal(
+                  briefing.medianWeightMg,
+                  Number.isInteger(briefing.medianWeightMg) ? 0 : 1,
+                )}mg`
+          }
           context={
             briefing.medianWeightMg === null ? '규격 표기 없음' : '1회 섭취 중량 기준'
           }
