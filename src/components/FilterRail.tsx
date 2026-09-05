@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import { RangeFields } from '@/components/filters/RangeFields'
 import { TokenMultiSelect } from '@/components/filters/TokenMultiSelect'
+import { FilterControls } from '@/components/filters/FilterControls'
 import type { FilterState, Option } from '@/lib/filters'
 import { formatInt } from '@/lib/format'
 import type { FormType } from '@/lib/types'
@@ -11,8 +12,11 @@ export type MarkerOption = { name: string; unit: string; count: number }
 
 type Props = {
   filters: FilterState
-  onChange: (next: FilterState) => void
+  onChange: (next: FilterState, group?: string) => void
   onReset: () => void
+  history: FilterState[]
+  onRestore: (index: number) => void
+  onEndEdit: () => void
   activeCount: number
   options: {
     mains: Option[]
@@ -32,31 +36,22 @@ export function FilterRail({
   filters,
   onChange,
   onReset,
+  history,
+  onRestore,
+  onEndEdit,
   activeCount,
   options,
   markers,
   importer,
 }: Props) {
-  const patch = (next: Partial<FilterState>) => onChange({ ...filters, ...next })
+  const patch = (next: Partial<FilterState>, group?: string) => onChange({ ...filters, ...next }, group)
 
   const markerKey = filters.marker ? `${filters.marker.name}|${filters.marker.unit}` : ''
 
   return (
-    <aside className="flex h-full flex-col overflow-y-auto scroll-contain border-r border-line bg-surface">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-line bg-surface px-5 py-4">
-        <h2 className="text-[13px] font-semibold text-ink">검색 조건</h2>
-        {activeCount > 0 ? (
-          <button
-            type="button"
-            onClick={onReset}
-            className="rounded-md border border-line px-2 py-1 text-[11px] text-ink-2 transition-colors hover:bg-surface-sunken"
-          >
-            {activeCount}개 조건 초기화
-          </button>
-        ) : (
-          <span className="text-[11px] text-ink-3">조건 없음</span>
-        )}
-      </div>
+    <aside onBlurCapture={onEndEdit} className="flex h-full flex-col overflow-y-auto scroll-contain border-r border-line bg-surface">
+      <FilterControls filters={filters} history={history} activeCount={activeCount}
+        onChange={onChange} onReset={onReset} onRestore={onRestore} />
 
       <Section>
         <label htmlFor="query" className="text-[12px] font-semibold text-ink">
@@ -66,7 +61,7 @@ export function FilterRail({
           id="query"
           type="search"
           value={filters.query}
-          onChange={(event) => patch({ query: event.target.value })}
+          onChange={(event) => patch({ query: event.target.value }, 'query')}
           placeholder="예: 밀크씨슬, 종근당, 서흥"
           className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-2 text-[12px] text-ink placeholder:text-ink-3"
         />
@@ -191,7 +186,7 @@ export function FilterRail({
             max={filters.marker?.max ?? null}
             disabled={!filters.marker}
             onChange={(min, max) =>
-              patch({ marker: filters.marker ? { ...filters.marker, min, max } : null })
+              patch({ marker: filters.marker ? { ...filters.marker, min, max } : null }, 'marker-range')
             }
             hint={filters.marker ? undefined : '먼저 지표성분을 선택하세요.'}
           />
@@ -204,7 +199,7 @@ export function FilterRail({
           unit="mg"
           min={filters.weightMin}
           max={filters.weightMax}
-          onChange={(weightMin, weightMax) => patch({ weightMin, weightMax })}
+          onChange={(weightMin, weightMax) => patch({ weightMin, weightMax }, 'weight-range')}
           hint="1알 중량이 확인된 정제·캡슐·환만 포함합니다."
         />
       </Section>

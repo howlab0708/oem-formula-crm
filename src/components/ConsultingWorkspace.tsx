@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { WorkspaceTabs, type WorkspaceTab } from '@/components/WorkspaceTabs'
 import { ActiveFilters } from '@/components/ActiveFilters'
@@ -23,9 +23,9 @@ import {
   mainIngredientOptions,
   manufacturerOptions,
   subIngredientOptions,
-  type FilterState,
 } from '@/lib/filters'
 import { formatInt } from '@/lib/format'
+import { filterHistoryReducer, INITIAL_FILTER_HISTORY, type FilterUpdate } from '@/lib/filterHistory'
 import { mainIngredientKey, uniqueMainIngredients } from '@/lib/ingredientNames'
 import { REFERENCE_PAGE_SIZE } from '@/lib/pagination'
 import { SEED_PRODUCTS } from '@/lib/seed'
@@ -99,19 +99,29 @@ function LoadedConsultingWorkspace({
 }) {
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [source, setSource] = useState<'seed' | 'csv' | 'db'>(initialSource)
-  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [filterHistory, dispatchFilters] = useReducer(filterHistoryReducer, INITIAL_FILTER_HISTORY)
+  const filters = filterHistory.current
+  const setFilters = useCallback((update: FilterUpdate, group?: string) => {
+    dispatchFilters({ type: 'change', update, group })
+    // 이미 적용된 조합을 다시 선택한 경우에도 결과를 바로 보여준다.
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+  }, [])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [railOpen, setRailOpen] = useState(false)
   const [verifyNote, setVerifyNote] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('consulting')
   const [ingredientsVisited, setIngredientsVisited] = useState(false)
 
-  const scrollRef = useRef<HTMLDivElement>(null)
+  // 조건 반영이 끝난 화면의 상단으로 즉시 이동한다. 왼쪽 조건 목록의 스크롤은 유지한다.
+  useLayoutEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+  }, [filters])
 
   const handleLoaded = useCallback((next: Product[]) => {
     setProducts(next)
     setSource('csv')
-    setFilters(EMPTY_FILTERS)
+    dispatchFilters({ type: 'clear' })
     setSelectedId(null)
     setVerifyNote(null)
     scrollRef.current?.scrollTo({ top: 0 })
@@ -200,7 +210,7 @@ function LoadedConsultingWorkspace({
   const restoreSample = useCallback(() => {
     setProducts(SEED_PRODUCTS)
     setSource('seed')
-    setFilters(EMPTY_FILTERS)
+    dispatchFilters({ type: 'clear' })
     setSelectedId(null)
     setVerifyNote(null)
     resetImport()
@@ -213,7 +223,7 @@ function LoadedConsultingWorkspace({
         ? prev.forms.filter((value) => value !== form)
         : [...prev.forms, form],
     }))
-  }, [])
+  }, [setFilters])
 
   const toggleSub = useCallback((name: string) => {
     setFilters((prev) => ({
@@ -222,14 +232,14 @@ function LoadedConsultingWorkspace({
         ? prev.subInclude.filter((value) => value !== name)
         : [...prev.subInclude, name],
     }))
-  }, [])
+  }, [setFilters])
 
   const selectCombo = useCallback((names: string[]) => {
     setFilters((prev) => ({
       ...prev,
       subInclude: [...new Set([...prev.subInclude, ...names])],
     }))
-  }, [])
+  }, [setFilters])
 
   const matchFormula = useCallback((product: Product) => {
     setFilters({
@@ -240,8 +250,8 @@ function LoadedConsultingWorkspace({
       mainMode: 'all',
       forms: [product.form],
     })
-    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [options.mains])
+    setSelectedId(null)
+  }, [options.mains, setFilters])
 
   const step = useCallback(
     (delta: number) => {
@@ -305,8 +315,15 @@ function LoadedConsultingWorkspace({
         >
           <FilterRail
             filters={filters}
-            onChange={setFilters}
-            onReset={() => setFilters(EMPTY_FILTERS)}
+            onChange={(next, group) => { setFilters(next, group); if (!group) setRailOpen(false) }}
+            onReset={() => { setFilters(EMPTY_FILTERS); setRailOpen(false) }}
+            history={filterHistory.previous}
+            onRestore={(index) => {
+              dispatchFilters({ type: 'restore', index })
+              scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+              setRailOpen(false)
+            }}
+            onEndEdit={() => dispatchFilters({ type: 'end-edit' })}
             activeCount={activeCount}
             options={options}
             markers={markers}
@@ -386,7 +403,7 @@ function LoadedConsultingWorkspace({
         total={filtered.length}
         onClose={() => setSelectedId(null)}
         onStep={step}
-        onFilterBySub={toggleSub}
+        onFilterBySub={(name) => { toggleSub(name); setSelectedId(null) }}
         onMatchFormula={matchFormula}
       /> : null}
     </div>
