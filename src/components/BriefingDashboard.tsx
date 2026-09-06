@@ -71,7 +71,7 @@ export function BriefingDashboard({
         >
           <HorizontalBars
             ariaLabel="제형별 점유율"
-            labelWidth="5.5rem"
+            labelWidth="min(5.5rem, 30%)"
             data={briefing.formMix.map((item) => ({
               key: item.label,
               label: item.label,
@@ -122,7 +122,7 @@ export function BriefingDashboard({
         >
           <HorizontalBars
             ariaLabel="다빈도 부원료"
-            labelWidth="9rem"
+            labelWidth="min(9rem, 38%)"
             data={briefing.topSubs.map((item) => ({
               key: item.label,
               label: item.label,
@@ -151,7 +151,7 @@ export function BriefingDashboard({
         >
           <HorizontalBars
             ariaLabel="다빈도 부원료 조합"
-            labelWidth="13rem"
+            labelWidth="min(13rem, 42%)"
             data={briefing.topCombos.map((item) => ({
               key: item.label,
               label: item.label,

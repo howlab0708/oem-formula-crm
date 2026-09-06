@@ -39,6 +39,15 @@ export type ParsedBriefing = {
   subCombos: { label: string; count: string }[]
 }
 
+/*
+ * 조건 이름은 저장된 노트 안에 텍스트로 굳어 있다. 이름을 바꿔도 예전 노트를 계속
+ * 읽어야 하므로 옛 표기를 목록에 남겨 두고, 읽어낸 뒤 현재 이름으로 바꾼다.
+ * `부원료 포함` 이 `부원료` 보다 앞에 와야 한다 - 뒤에 두면 `부원료 포함 X` 가
+ * `부원료` + `포함 X` 로 갈린다.
+ */
+const CONDITION_GROUPS = '부원료 포함|부원료 제외|부원료|검색어|주원료|제형|제조원|규격|지표성분'
+const RENAMED_GROUPS: Record<string, string> = { '부원료 포함': '부원료' }
+
 /** 기존 복사 텍스트도 읽되, 시장 채택률을 실제 배합 비율로 바꾸어 해석하지 않는다. */
 export function parseBriefingText(text: string): ParsedBriefing | null {
   const lines = text.trim().replace(/\r\n?/g, '\n').split('\n').map((line) => line.trim())
@@ -46,12 +55,12 @@ export function parseBriefingText(text: string): ParsedBriefing | null {
   const field = (name: string) => lines.find((line) => line.startsWith(`· ${name}: `))?.slice(name.length + 4) ?? ''
   const conditionText = field('검토 조건')
   if (!conditionText || !field('시장 레퍼런스')) return null
-  const groups = '부원료 포함|부원료 제외|검색어|주원료|제형|제조원|규격|지표성분'
   const conditions = conditionText === '조건 미지정(전체)' ? [] : conditionText
-    .split(new RegExp(` / (?=(?:${groups}) )`))
+    .split(new RegExp(` / (?=(?:${CONDITION_GROUPS}) )`))
     .map((part) => {
-      const match = part.match(new RegExp(`^(${groups}) (.+)$`))
-      return match ? { group: match[1], label: match[2] } : { group: '조건', label: part }
+      const match = part.match(new RegExp(`^(${CONDITION_GROUPS}) (.+)$`))
+      if (!match) return { group: '조건', label: part }
+      return { group: RENAMED_GROUPS[match[1]] ?? match[1], label: match[2] }
     })
   const frequencies = (value: string): NoteFrequency[] => {
     // 원료명 안의 쉼표·괄호는 보존하고 끝의 채택률만 구분자로 사용한다.

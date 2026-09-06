@@ -172,7 +172,7 @@ export function filterChips(filters: FilterState): FilterChip[] {
   for (const sub of filters.subInclude) {
     chips.push({
       key: `sub+:${sub}`,
-      group: '부원료 포함',
+      group: '부원료',
       label: sub,
       remove: (f) => ({ ...f, subInclude: f.subInclude.filter((v) => v !== sub) }),
     })

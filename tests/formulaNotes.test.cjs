@@ -19,6 +19,18 @@ test('copied briefing round trips into separate conditions, statistics and ingre
   assert.ok(parsed.date)
 })
 
+test('sub-ingredient conditions read back under the current name from both old and new copies', () => {
+  const current = briefingToText(buildBriefing(SEED_PRODUCTS, { ...EMPTY_FILTERS, subInclude: ['설탕'], subExclude: ['젤라틴'] }, SEED_PRODUCTS.length))
+  assert.match(current, /· 검토 조건: 부원료 설탕 \/ 부원료 제외 젤라틴/)
+  const expected = [{ group: '부원료', label: '설탕' }, { group: '부원료 제외', label: '젤라틴' }]
+  assert.deepEqual(parseBriefingText(current).conditions, expected)
+
+  // 이름을 바꾸기 전에 저장된 노트. 옛 표기로 읽되 현재 이름으로 돌려준다.
+  const legacy = current.replace('검토 조건: 부원료 설탕', '검토 조건: 부원료 포함 설탕')
+  assert.deepEqual(parseBriefingText(legacy).conditions, expected)
+  assert.doesNotThrow(() => validateNoteInput({ company: '회사', title: '노트', sourceText: legacy, memo: '' }))
+})
+
 test('legacy text, CRLF, comma ingredient names and nested parentheses are preserved', () => {
   const legacy = '[OEM 배합 설계 브리핑]\r\n· 검토 조건: 조건 미지정(전체)\r\n· 시장 레퍼런스: 1,000건 (전체 1,000건 중)\r\n· 다빈도 부원료: 혼합물(A, B)(40%), 원료C(10.5%)\r\n· 다빈도 조합: A + B 1,000건'
   const result = parseBriefingText(legacy)

@@ -80,14 +80,26 @@ export function ColumnHistogram({
                 >
                   {isPeak ? (
                     <span
-                      className={`pointer-events-none absolute inset-x-0 text-center text-[11px] font-medium tnum ${
-                        inside ? 'text-white' : 'text-ink'
-                      }`}
-                      style={
-                        inside
-                          ? { bottom: `calc(${height}% - 18px)` }
-                          : { bottom: `calc(${height}% + 4px)` }
-                      }
+                      className={`pointer-events-none absolute whitespace-nowrap text-[11px] font-medium tnum ${
+                        // 첫·마지막 칸은 칸 바깥쪽 끝에 붙여 그림 영역을 넘지 않게 한다.
+                        index === 0
+                          ? 'left-0'
+                          : index === data.length - 1
+                            ? 'right-0'
+                            : 'left-1/2 -translate-x-1/2'
+                      } ${inside ? 'rounded-[3px] px-1 text-white' : 'text-ink'}`}
+                      style={{
+                        bottom: inside
+                          ? `calc(${height}% - 18px)`
+                          : `calc(${height}% + 4px)`,
+                        // 좁은 화면에서는 라벨이 막대보다 넓어진다. 막대 색을 깔아 두어야
+                        // 삐져나온 흰 글씨가 흰 배경에 묻히지 않는다.
+                        backgroundColor: inside
+                          ? hovered === index
+                            ? 'var(--color-accent-strong)'
+                            : 'var(--color-mark)'
+                          : undefined,
+                      }}
                     >
                       {datum.value.toLocaleString('ko-KR')}
                     </span>
@@ -110,7 +122,12 @@ export function ColumnHistogram({
               className="pointer-events-none absolute inset-y-0 z-10 border-l border-ink-3"
               style={{ left: `${referenceLeft}%` }}
             >
-              <span className="absolute -top-5 left-1.5 whitespace-nowrap text-[10px] leading-4 font-medium text-ink-2">
+              {/* 기준선이 오른쪽 끝에 서면 라벨을 선 왼쪽으로 넘겨 그림 밖으로 나가지 않게 한다. */}
+              <span
+                className={`absolute -top-5 whitespace-nowrap text-[10px] leading-4 font-medium text-ink-2 ${
+                  referenceLeft > 70 ? 'right-1.5' : 'left-1.5'
+                }`}
+              >
                 {reference.label}
               </span>
             </div>
