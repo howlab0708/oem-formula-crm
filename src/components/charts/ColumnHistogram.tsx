@@ -8,6 +8,12 @@ export type ColumnDatum = {
   value: number
   /** 툴팁 본문. 없으면 label · value 로 만든다. */
   hint?: string
+  /**
+   * x축에 찍을 짧은 이름. 없으면 label 을 쓴다.
+   * 구간 이름(`0~1,000`)은 칸 폭보다 길어 잘려 나가므로, 축에는 구간의 시작값만 찍고
+   * 온전한 구간은 툴팁과 '표' 보기에 맡긴다.
+   */
+  axisLabel?: string
 }
 
 type Props = {
@@ -80,7 +86,7 @@ export function ColumnHistogram({
                 >
                   {isPeak ? (
                     <span
-                      className={`pointer-events-none absolute whitespace-nowrap text-[11px] font-medium tnum ${
+                      className={`pointer-events-none absolute whitespace-nowrap text-[12px] font-medium tnum ${
                         // 첫·마지막 칸은 칸 바깥쪽 끝에 붙여 그림 영역을 넘지 않게 한다.
                         index === 0
                           ? 'left-0'
@@ -124,7 +130,7 @@ export function ColumnHistogram({
             >
               {/* 기준선이 오른쪽 끝에 서면 라벨을 선 왼쪽으로 넘겨 그림 밖으로 나가지 않게 한다. */}
               <span
-                className={`absolute -top-5 whitespace-nowrap text-[10px] leading-4 font-medium text-ink-2 ${
+                className={`absolute -top-5 whitespace-nowrap text-[12px] leading-4 font-medium text-ink-2 ${
                   referenceLeft > 70 ? 'right-1.5' : 'left-1.5'
                 }`}
               >
@@ -136,7 +142,7 @@ export function ColumnHistogram({
 
         {active && hovered !== null ? (
           <div
-            className="pointer-events-none absolute -top-1 z-20 -translate-x-1/2 -translate-y-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-[11px] whitespace-nowrap text-ink shadow-[0_2px_8px_rgba(24,24,27,0.08)]"
+            className="pointer-events-none absolute -top-1 z-20 -translate-x-1/2 -translate-y-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-[12px] whitespace-nowrap text-ink shadow-[0_2px_8px_rgba(24,24,27,0.08)]"
             style={{ left: `${((hovered + 0.5) / data.length) * 100}%` }}
           >
             {active.hint ?? `${active.label} · ${active.value.toLocaleString('ko-KR')}${valueSuffix}`}
@@ -148,9 +154,16 @@ export function ColumnHistogram({
         {data.map((datum, index) => (
           <div
             key={datum.key}
-            className="flex-1 truncate text-center text-[10px] leading-4 text-ink-3 tnum"
+            /*
+             * 칸 하나는 좁아도 라벨은 step 칸마다 하나씩만 찍는다. 그래서 옆 칸이 비어 있는
+             * 동안에는 글자가 칸 밖으로 걸쳐도 부딪히지 않는다 - 잘라내는 대신 흘려보내
+             * 읽을 수 있는 크기를 유지한다. 칸마다 라벨이 붙는 경우에만 잘라낸다.
+             */
+            className={`flex-1 text-center text-[12px] leading-4 text-ink-3 tnum ${
+              step > 1 ? 'whitespace-nowrap' : 'truncate'
+            }`}
           >
-            {index % step === 0 || index === data.length - 1 ? datum.label : ''}
+            {index % step === 0 || index === data.length - 1 ? datum.axisLabel ?? datum.label : ''}
           </div>
         ))}
       </div>

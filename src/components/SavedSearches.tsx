@@ -35,8 +35,24 @@ export function SavedSearches({ current, onRestore, onNotice }: {
         if (!cancelled) restoreRef.current(result.item)
       } catch (error) { if (!cancelled) noticeRef.current(error instanceof Error ? error.message : '검색 링크를 확인해 주세요.') }
     }
-    // Establish the browser cookie before loading a private link.
-    request<{ items: SavedSearch[]; hasMore: boolean }>('/api/favorites').then(result => {
+    /*
+     * Establish the browser cookie before loading a private link.
+     *
+     * 첫 요청이 한 번 어긋나면(데이터베이스 첫 연결 지연 등) 목록이 비고 저장 버튼이
+     * 잠긴 채로 남는다. 개발 모드에서는 Strict Mode 가 이 효과를 두 번 돌려 그 실패를
+     * 가려 주지만 운영에는 그런 보정이 없다. 그래서 여기서 한 번만 직접 다시 부른다.
+     */
+    const load = async (): Promise<{ items: SavedSearch[]; hasMore: boolean }> => {
+      try {
+        return await request<{ items: SavedSearch[]; hasMore: boolean }>('/api/favorites')
+      } catch (error) {
+        if (cancelled) throw error
+        await new Promise(resolve => setTimeout(resolve, 600))
+        if (cancelled) throw error
+        return await request<{ items: SavedSearch[]; hasMore: boolean }>('/api/favorites')
+      }
+    }
+    load().then(result => {
       if (cancelled) return
       setItems(result.items); setHasMore(result.hasMore); setReady(true)
       return loadLink()

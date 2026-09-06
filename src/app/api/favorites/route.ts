@@ -15,7 +15,11 @@ async function ownerKey() {
   return createHash('sha256').update(token).digest('hex')
 }
 const unavailable = () => json({ error: '즐겨찾기 서버 저장소가 연결되지 않았습니다.' }, 503)
-const failure = () => json({ error: '즐겨찾기 요청을 처리하지 못했습니다. 다시 시도해 주세요.' }, 500)
+/** 원인을 삼키면 운영에서 왜 실패했는지 알아낼 방법이 없다. 응답 문구는 그대로 두고 로그만 남긴다. */
+const failure = (context: string, error: unknown) => {
+  console.error(`[api/favorites] ${context}`, error)
+  return json({ error: '즐겨찾기 요청을 처리하지 못했습니다. 다시 시도해 주세요.' }, 500)
+}
 export async function GET(request: Request) {
   if (!isDatabaseConfigured()) return unavailable()
   const params = new URL(request.url).searchParams
@@ -29,7 +33,7 @@ export async function GET(request: Request) {
       return item ? json({ item }) : json({ error: '검색이 삭제되었거나 이 브라우저에서 볼 수 없습니다.' }, 404)
     }
     return json(await listSavedSearches(owner, page))
-  } catch { return failure() }
+  } catch (error) { return failure('read failed', error) }
 }
 async function mutate(request: Request, remove: boolean) {
   const origin = request.headers.get('origin')
@@ -53,7 +57,7 @@ async function mutate(request: Request, remove: boolean) {
       return await deleteSavedSearch(id, owner) ? json({ deleted: true }) : json({ error: '본인이 저장한 검색만 삭제할 수 있습니다.' }, 404)
     }
     return json({ item: await createSavedSearch(randomUUID(), owner, input!) }, 201)
-  } catch { return failure() }
+  } catch (error) { return failure('write failed', error) }
 }
 export const POST = (request: Request) => mutate(request, false)
 export const DELETE = (request: Request) => mutate(request, true)

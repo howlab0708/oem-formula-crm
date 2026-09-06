@@ -191,6 +191,8 @@ export function BriefingDashboard({
             data={markerBins.map((bin) => ({
               key: bin.label,
               label: bin.label,
+              // 축에는 구간의 시작값만 찍는다. `0~1,000` 은 칸 폭보다 길어 잘려 나간다.
+              axisLabel: Number.isInteger(bin.from) ? formatInt(bin.from) : formatDecimal(bin.from, 1),
               value: bin.count,
               hint: `${bin.label}${selectedMarker.unit} · ${formatInt(bin.count)}건`,
             }))}
