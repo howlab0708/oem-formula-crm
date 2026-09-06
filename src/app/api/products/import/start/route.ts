@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { validateProvenance } from '@/lib/datasetProvenance'
 import { isDatabaseConfigured, startImport } from '@/lib/db'
 
 export const runtime = 'nodejs'
@@ -17,8 +18,11 @@ export async function POST(request: NextRequest) {
   const fileName = typeof body?.fileName === 'string' ? body.fileName : 'unknown.csv'
   const totalRows = Number.isFinite(body?.totalRows) ? Number(body.totalRows) : 0
 
+  let provenance
+  try { provenance = validateProvenance(body?.provenance, totalRows) }
+  catch { return NextResponse.json({ error: '데이터 기준일 정보를 확인해 주세요.' }, { status: 400 }) }
   try {
-    const generation = await startImport(fileName, totalRows)
+    const generation = await startImport(fileName, totalRows, provenance)
     return NextResponse.json({ generation })
   } catch (error) {
     console.error('[api/products/import/start] failed', error)

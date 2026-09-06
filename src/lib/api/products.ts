@@ -5,10 +5,12 @@
  * 있어서 브라우저 번들에 들어가면 빌드가 깨진다. 이 파일은 fetch 만 한다.
  */
 
+import type { DatasetProvenance } from '../datasetProvenance'
 import type { Product } from '@/lib/types'
 import { SNAPSHOT_FORMAT, unpackSnapshot, type DatasetSnapshot } from '../datasetSnapshot'
 
 export type DatasetMeta = {
+  provenance?: DatasetProvenance | null
   generation: string
   status: string
   file_name: string | null
@@ -148,11 +150,12 @@ export async function saveDatasetToServer(
   fileName: string,
   products: Product[],
   onProgress?: (progress: SaveProgress) => void,
+  provenance?: DatasetProvenance,
 ): Promise<DatasetMeta> {
   const startResponse = await fetch('/api/products/import/start', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ fileName, totalRows: products.length }),
+    body: JSON.stringify({ fileName, totalRows: products.length, provenance }),
   })
   const { generation } = await parseJsonOrThrow<StartImportBody>(startResponse)
 

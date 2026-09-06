@@ -62,6 +62,7 @@ export type Product = {
 
 /** CSV 파싱 결과 요약. 업로드 패널에 그대로 노출한다. */
 export type ImportReport = {
+  provenance?: import('./datasetProvenance').DatasetProvenance
   fileName: string
   encoding: string
   totalRows: number

@@ -25,6 +25,7 @@ type Props = {
     subs: Option[]
   }
   markers: MarkerOption[]
+  savedSearches?: ReactNode
   importer: ReactNode
 }
 
@@ -42,6 +43,7 @@ export function FilterRail({
   activeCount,
   options,
   markers,
+  savedSearches,
   importer,
 }: Props) {
   const patch = (next: Partial<FilterState>, group?: string) => onChange({ ...filters, ...next }, group)
@@ -52,6 +54,7 @@ export function FilterRail({
     <aside onBlurCapture={onEndEdit} className="flex h-full flex-col overflow-y-auto scroll-contain border-r border-line bg-surface">
       <FilterControls filters={filters} history={history} activeCount={activeCount}
         onChange={onChange} onReset={onReset} onRestore={onRestore} />
+      {savedSearches}
 
       <Section>
         <label htmlFor="query" className="text-[12px] font-semibold text-ink">

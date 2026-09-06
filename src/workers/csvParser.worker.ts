@@ -7,6 +7,7 @@
  */
 
 import { decodeBuffer, detectDelimiter, parseCsv } from '../lib/csv'
+import { buildProvenance } from '../lib/datasetProvenance'
 import { mapHeaders, rowToProduct } from '../lib/csvSchema'
 import type { ImportReport, Product, WorkerRequest, WorkerResponse } from '../lib/types'
 
@@ -67,10 +68,11 @@ ctx.addEventListener('message', (event) => {
 
     const products: Product[] = []
     let skipped = 0
+    const acceptedRows: string[][] = []
 
     for (let i = 0; i < dataRows.length; i += 1) {
       const product = rowToProduct(dataRows[i], mapping, i)
-      if (product) products.push(product)
+      if (product) { products.push(product); acceptedRows.push(dataRows[i]) }
       else skipped += 1
 
       if (i > 0 && i % 5000 === 0) {
@@ -96,6 +98,7 @@ ctx.addEventListener('message', (event) => {
       columnMap: mapping.label,
       unmappedHeaders: mapping.unmapped,
       elapsedMs: Date.now() - startedAt,
+      provenance: buildProvenance(rows[0], acceptedRows),
     }
 
     post({ type: 'done', products, report })

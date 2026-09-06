@@ -70,7 +70,7 @@ export function buildBriefing(
 }
 
 /** 고객에게 그대로 붙여 넣을 수 있는 텍스트. 메신저 폭을 고려해 한 줄을 짧게 유지한다. */
-export function briefingToText(briefing: Briefing): string {
+export function briefingToText(briefing: Briefing, sourceNote?: string): string {
   const lines: string[] = []
   lines.push('[OEM 배합 설계 브리핑]')
   lines.push(`· 작성일 ${briefing.generatedAt}`)
@@ -151,6 +151,6 @@ export function briefingToText(briefing: Briefing): string {
     )
   }
 
-  lines.push('※ 식약처 품목제조보고 공개 데이터 기준. 최종 배합은 처방 검토 후 확정됩니다.')
+  lines.push(sourceNote ? `※ ${sourceNote}. 최종 배합은 처방 검토 후 확정됩니다.` : '※ 식약처 품목제조보고 공개 데이터 기준. 최종 배합은 처방 검토 후 확정됩니다.')
   return lines.join('\n')
 }

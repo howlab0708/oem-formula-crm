@@ -43,13 +43,13 @@ export function useCsvImport({ onLoaded }: Options) {
     onLoadedRef.current = onLoaded
   }, [onLoaded])
 
-  const saveToServer = useCallback((fileName: string, products: Product[]) => {
+  const saveToServer = useCallback((fileName: string, products: Product[], provenance?: ImportReport['provenance']) => {
     const runId = (saveRunId.current += 1)
     setSaveStatus({ phase: 'saving', sent: 0, total: products.length })
     saveDatasetToServer(fileName, products, (progress) => {
       if (saveRunId.current !== runId) return
       setSaveStatus({ phase: 'saving', sent: progress.sent, total: progress.total })
-    })
+    }, provenance)
       .then((meta) => {
         if (saveRunId.current !== runId) return
         setSaveStatus({ phase: 'saved', meta })
@@ -88,7 +88,7 @@ export function useCsvImport({ onLoaded }: Options) {
       if (message.type === 'done') {
         onLoadedRef.current(message.products, message.report)
         setStatus({ phase: 'done', report: message.report })
-        saveToServer(message.report.fileName, message.products)
+        saveToServer(message.report.fileName, message.products, message.report.provenance)
         return
       }
 

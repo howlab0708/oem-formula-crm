@@ -27,7 +27,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  return NextResponse.redirect(loginUrl(request, pathname === '/' ? {} : { next: pathname }))
+  return NextResponse.redirect(loginUrl(request, pathname === '/' && !request.nextUrl.searchParams.has('saved') ? {} : { next: pathname + request.nextUrl.search }))
 }
 
 function loginUrl(request: NextRequest, params: Record<string, string>): URL {

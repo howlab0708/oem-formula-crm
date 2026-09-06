@@ -3,15 +3,19 @@
 import { ChartCard } from '@/components/charts/ChartCard'
 import { ColumnHistogram } from '@/components/charts/ColumnHistogram'
 import { HorizontalBars } from '@/components/charts/HorizontalBars'
-import { StatTile } from '@/components/StatTile'
+import { DashboardSummaryCards } from '@/components/DashboardSummaryCards'
+import type { DashboardSummary } from '@/lib/dashboardSummary'
 import { MainIngredientCharts } from '@/components/MainIngredientCharts'
 import type { Briefing } from '@/lib/export/briefing'
 import type { MarkerFilter } from '@/lib/filters'
-import { formatDecimal, formatInt, formatMarkerValue, formatMilligrams, formatPercent } from '@/lib/format'
+import { formatDecimal, formatInt, formatMarkerValue, formatPercent } from '@/lib/format'
 import type { FormType } from '@/lib/types'
 
 type Props = {
   briefing: Briefing
+  rdaProfile: string
+  onRdaProfileChange: (value: string) => void
+  summary: DashboardSummary
   selectedMarker: MarkerFilter | null
   onToggleForm: (form: FormType) => void
   onToggleSub: (name: string) => void
@@ -21,6 +25,9 @@ type Props = {
 
 export function BriefingDashboard({
   briefing,
+  summary,
+  rdaProfile,
+  onRdaProfileChange,
   selectedMarker,
   onToggleForm,
   onToggleSub,
@@ -46,45 +53,7 @@ export function BriefingDashboard({
 
   return (
     <section aria-label="상담 브리핑 대시보드" className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatTile
-          label="시장 레퍼런스"
-          value={formatInt(briefing.referenceCount)}
-          unit="건"
-          context={`전체 ${formatInt(briefing.totalCount)}건 중 조건 일치`}
-          hero
-        />
-        <StatTile
-          label="시장 표준 제형"
-          value={briefing.standardForm?.label ?? '-'}
-          context={
-            briefing.standardForm
-              ? `${formatPercent(briefing.standardForm.share)} 채택 · ${formatInt(
-                  briefing.standardForm.count,
-                )}건`
-              : '데이터 없음'
-          }
-        />
-        <StatTile
-          label="평균 부원료 투입"
-          value={empty ? '-' : formatDecimal(briefing.subCount.average, 1)}
-          unit={empty ? undefined : '종'}
-          context={
-            empty
-              ? '데이터 없음'
-              : `중앙값 ${formatDecimal(briefing.subCount.median, 0)}종 · 최대 ${formatInt(
-                  briefing.subCount.max,
-                )}종`
-          }
-        />
-        <StatTile
-          label="1알 중량 (중앙값)"
-          value={formatMilligrams(briefing.medianWeightMg)}
-          context={
-            briefing.medianWeightMg === null ? '1알 중량을 확인할 수 없습니다.' : `환산 가능 ${formatInt(briefing.weightSampleSize)}건 기준`
-          }
-        />
-      </div>
+      <DashboardSummaryCards briefing={briefing} summary={summary} rdaProfile={rdaProfile} onRdaProfileChange={onRdaProfileChange} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <ChartCard

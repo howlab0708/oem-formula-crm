@@ -79,7 +79,7 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): st
 }
 
 /** 브리핑 카드를 그린 캔버스를 돌려준다. 폰트 로딩이 끝난 뒤 호출해야 한다. */
-export async function renderBriefingCard(briefing: Briefing): Promise<HTMLCanvasElement> {
+export async function renderBriefingCard(briefing: Briefing, options: { logo?: string | null; sourceLines?: string[]; customer?: boolean } = {}): Promise<HTMLCanvasElement> {
   if (typeof document !== 'undefined' && 'fonts' in document) {
     await document.fonts.ready
   }
@@ -99,6 +99,14 @@ export async function renderBriefingCard(briefing: Briefing): Promise<HTMLCanvas
   const contentWidth = WIDTH - PADDING * 2
   let y = PADDING
 
+  if (options.logo) {
+    const logo = new Image()
+    logo.src = options.logo
+    await logo.decode().catch(() => { throw new Error('로고를 그리지 못했습니다. 이미지를 다시 선택해 주세요.') })
+    const scale = Math.min(200/logo.width, 64/logo.height)
+    ctx.drawImage(logo, PADDING, y, logo.width*scale, logo.height*scale)
+    y += 82
+  }
   // ── 헤더 ────────────────────────────────────────────────
   ctx.fillStyle = palette.ink
   ctx.font = font(34, 700)
@@ -107,11 +115,14 @@ export async function renderBriefingCard(briefing: Briefing): Promise<HTMLCanvas
   ctx.fillStyle = palette.ink3
   ctx.font = font(16)
   ctx.fillText(
-    `${briefing.generatedAt} · 식약처 품목제조보고 데이터 기준`,
+    `${briefing.generatedAt} 작성${options.customer ? ' · 고객용 보기' : ''}`,
     PADDING,
     (y += 28),
   )
 
+  for (const line of options.sourceLines ?? []) {
+    for (const part of wrap(ctx, line, contentWidth)) ctx.fillText(part, PADDING, (y += 23))
+  }
   y += 24
   ctx.fillStyle = palette.line
   ctx.fillRect(PADDING, y, contentWidth, 1)
@@ -259,7 +270,7 @@ export async function renderBriefingCard(briefing: Briefing): Promise<HTMLCanvas
   ctx.font = font(14)
   for (const line of wrap(
     ctx,
-    '본 자료는 식약처 품목제조보고 공개 데이터에서 집계한 시장 현황입니다. 최종 배합·함량은 처방 검토 및 원료 수급 확인 후 확정됩니다.',
+    options.sourceLines ? '본 자료는 위에 표시된 출처에서 집계한 시장 현황입니다. 최종 배합·함량은 처방 검토 및 원료 수급 확인 후 확정됩니다.' : '본 자료는 식약처 품목제조보고 공개 데이터에서 집계한 시장 현황입니다. 최종 배합·함량은 처방 검토 및 원료 수급 확인 후 확정됩니다.',
     contentWidth,
   )) {
     ctx.fillText(line, PADDING, (y += 22))

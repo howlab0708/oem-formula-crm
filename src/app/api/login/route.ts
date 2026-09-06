@@ -25,7 +25,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.redirect(url, { status: 303 })
   }
 
-  url.pathname = next
+  const destination = new URL(next, url.origin)
+  url.pathname = destination.pathname
+  url.search = destination.search
   const response = NextResponse.redirect(url, { status: 303 })
   response.cookies.set({
     name: AUTH_COOKIE,

@@ -7,6 +7,12 @@ import { ActiveFilters } from '@/components/ActiveFilters'
 import { BriefingDashboard } from '@/components/BriefingDashboard'
 import { DatasetImporter } from '@/components/DatasetImporter'
 import { DetailPanel } from '@/components/DetailPanel'
+import { SavedSearches } from '@/components/SavedSearches'
+import { freshnessLabel } from '@/lib/datasetProvenance'
+import type { DatasetProvenance } from '@/lib/datasetProvenance'
+import type { ImportReport } from '@/lib/types'
+import type { SavedSearch } from '@/lib/savedSearches'
+import type { DatasetMeta } from '@/lib/api/products'
 import { ExportActions } from '@/components/ExportActions'
 import { FilterRail } from '@/components/FilterRail'
 import { ReferenceGrid } from '@/components/ReferenceGrid'
@@ -15,6 +21,8 @@ import { fetchStoredDataset, type StoredDataset } from '@/lib/api/products'
 import { markerCatalog } from '@/lib/analytics'
 import { downloadProductsAsCsv } from '@/lib/export/download'
 import { buildBriefing } from '@/lib/export/briefing'
+import { DEFAULT_RDA_PROFILE } from '@/lib/rda'
+import { buildDashboardSummary } from '@/lib/dashboardSummary'
 import {
   activeFilterCount,
   applyFilters,
@@ -89,6 +97,7 @@ export default function ConsultingWorkspace() {
   return (
     <LoadedConsultingWorkspace
       initialProducts={dataset.products ?? SEED_PRODUCTS}
+      initialMeta={dataset.meta}
       initialSource={dataset.products ? 'db' : 'seed'}
     />
   )
@@ -97,14 +106,21 @@ export default function ConsultingWorkspace() {
 function LoadedConsultingWorkspace({
   initialProducts,
   initialSource,
+  initialMeta,
 }: {
   initialProducts: Product[]
   initialSource: 'seed' | 'db'
+  initialMeta: DatasetMeta | null
 }) {
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [source, setSource] = useState<'seed' | 'csv' | 'db'>(initialSource)
+  const [datasetMeta, setDatasetMeta] = useState(initialMeta)
+  const [provenance, setProvenance] = useState<DatasetProvenance | null>(initialMeta?.provenance ?? null)
+  const [savedNotice, setSavedNotice] = useState('')
+  const freshness = freshnessLabel(provenance, datasetMeta?.finished_at, source === 'seed')
   const scrollRef = useRef<HTMLDivElement>(null)
   const [filterHistory, dispatchFilters] = useReducer(filterHistoryReducer, INITIAL_FILTER_HISTORY)
+  const [rdaProfile, setRdaProfile] = useState(DEFAULT_RDA_PROFILE)
   const filters = filterHistory.current
   const setFilters = useCallback((update: FilterUpdate, group?: string) => {
     dispatchFilters({ type: 'change', update, group })
@@ -123,9 +139,11 @@ function LoadedConsultingWorkspace({
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
   }, [filters])
 
-  const handleLoaded = useCallback((next: Product[]) => {
+  const handleLoaded = useCallback((next: Product[], report: ImportReport) => {
     setProducts(next)
     setSource('csv')
+    setDatasetMeta(null)
+    setProvenance(report.provenance ?? null)
     dispatchFilters({ type: 'clear' })
     setSelectedId(null)
     setVerifyNote(null)
@@ -157,6 +175,8 @@ function LoadedConsultingWorkspace({
           if (result.products && result.products.length === expectedRows) {
             setProducts(result.products)
             setSource('db')
+            setDatasetMeta(result.meta)
+            setProvenance(result.meta?.provenance ?? null)
             setVerifyNote(null)
             return
           }
@@ -199,6 +219,7 @@ function LoadedConsultingWorkspace({
     () => buildBriefing(filtered, filters, products.length),
     [filtered, filters, products.length],
   )
+  const dashboardSummary = useMemo(() => buildDashboardSummary(filtered, filters, rdaProfile), [filtered, filters, rdaProfile])
 
   const selectedIndex = useMemo(
     () => (selectedId ? filtered.findIndex((product) => product.id === selectedId) : -1),
@@ -215,6 +236,8 @@ function LoadedConsultingWorkspace({
   const restoreSample = useCallback(() => {
     setProducts(SEED_PRODUCTS)
     setSource('seed')
+    setDatasetMeta(null)
+    setProvenance(null)
     dispatchFilters({ type: 'clear' })
     setSelectedId(null)
     setVerifyNote(null)
@@ -270,6 +293,15 @@ function LoadedConsultingWorkspace({
     [filtered, selectedIndex],
   )
 
+  const restoreSaved = useCallback((item: SavedSearch) => {
+    setFilters(item.filters)
+    setRdaProfile(item.rdaProfile)
+    setSelectedId(null)
+    setRailOpen(false)
+    setActiveTab('consulting')
+    setSavedNotice(`“${item.name}” 조건을 불러왔습니다.${!item.generation || item.generation !== datasetMeta?.generation ? ' 저장 당시와 데이터가 달라 현재 데이터로 다시 계산합니다.' : ''}`)
+  }, [datasetMeta?.generation, setFilters])
+
   const panelOpen = selectedProduct !== null
 
   return (
@@ -294,7 +326,11 @@ function LoadedConsultingWorkspace({
           </div>
         </div>
 
-        {activeTab === 'consulting' ? <ExportActions briefing={briefing} disabled={filtered.length === 0} /> : null}
+        {activeTab === 'consulting' ? <ExportActions freshness={freshness} briefing={briefing} disabled={filtered.length === 0} /> : null}
+        {activeTab === 'consulting' ? <div className="w-full text-[11px] leading-4 text-ink-3" aria-label="데이터 출처와 최신성">
+          <p title={provenance?.updatedThrough ? `원본 LAST_UPDT_DTM 최댓값 · 날짜 확인 ${provenance.datedRows.toLocaleString('ko-KR')}건. CSV 다운로드 날짜는 아닙니다.` : undefined}>{freshness.date}</p>
+          <p>{freshness.url ? <a href={freshness.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">{freshness.source}</a> : freshness.source} · {freshness.schedule}</p>
+        </div> : null}
       </header>
 
       <WorkspaceTabs value={activeTab} onChange={(tab) => {
@@ -333,6 +369,7 @@ function LoadedConsultingWorkspace({
             activeCount={activeCount}
             options={options}
             markers={markers}
+            savedSearches={<SavedSearches current={{ filters, rdaProfile, generation: datasetMeta?.generation ?? null, resultCount: filtered.length }} onRestore={restoreSaved} onNotice={setSavedNotice} />}
             importer={
               <DatasetImporter
                 status={status}
@@ -356,6 +393,7 @@ function LoadedConsultingWorkspace({
               panelOpen ? '2xl:pr-[36rem]' : ''
             }`}
           >
+            {savedNotice ? <p role="status" className="rounded border border-line bg-surface p-3 text-[12px] text-ink-2">{savedNotice}<button type="button" className="ml-3 underline" onClick={() => setSavedNotice('')}>닫기</button></p> : null}
             <ActiveFilters
               filters={filters}
               onChange={setFilters}
@@ -364,6 +402,8 @@ function LoadedConsultingWorkspace({
 
             <BriefingDashboard
               briefing={briefing}
+              summary={dashboardSummary}
+              rdaProfile={rdaProfile} onRdaProfileChange={setRdaProfile}
               selectedMarker={filters.marker}
               onToggleForm={toggleForm}
               onToggleSub={toggleSub}

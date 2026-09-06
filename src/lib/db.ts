@@ -12,6 +12,7 @@
  */
 
 import postgres from 'postgres'
+import type { DatasetProvenance } from './datasetProvenance'
 import type { Product } from './types'
 
 let sqlInstance: ReturnType<typeof postgres> | null = null
@@ -76,6 +77,7 @@ async function ensureSchema(): Promise<void> {
       primary key (generation, id)
     )
   `
+  await sql`alter table import_status add column if not exists provenance jsonb`
   await sql`create index if not exists products_generation_seq_idx on products (generation, seq)`
 }
 
@@ -87,6 +89,7 @@ async function withSchema() {
 }
 
 export type ImportStatusRow = {
+  provenance?: DatasetProvenance | null
   generation: string
   status: string
   file_name: string | null
@@ -100,13 +103,13 @@ export type ImportStatusRow = {
  * 새 적재를 시작한다. 이전에 중단된(끝맺지 못한) `in_progress` 세대가 있으면
  * 먼저 지운다 - 그러지 않으면 업로드가 실패할 때마다 고아 행이 쌓인다.
  */
-export async function startImport(fileName: string, totalRows: number): Promise<string> {
+export async function startImport(fileName: string, totalRows: number, provenance: DatasetProvenance | null = null): Promise<string> {
   const sql = await withSchema()
   await sql`delete from import_status where status = 'in_progress'`
   const generation = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
   await sql`
-    insert into import_status (generation, status, file_name, total_rows)
-    values (${generation}, 'in_progress', ${fileName}, ${totalRows})
+    insert into import_status (generation, status, file_name, total_rows, provenance)
+    values (${generation}, 'in_progress', ${fileName}, ${totalRows}, ${provenance ? sql.json(provenance) : null})
   `
   return generation
 }
@@ -138,7 +141,7 @@ export async function finishImport(generation: string): Promise<ImportStatusRow>
   const [status] = await sql<ImportStatusRow[]>`
     update import_status set status = 'complete', finished_at = now()
     where generation = ${generation}
-    returning generation, status, file_name, total_rows, imported_rows, started_at::text, finished_at::text
+    returning generation, status, file_name, total_rows, imported_rows, started_at::text, finished_at::text, provenance
   `
   if (!status) throw new Error('알 수 없는 세대입니다. 처음부터 다시 업로드해 주세요.')
   await sql`delete from import_status where generation <> ${generation}`
@@ -155,7 +158,7 @@ export async function getActiveDataset(): Promise<ActiveDataset | null> {
   const sql = await withSchema()
   const [status] = await sql<ImportStatusRow[]>`
     select generation, status, file_name, total_rows, imported_rows,
-           started_at::text, finished_at::text
+           started_at::text, finished_at::text, provenance
     from import_status
     where status = 'complete'
     order by finished_at desc
@@ -181,7 +184,7 @@ export async function getDatasetMeta(): Promise<ImportStatusRow | null> {
   const sql = await withSchema()
   const [status] = await sql<ImportStatusRow[]>`
     select generation, status, file_name, total_rows, imported_rows,
-           started_at::text, finished_at::text
+           started_at::text, finished_at::text, provenance
     from import_status
     where status = 'complete'
     order by finished_at desc
