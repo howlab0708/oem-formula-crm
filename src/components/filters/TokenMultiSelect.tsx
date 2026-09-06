@@ -66,17 +66,18 @@ export function TokenMultiSelect({
 
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
+        {/* 제목 줄 전체가 여는 버튼이다. 손가락으로도 눌리도록 화살표와 여백을 넉넉히 준다. */}
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           aria-expanded={!collapsed}
           aria-controls={bodyId}
-          className="flex min-w-0 items-center gap-1.5 text-left text-[13px] font-semibold text-ink"
+          className="-mx-1.5 flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-surface-sunken"
         >
           <span
             aria-hidden
-            className={`inline-block shrink-0 text-[10px] text-ink-3 transition-transform ${
+            className={`grid h-5 w-5 shrink-0 place-items-center text-[13px] text-ink-3 transition-transform ${
               collapsed ? '' : 'rotate-90'
             }`}
           >
@@ -84,15 +85,29 @@ export function TokenMultiSelect({
           </span>
           <span className="truncate">{label}</span>
         </button>
-        {selected.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => onChange([])}
-            className="shrink-0 text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
-          >
-            {selected.length}개 해제
-          </button>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {selected.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+            >
+              {selected.length}개 해제
+            </button>
+          ) : null}
+          {/* 펼쳐져 있을 때만 나오는 닫기 버튼. 목록 아래의 `접기` 는 목록 길이만 줄인다. */}
+          {!collapsed ? (
+            <button
+              type="button"
+              onClick={() => setCollapsed(true)}
+              aria-controls={bodyId}
+              aria-label={`${label} 조건 접기`}
+              className="rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken"
+            >
+              접기
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div id={bodyId} hidden={collapsed}>
