@@ -4,6 +4,7 @@ import { ChartCard } from '@/components/charts/ChartCard'
 import { ColumnHistogram } from '@/components/charts/ColumnHistogram'
 import { HorizontalBars } from '@/components/charts/HorizontalBars'
 import { StatTile } from '@/components/StatTile'
+import { MainIngredientCharts } from '@/components/MainIngredientCharts'
 import type { Briefing } from '@/lib/export/briefing'
 import type { MarkerFilter } from '@/lib/filters'
 import { formatDecimal, formatInt, formatMarkerValue, formatMilligrams, formatPercent } from '@/lib/format'
@@ -15,6 +16,7 @@ type Props = {
   onToggleForm: (form: FormType) => void
   onToggleSub: (name: string) => void
   onSelectCombo: (names: string[]) => void
+  onSelectMains: (names: string[]) => void
 }
 
 export function BriefingDashboard({
@@ -23,6 +25,7 @@ export function BriefingDashboard({
   onToggleForm,
   onToggleSub,
   onSelectCombo,
+  onSelectMains,
 }: Props) {
   const empty = briefing.referenceCount === 0
 
@@ -111,6 +114,8 @@ export function BriefingDashboard({
           />
         </ChartCard>
 
+        <MainIngredientCharts briefing={briefing} onSelect={onSelectMains} />
+
         <ChartCard
           title="부원료 투입 개수 분포"
           caption="한 제품에 들어간 부원료 종수. 배합 난이도와 원가 구조를 가늠하는 값입니다."
@@ -161,7 +166,7 @@ export function BriefingDashboard({
         </ChartCard>
 
         <ChartCard
-          title="인기 부원료 조합"
+          title="다빈도 부원료 조합"
           caption="같은 제품에 함께 들어간 부원료 쌍. 막대를 누르면 두 원료를 동시에 겁니다."
           note="2건 이상 동시 등장한 조합만 표시합니다."
           isEmpty={empty || briefing.topCombos.length === 0}
@@ -176,7 +181,7 @@ export function BriefingDashboard({
           }}
         >
           <HorizontalBars
-            ariaLabel="인기 부원료 조합"
+            ariaLabel="다빈도 부원료 조합"
             labelWidth="13rem"
             data={briefing.topCombos.map((item) => ({
               key: item.label,

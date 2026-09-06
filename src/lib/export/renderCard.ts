@@ -237,7 +237,7 @@ export async function renderBriefingCard(briefing: Briefing): Promise<HTMLCanvas
 
   // ── 인기 조합 ───────────────────────────────────────────
   if (briefing.topCombos.length) {
-    y = drawSectionLabel(ctx, palette, '인기 부원료 조합', PADDING, y)
+    y = drawSectionLabel(ctx, palette, '다빈도 부원료 조합', PADDING, y)
     ctx.font = font(18)
     for (const combo of briefing.topCombos.slice(0, 4)) {
       y += 28

@@ -36,7 +36,7 @@ export function isDatabaseConfigured(): boolean {
  * `prepare: false` 는 Supabase 커넥션 풀러(Supavisor, transaction mode)에서
  * 프로토콜 수준 프리페어드 스테이트먼트가 깨지는 걸 막기 위함이다.
  */
-function getSql() {
+export function getSql() {
   if (sqlInstance) return sqlInstance
   const url = connectionString()
   if (!url) {

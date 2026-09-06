@@ -17,6 +17,7 @@ import {
 import { filterChips, type FilterState } from '../filters'
 import { formatDecimal, formatInt, formatMarkerValue, formatMilligrams, formatPercent, formatToday } from '../format'
 import type { Product } from '../types'
+import { mainIngredientSummary } from '../mainAnalytics'
 
 export type Briefing = {
   generatedAt: string
@@ -25,6 +26,7 @@ export type Briefing = {
   totalCount: number
   standardForm: CountItem | null
   formMix: CountItem[]
+  main: ReturnType<typeof mainIngredientSummary>
   subCount: { average: number; median: number; max: number }
   subHistogram: Array<{ label: string; bucket: number; count: number }>
   topSubs: CountItem[]
@@ -55,6 +57,7 @@ export function buildBriefing(
     totalCount,
     standardForm: formMix[0] ?? null,
     formMix,
+    main: mainIngredientSummary(products),
     subCount: { average: subStats.average, median: subStats.median, max: subStats.max },
     subHistogram: subStats.histogram,
     topSubs: topSubIngredients(products, 8),
@@ -113,6 +116,14 @@ export function briefingToText(briefing: Briefing): string {
       `(중앙값 ${formatDecimal(briefing.subCount.median, 0)}종, 부형제 제외)`,
   )
 
+  lines.push(`· 평균 주원료 투입: ${formatDecimal(briefing.main.stats.average, 1)}종 (중앙값 ${formatDecimal(briefing.main.stats.median, 0)}종)`)
+  if (briefing.main.topIngredients.length) {
+    lines.push(`· 다빈도 주원료: ${briefing.main.topIngredients.slice(0, 5).map((item) => `${item.label}(${formatPercent(item.share)})`).join(', ')}`)
+  }
+  if (briefing.main.topCombos.length) {
+    lines.push(`· 다빈도 주원료 조합: ${briefing.main.topCombos.slice(0, 3).map((item) => `${item.label} ${formatInt(item.count)}건`).join(' / ')}`)
+  }
+
   if (briefing.topSubs.length) {
     lines.push(
       `· 다빈도 부원료: ${briefing.topSubs
@@ -124,7 +135,7 @@ export function briefingToText(briefing: Briefing): string {
 
   if (briefing.topCombos.length) {
     lines.push(
-      `· 다빈도 조합: ${briefing.topCombos
+      `· 다빈도 부원료 조합: ${briefing.topCombos
         .slice(0, 3)
         .map((item) => `${item.label} ${formatInt(item.count)}건`)
         .join(' / ')}`,

@@ -35,6 +35,10 @@ const FunctionalIngredientLibrary = dynamic(() => import('@/components/Functiona
   loading: () => <p role="status" className="p-6 text-[13px] text-ink-2">기능성 원료 자료를 불러오는 중…</p>,
 })
 
+const FormulaNotes = dynamic(() => import('@/components/FormulaNotes'), {
+  loading: () => <p role="status" className="p-6 text-[13px] text-ink-2">노트를 불러오는 중…</p>,
+})
+
 export default function ConsultingWorkspace() {
   const [dataset, setDataset] = useState<StoredDataset | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -62,7 +66,7 @@ export default function ConsultingWorkspace() {
   if (!dataset) {
     return (
       <main className="h-workspace flex flex-col items-center justify-center gap-3 px-4">
-        <h1 className="text-[15px] font-semibold text-ink">OEM 처방 상담 콘솔</h1>
+        <h1 className="text-[15px] font-semibold text-ink">건기식 OEM 배합비 솔루션</h1>
         <p role={loadError ? 'alert' : 'status'} className="text-[13px] text-ink-2">
           {loadError ?? '저장된 데이터를 불러오는 중…'}
         </p>
@@ -112,6 +116,7 @@ function LoadedConsultingWorkspace({
   const [verifyNote, setVerifyNote] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('consulting')
   const [ingredientsVisited, setIngredientsVisited] = useState(false)
+  const [notesVisited, setNotesVisited] = useState(false)
 
   // 조건 반영이 끝난 화면의 상단으로 즉시 이동한다. 왼쪽 조건 목록의 스크롤은 유지한다.
   useLayoutEffect(() => {
@@ -280,7 +285,7 @@ function LoadedConsultingWorkspace({
           </button> : null}
           <div className="min-w-0">
             <h1 className="truncate text-[15px] leading-5 font-semibold text-ink">
-              OEM 처방 상담 콘솔
+              건기식 OEM 배합비 솔루션
             </h1>
             <p className="truncate text-[11px] leading-4 text-ink-3">
               {source === 'seed' ? '예시 레퍼런스' : source === 'db' ? '저장된 데이터' : '업로드 데이터'}{' '}
@@ -295,6 +300,7 @@ function LoadedConsultingWorkspace({
       <WorkspaceTabs value={activeTab} onChange={(tab) => {
         setActiveTab(tab)
         if (tab === 'ingredients') setIngredientsVisited(true)
+        if (tab === 'notes') setNotesVisited(true)
       }} />
 
       <div id="workspace-panel-consulting" role="tabpanel" aria-labelledby="workspace-tab-consulting"
@@ -362,6 +368,11 @@ function LoadedConsultingWorkspace({
               onToggleForm={toggleForm}
               onToggleSub={toggleSub}
               onSelectCombo={selectCombo}
+              onSelectMains={(names) => setFilters((prev) => ({
+                ...prev,
+                mains: names.map((name) => options.mains.find((option) => mainIngredientKey(option.value) === mainIngredientKey(name))?.value ?? name),
+                mainMode: 'all',
+              }))}
             />
 
             <ReferenceGrid
@@ -395,6 +406,11 @@ function LoadedConsultingWorkspace({
       <div id="workspace-panel-ingredients" role="tabpanel" aria-labelledby="workspace-tab-ingredients"
         hidden={activeTab !== 'ingredients'} className={activeTab === 'ingredients' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
         {ingredientsVisited ? <FunctionalIngredientLibrary /> : null}
+      </div>
+
+      <div id="workspace-panel-notes" role="tabpanel" aria-labelledby="workspace-tab-notes"
+        hidden={activeTab !== 'notes'} className={activeTab === 'notes' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
+        {notesVisited ? <FormulaNotes /> : null}
       </div>
 
       {activeTab === 'consulting' ? <DetailPanel

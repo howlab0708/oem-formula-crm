@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { safeNextPath } from '@/lib/auth'
 
 export const metadata: Metadata = {
-  title: '로그인 · OEM 처방 상담 콘솔',
+  title: '로그인 · 건기식 OEM 배합비 솔루션',
   robots: { index: false, follow: false },
 }
 
@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: Props) {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-canvas px-4 py-10">
       <div className="w-full max-w-sm">
-        <h1 className="text-[18px] leading-6 font-semibold text-ink">OEM 처방 상담 콘솔</h1>
+        <h1 className="text-[18px] leading-6 font-semibold text-ink">건기식 OEM 배합비 솔루션</h1>
         <p className="mt-1.5 text-[12px] leading-5 text-ink-3 keep-all">
           사내 영업용 도구입니다. 전달받은 비밀번호를 입력하세요.
         </p>

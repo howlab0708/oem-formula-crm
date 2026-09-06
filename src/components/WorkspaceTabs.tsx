@@ -2,10 +2,11 @@
 
 import { useRef } from 'react'
 
-export type WorkspaceTab = 'consulting' | 'ingredients'
+export type WorkspaceTab = 'consulting' | 'ingredients' | 'notes'
 const tabs = [
-  { id: 'consulting', label: '처방 상담' },
+  { id: 'consulting', label: '배합비 검색' },
   { id: 'ingredients', label: '기능성 원료' },
+  { id: 'notes', label: '노트' },
 ] as const
 
 export function WorkspaceTabs({ value, onChange }: { value: WorkspaceTab; onChange: (tab: WorkspaceTab) => void }) {
@@ -20,7 +21,7 @@ export function WorkspaceTabs({ value, onChange }: { value: WorkspaceTab; onChan
           onKeyDown={(event) => {
             if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
             event.preventDefault()
-            const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + 1) % tabs.length
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowLeft' ? -1 : 1) + tabs.length) % tabs.length
             onChange(tabs[next].id)
             buttons.current[next]?.focus()
           }}
