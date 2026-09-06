@@ -110,7 +110,7 @@ export function FilterRail({
 
       <Section>
         <TokenMultiSelect
-          label="부원료 포함"
+          label="부원료"
           options={options.subs}
           selected={filters.subInclude}
           onChange={(subInclude) => patch({ subInclude })}

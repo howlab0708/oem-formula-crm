@@ -41,7 +41,8 @@ export function DashboardSummaryCards({ briefing, summary, rdaProfile, onRdaProf
           <span className="ml-2 text-ink-3">제조사 확인 {formatInt(summary.manufacturerKnownCount)}건</span></p>
       </div>
 
-      <details className="group rounded-lg border border-line bg-surface text-[13px] text-ink-2">
+      {/* 집계 기준은 처음부터 펼쳐 둔다. 접었다 펴는 것은 그대로 사용자 몫이다. */}
+      <details open className="group rounded-lg border border-line bg-surface text-[13px] text-ink-2">
         <summary className="cursor-pointer px-5 py-3 font-medium text-ink focus-visible:outline-2 focus-visible:outline-accent">원료별 1일 함량과 집계 기준 확인</summary>
         <div className="border-t border-line px-5 py-4">
           <p className="leading-5 keep-all">현재 조건에 맞는 제품에서 선택한 지표성분을 우선 표시합니다. 지표성분을 선택하지 않았다면 선택한 주원료, 주원료도 선택하지 않았다면 전체 지표성분을 집계합니다. 함량이 확인된 표본 수가 많은 순서입니다.</p>
