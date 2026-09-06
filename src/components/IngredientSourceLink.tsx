@@ -26,7 +26,7 @@ export function IngredientSourceLink({ url, pageUrl, label, className }: { url: 
         onClick={() => setOpen((value) => !value)} className={`${className ?? ''} text-left`}>
         {label} <span aria-hidden>{open ? '▴' : '▾'}</span>
       </button>
-      {open ? <div id={id} role="group" aria-label={`${label} 이용 방법`} className="mt-2 flex flex-col items-start gap-2 rounded-md border border-line bg-surface p-3 text-[12px]">
+      {open ? <div id={id} role="group" aria-label={`${label} 이용 방법`} className="mt-2 flex flex-col items-start gap-2 rounded-md border border-line bg-surface p-3 text-[13px]">
         <a href={url} download className={className}>{url.includes('/down.do?') ? '공전 파일 다운로드 (ZIP)' : 'PDF 다운로드'}</a>
         <a href={pageUrl ?? INGREDIENT_SOURCES.codex} target="_blank" rel="noopener noreferrer" className={className}>
           공전 웹페이지로 이동 ↗<span className="sr-only"> (새 창)</span>

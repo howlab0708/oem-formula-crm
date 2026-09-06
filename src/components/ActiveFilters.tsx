@@ -16,7 +16,7 @@ export function ActiveFilters({ filters, onChange, onReset }: Props) {
   const chips = filterChips(filters)
   if (chips.length === 0) {
     return (
-      <p className="text-[12px] text-ink-3">
+      <p className="text-[13px] text-ink-3">
         조건 없음 · 전체 레퍼런스를 기준으로 시장 평균을 보여줍니다.
       </p>
     )
@@ -29,7 +29,7 @@ export function ActiveFilters({ filters, onChange, onReset }: Props) {
           key={chip.key}
           type="button"
           onClick={() => onChange(chip.remove(filters))}
-          className="group flex items-center gap-1.5 rounded-md border border-line bg-surface py-1 pr-1.5 pl-2 text-[12px] text-ink-2 transition-colors hover:border-line-strong"
+          className="group flex items-center gap-1.5 rounded-md border border-line bg-surface py-1 pr-1.5 pl-2 text-[13px] text-ink-2 transition-colors hover:border-line-strong"
         >
           <span className="text-ink-3">{chip.group}</span>
           <span className="font-medium text-ink">{chip.label}</span>
@@ -42,7 +42,7 @@ export function ActiveFilters({ filters, onChange, onReset }: Props) {
       <button
         type="button"
         onClick={onReset}
-        className="ml-1 text-[11px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+        className="ml-1 text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
       >
         전체 해제
       </button>

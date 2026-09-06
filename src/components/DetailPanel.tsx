@@ -101,20 +101,20 @@ export function DetailPanel({
                 <h2 className="text-[16px] leading-6 font-semibold text-ink keep-all">
                   {rendered.name}
                 </h2>
-                <p className="mt-1 text-[12px] text-ink-3">{rendered.manufacturer}</p>
+                <p className="mt-1 text-[13px] text-ink-3">{rendered.manufacturer}</p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="상세 닫기"
-                className="shrink-0 rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken"
+                className="shrink-0 rounded-md border border-line px-2 py-1 text-[13px] text-ink-2 transition-colors hover:bg-surface-sunken"
               >
                 닫기 (Esc)
               </button>
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-[11px] text-ink-3 tnum">
+              <p className="text-[12px] text-ink-3 tnum">
                 {position >= 0 ? `${formatInt(position + 1)} / ${formatInt(total)}` : '-'}
               </p>
               <div className="flex gap-1.5">
@@ -148,20 +148,20 @@ export function DetailPanel({
                   {rendered.mainIngredients.map((name) => (
                     <li
                       key={name}
-                      className="rounded border border-accent-line bg-accent-soft px-2 py-1 text-[12px] text-accent-strong"
+                      className="rounded border border-accent-line bg-accent-soft px-2 py-1 text-[13px] text-accent-strong"
                     >
                       {name}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-[12px] text-ink-3">표기 없음</p>
+                <p className="text-[13px] text-ink-3">표기 없음</p>
               )}
             </Block>
 
             <Block label="지표성분 상세 함량">
               {rendered.markers.length ? (
-                <table className="w-full border-collapse text-[12px]">
+                <table className="w-full border-collapse text-[13px]">
                   <tbody>
                     {rendered.markers.map((marker) => (
                       <tr key={`${marker.name}-${marker.unit}`} className="border-b border-line last:border-b-0">
@@ -176,11 +176,11 @@ export function DetailPanel({
                 </table>
               ) : null}
               {rendered.mainDetail ? (
-                <p className="mt-2 text-[12px] leading-5 text-ink-3 keep-all">
+                <p className="mt-2 text-[13px] leading-5 text-ink-3 keep-all">
                   원문: {rendered.mainDetail}
                 </p>
               ) : rendered.markers.length === 0 ? (
-                <p className="text-[12px] text-ink-3">표기 없음</p>
+                <p className="text-[13px] text-ink-3">표기 없음</p>
               ) : null}
             </Block>
 
@@ -195,7 +195,7 @@ export function DetailPanel({
                       <button
                         type="button"
                         onClick={() => onFilterBySub(name)}
-                        className="rounded border border-line bg-surface px-2 py-1 text-[12px] text-ink-2 transition-colors hover:border-line-strong hover:bg-surface-sunken"
+                        className="rounded border border-line bg-surface px-2 py-1 text-[13px] text-ink-2 transition-colors hover:border-line-strong hover:bg-surface-sunken"
                       >
                         {name}
                       </button>
@@ -203,13 +203,13 @@ export function DetailPanel({
                   ))}
                 </ul>
               ) : (
-                <p className="text-[12px] text-ink-3">표기 없음</p>
+                <p className="text-[13px] text-ink-3">표기 없음</p>
               )}
             </Block>
 
             {rendered.reportNo || rendered.reportedAt || rendered.primaryFunction ? (
               <Block label="신고 정보">
-                <dl className="flex flex-col gap-1.5 text-[12px]">
+                <dl className="flex flex-col gap-1.5 text-[13px]">
                   {rendered.reportNo ? (
                     <MetaRow term="신고번호" description={rendered.reportNo} />
                   ) : null}
@@ -228,11 +228,11 @@ export function DetailPanel({
             <button
               type="button"
               onClick={() => onMatchFormula(rendered)}
-              className="w-full rounded-md bg-accent px-3 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-accent-strong"
+              className="w-full rounded-md bg-accent px-3 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-accent-strong"
             >
               해당 배합비로 조건 맞추기
             </button>
-            <p className="mt-2 text-[11px] leading-4 text-ink-3 keep-all">
+            <p className="mt-2 text-[12px] leading-4 text-ink-3 keep-all">
               주원료와 제형을 이 제품과 동일하게 맞춰 유사 레퍼런스를 다시 검색합니다.
             </p>
           </footer>
@@ -256,7 +256,7 @@ function StepButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="rounded-md border border-line px-2.5 py-1 text-[11px] text-ink-2 transition-colors hover:bg-surface-sunken disabled:text-ink-3 disabled:hover:bg-surface"
+      className="rounded-md border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken disabled:text-ink-3 disabled:hover:bg-surface"
     >
       {label}
     </button>
@@ -266,10 +266,10 @@ function StepButton({
 function Row({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="flex gap-4 border-b border-line py-3.5 first:pt-0">
-      <span className="w-28 shrink-0 text-[12px] font-medium text-ink-3">{label}</span>
+      <span className="w-28 shrink-0 text-[13px] font-medium text-ink-3">{label}</span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[13px] leading-5 text-ink keep-all">{value}</span>
-        {sub ? <span className="mt-0.5 block text-[11px] text-ink-3">{sub}</span> : null}
+        <span className="block text-[14px] leading-5 text-ink keep-all">{value}</span>
+        {sub ? <span className="mt-0.5 block text-[12px] text-ink-3">{sub}</span> : null}
       </span>
     </div>
   )
@@ -286,8 +286,8 @@ function Block({
 }) {
   return (
     <section className="border-b border-line py-4 last:border-b-0">
-      <h3 className="text-[12px] font-medium text-ink-3">{label}</h3>
-      {hint ? <p className="mt-0.5 text-[11px] text-ink-3">{hint}</p> : null}
+      <h3 className="text-[13px] font-medium text-ink-3">{label}</h3>
+      {hint ? <p className="mt-0.5 text-[12px] text-ink-3">{hint}</p> : null}
       <div className="mt-2.5">{children}</div>
     </section>
   )

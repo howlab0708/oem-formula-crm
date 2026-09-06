@@ -40,11 +40,11 @@ import { SEED_PRODUCTS } from '@/lib/seed'
 import type { FormType, Product } from '@/lib/types'
 
 const FunctionalIngredientLibrary = dynamic(() => import('@/components/FunctionalIngredientLibrary'), {
-  loading: () => <p role="status" className="p-6 text-[13px] text-ink-2">기능성 원료 자료를 불러오는 중…</p>,
+  loading: () => <p role="status" className="p-6 text-[14px] text-ink-2">기능성 원료 자료를 불러오는 중…</p>,
 })
 
 const FormulaNotes = dynamic(() => import('@/components/FormulaNotes'), {
-  loading: () => <p role="status" className="p-6 text-[13px] text-ink-2">노트를 불러오는 중…</p>,
+  loading: () => <p role="status" className="p-6 text-[14px] text-ink-2">노트를 불러오는 중…</p>,
 })
 
 export default function ConsultingWorkspace() {
@@ -75,7 +75,7 @@ export default function ConsultingWorkspace() {
     return (
       <main className="h-workspace flex flex-col items-center justify-center gap-3 px-4">
         <h1 className="text-[15px] font-semibold text-ink">건기식 OEM 배합비 솔루션</h1>
-        <p role={loadError ? 'alert' : 'status'} className="text-[13px] text-ink-2">
+        <p role={loadError ? 'alert' : 'status'} className="text-[14px] text-ink-2">
           {loadError ?? '저장된 데이터를 불러오는 중…'}
         </p>
         {loadError ? (
@@ -85,7 +85,7 @@ export default function ConsultingWorkspace() {
               setLoadError(null)
               setLoadAttempt((attempt) => attempt + 1)
             }}
-            className="rounded-md border border-line bg-surface px-3 py-2 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken"
+            className="rounded-md border border-line bg-surface px-3 py-2 text-[13px] text-ink-2 transition-colors hover:bg-surface-sunken"
           >
             다시 시도
           </button>
@@ -311,7 +311,7 @@ function LoadedConsultingWorkspace({
           {activeTab === 'consulting' ? <button
             type="button"
             onClick={() => setRailOpen((prev) => !prev)}
-            className="rounded-md border border-line px-2.5 py-1.5 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken lg:hidden"
+            className="rounded-md border border-line px-2.5 py-1.5 text-[13px] text-ink-2 transition-colors hover:bg-surface-sunken lg:hidden"
           >
             조건 {activeCount > 0 ? `(${activeCount})` : ''}
           </button> : null}
@@ -319,7 +319,7 @@ function LoadedConsultingWorkspace({
             <h1 className="truncate text-[15px] leading-5 font-semibold text-ink">
               건기식 OEM 배합비 솔루션
             </h1>
-            <p className="truncate text-[11px] leading-4 text-ink-3">
+            <p className="truncate text-[12px] leading-4 text-ink-3">
               {source === 'seed' ? '예시 레퍼런스' : source === 'db' ? '저장된 데이터' : '업로드 데이터'}{' '}
               {formatInt(products.length)}건 · 조건 일치 {formatInt(filtered.length)}건
             </p>
@@ -327,7 +327,7 @@ function LoadedConsultingWorkspace({
         </div>
 
         {activeTab === 'consulting' ? <ExportActions freshness={freshness} briefing={briefing} disabled={filtered.length === 0} /> : null}
-        {activeTab === 'consulting' ? <div className="w-full text-[11px] leading-4 text-ink-3" aria-label="데이터 출처와 최신성">
+        {activeTab === 'consulting' ? <div className="w-full text-[12px] leading-4 text-ink-3" aria-label="데이터 출처와 최신성">
           <p title={provenance?.updatedThrough ? `원본 LAST_UPDT_DTM 최댓값 · 날짜 확인 ${provenance.datedRows.toLocaleString('ko-KR')}건. CSV 다운로드 날짜는 아닙니다.` : undefined}>{freshness.date}</p>
           <p>{freshness.url ? <a href={freshness.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">{freshness.source}</a> : freshness.source} · {freshness.schedule}</p>
         </div> : null}
@@ -393,7 +393,7 @@ function LoadedConsultingWorkspace({
               panelOpen ? '2xl:pr-[36rem]' : ''
             }`}
           >
-            {savedNotice ? <p role="status" className="rounded border border-line bg-surface p-3 text-[12px] text-ink-2">{savedNotice}<button type="button" className="ml-3 underline" onClick={() => setSavedNotice('')}>닫기</button></p> : null}
+            {savedNotice ? <p role="status" className="rounded border border-line bg-surface p-3 text-[13px] text-ink-2">{savedNotice}<button type="button" className="ml-3 underline" onClick={() => setSavedNotice('')}>닫기</button></p> : null}
             <ActiveFilters
               filters={filters}
               onChange={setFilters}
@@ -433,7 +433,7 @@ function LoadedConsultingWorkspace({
                       `OEM레퍼런스_${briefing.generatedAt.replace(/\./g, '')}.csv`,
                     )
                   }
-                  className="rounded-md border border-line bg-surface px-3 py-1.5 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken disabled:opacity-50"
+                  className="rounded-md border border-line bg-surface px-3 py-1.5 text-[13px] text-ink-2 transition-colors hover:bg-surface-sunken disabled:opacity-50"
                 >
                   CSV 내보내기
                 </button>

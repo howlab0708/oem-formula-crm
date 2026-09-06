@@ -42,7 +42,7 @@ export function ReferenceGrid({
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
           <div>
             <h2 className="text-[14px] font-semibold text-ink">품목제조보고 레퍼런스</h2>
-            <p className="mt-1 text-[12px] text-ink-3 tnum">
+            <p className="mt-1 text-[13px] text-ink-3 tnum">
               {formatInt(products.length)}건{products.length !== totalCount ? ` / 전체 ${formatInt(totalCount)}건` : ''}
               <span className="ml-2">페이지당 50개 · 제품을 누르면 상세 확인</span>
             </p>
@@ -50,7 +50,7 @@ export function ReferenceGrid({
           {actions}
         </div>
         {rows.length > 0 ? <PageNavigation position="상단" total={products.length} page={bounds.page} onChange={changePage} /> : null}
-        <div className={`hidden ${GRID_TEMPLATE} gap-4 border-t border-line bg-surface-muted px-5 py-2.5 text-[11px] font-medium text-ink-3 md:grid`}>
+        <div className={`hidden ${GRID_TEMPLATE} gap-4 border-t border-line bg-surface-muted px-5 py-2.5 text-[12px] font-medium text-ink-3 md:grid`}>
           <span>제품명 · 제조원</span>
           <span>제형</span>
           <span>1알 중량</span>
@@ -60,7 +60,7 @@ export function ReferenceGrid({
       </div>
 
       {rows.length === 0 ? (
-        <p className="px-5 py-16 text-center text-[13px] text-ink-3">
+        <p className="px-5 py-16 text-center text-[14px] text-ink-3">
           조건에 맞는 레퍼런스가 없습니다. 왼쪽에서 조건을 완화해 보세요.
         </p>
       ) : (
@@ -80,17 +80,17 @@ export function ReferenceGrid({
                   }`}
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-[13px] leading-5 font-medium text-ink" title={product.name}>{product.name}</span>
-                    <span className="mt-0.5 block truncate text-[11px] leading-4 text-ink-3" title={product.manufacturer}>{product.manufacturer}</span>
-                    {product.brand ? <span className="block truncate text-[11px] leading-4 text-ink-3">브랜드: {product.brand}</span> : null}
+                    <span className="block truncate text-[14px] leading-5 font-medium text-ink" title={product.name}>{product.name}</span>
+                    <span className="mt-0.5 block truncate text-[12px] leading-4 text-ink-3" title={product.manufacturer}>{product.manufacturer}</span>
+                    {product.brand ? <span className="block truncate text-[12px] leading-4 text-ink-3">브랜드: {product.brand}</span> : null}
                   </span>
-                  <span className="hidden text-[12px] text-ink-2 md:block">{product.form}</span>
-                  <span className="hidden text-[12px] text-ink-2 tnum md:block">{formatMilligrams(product.unitWeightMg)}</span>
-                  <span className="col-span-2 min-w-0 text-[12px] leading-5 text-ink-2 md:col-span-1">
-                    <span className="mb-1 block text-[11px] text-ink-3 md:hidden">{product.form} · 1알 {formatMilligrams(product.unitWeightMg)}</span>
+                  <span className="hidden text-[13px] text-ink-2 md:block">{product.form}</span>
+                  <span className="hidden text-[13px] text-ink-2 tnum md:block">{formatMilligrams(product.unitWeightMg)}</span>
+                  <span className="col-span-2 min-w-0 text-[13px] leading-5 text-ink-2 md:col-span-1">
+                    <span className="mb-1 block text-[12px] text-ink-3 md:hidden">{product.form} · 1알 {formatMilligrams(product.unitWeightMg)}</span>
                     <span className="line-clamp-2 keep-all">{mains.slice(0, 3).join(' · ') || '-'}{mains.length > 3 ? ` 외 ${mains.length - 3}종` : ''}</span>
                   </span>
-                  <span className="col-start-2 row-start-1 text-[12px] font-medium text-accent-strong md:col-auto md:row-auto" aria-hidden="true">보기 ›</span>
+                  <span className="col-start-2 row-start-1 text-[13px] font-medium text-accent-strong md:col-auto md:row-auto" aria-hidden="true">보기 ›</span>
                 </button>
               </li>
             )
@@ -106,10 +106,10 @@ function PageNavigation({ position, total, page, onChange }: {
   position: string; total: number; page: number; onChange: (page: number) => void
 }) {
   const bounds = referencePage(total, page)
-  const buttonClass = 'min-w-8 rounded-md border border-line px-2 py-1.5 text-[12px] text-ink-2 hover:bg-surface-sunken disabled:cursor-default disabled:opacity-40'
+  const buttonClass = 'min-w-8 rounded-md border border-line px-2 py-1.5 text-[13px] text-ink-2 hover:bg-surface-sunken disabled:cursor-default disabled:opacity-40'
   return (
     <nav aria-label={`레퍼런스 페이지 ${position}`} className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3">
-      <p aria-live={position === '상단' ? 'polite' : undefined} className="text-[11px] text-ink-3 tnum">
+      <p aria-live={position === '상단' ? 'polite' : undefined} className="text-[12px] text-ink-3 tnum">
         {formatInt(bounds.start + 1)}–{formatInt(bounds.end)} / {formatInt(total)}건 · {formatInt(bounds.page)}/{formatInt(bounds.pages)}페이지
       </p>
       <div className="flex flex-wrap items-center gap-1">
@@ -121,9 +121,9 @@ function PageNavigation({ position, total, page, onChange }: {
             aria-label={`${item}페이지`}
             aria-current={item === page ? 'page' : undefined}
             onClick={() => onChange(item)}
-            className={item === page ? 'min-w-8 rounded-md border border-accent bg-accent px-2 py-1.5 text-[12px] font-medium text-white' : buttonClass}
+            className={item === page ? 'min-w-8 rounded-md border border-accent bg-accent px-2 py-1.5 text-[13px] font-medium text-white' : buttonClass}
           >{item}</button>
-        ) : <span key={item} className="px-1 text-[12px] text-ink-3" aria-hidden="true">…</span>)}
+        ) : <span key={item} className="px-1 text-[13px] text-ink-3" aria-hidden="true">…</span>)}
         <button type="button" aria-label="다음 페이지" className={buttonClass} disabled={page >= bounds.pages} onClick={() => onChange(page + 1)}>다음</button>
       </div>
     </nav>

@@ -41,7 +41,7 @@ export function ChartCard({
         <div className="min-w-0">
           <h3 className="text-[14px] leading-5 font-semibold text-ink keep-all">{title}</h3>
           {caption ? (
-            <p className="mt-1 text-[12px] leading-4 text-ink-3 keep-all">{caption}</p>
+            <p className="mt-1 text-[13px] leading-4 text-ink-3 keep-all">{caption}</p>
           ) : null}
         </div>
         <div className="flex shrink-0 rounded-md border border-line p-0.5">
@@ -52,7 +52,7 @@ export function ChartCard({
               aria-pressed={mode === value}
               aria-controls={panelId}
               onClick={() => setMode(value)}
-              className={`rounded-[5px] px-2.5 py-1 text-[11px] font-medium transition-colors ${
+              className={`rounded-[5px] px-2.5 py-1 text-[12px] font-medium transition-colors ${
                 mode === value
                   ? 'bg-surface-sunken text-ink'
                   : 'text-ink-3 hover:text-ink-2'
@@ -66,7 +66,7 @@ export function ChartCard({
 
       <div id={panelId} className="flex-1 px-5 pb-5">
         {isEmpty ? (
-          <p className="py-10 text-center text-[12px] text-ink-3">{emptyMessage}</p>
+          <p className="py-10 text-center text-[13px] text-ink-3">{emptyMessage}</p>
         ) : mode === 'chart' ? (
           children
         ) : (
@@ -75,7 +75,7 @@ export function ChartCard({
       </div>
 
       {note ? (
-        <p className="border-t border-line px-5 py-3 text-[11px] leading-4 text-ink-3 keep-all">
+        <p className="border-t border-line px-5 py-3 text-[12px] leading-4 text-ink-3 keep-all">
           {note}
         </p>
       ) : null}
@@ -86,7 +86,7 @@ export function ChartCard({
 function DataTable({ table }: { table: TableView }) {
   return (
     <div className="max-h-72 overflow-auto scroll-contain rounded-md border border-line">
-      <table className="w-full border-collapse text-[12px]">
+      <table className="w-full border-collapse text-[13px]">
         <thead>
           <tr>
             {table.columns.map((column, index) => (

@@ -68,7 +68,7 @@ function BarRowContent({
   return (
     <>
       <span
-        className="shrink-0 truncate text-[12px] leading-5 text-ink-2"
+        className="shrink-0 truncate text-[13px] leading-5 text-ink-2"
         style={{ width: labelWidth }}
       >
         {datum.label}
@@ -83,7 +83,7 @@ function BarRowContent({
           }}
         />
       </span>
-      <span className="w-24 shrink-0 text-right text-[12px] leading-5 font-medium text-ink tnum">
+      <span className="w-28 shrink-0 text-right text-[13px] leading-5 font-medium text-ink tnum">
         {datum.valueLabel}
       </span>
     </>

@@ -25,7 +25,7 @@ export function WorkspaceTabs({ value, onChange }: { value: WorkspaceTab; onChan
             onChange(tabs[next].id)
             buttons.current[next]?.focus()
           }}
-          className={`border-b-2 px-4 py-2.5 text-[13px] font-medium transition-colors ${value === tab.id
+          className={`border-b-2 px-4 py-2.5 text-[14px] font-medium transition-colors ${value === tab.id
             ? 'border-accent text-accent-strong' : 'border-transparent text-ink-2 hover:bg-surface-sunken'}`}>
           {tab.label}
         </button>

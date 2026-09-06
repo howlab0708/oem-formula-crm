@@ -64,19 +64,19 @@ export function TokenMultiSelect({
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
-        <label className="text-[12px] font-semibold text-ink">{label}</label>
+        <label className="text-[13px] font-semibold text-ink">{label}</label>
         {selected.length > 0 ? (
           <button
             type="button"
             onClick={() => onChange([])}
-            className="text-[11px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+            className="text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
           >
             {selected.length}개 해제
           </button>
         ) : null}
       </div>
 
-      {hint ? <p className="mt-1 text-[11px] leading-4 text-ink-3">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-[12px] leading-4 text-ink-3">{hint}</p> : null}
 
       {options.length > visibleCount ? (
         <input
@@ -84,7 +84,7 @@ export function TokenMultiSelect({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={searchPlaceholder}
-          className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-[12px] text-ink placeholder:text-ink-3"
+          className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] text-ink placeholder:text-ink-3"
         />
       ) : null}
 
@@ -97,7 +97,7 @@ export function TokenMultiSelect({
                 type="button"
                 onClick={() => toggle(option.value)}
                 aria-pressed={isSelected}
-                className={`flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-[12px] transition-colors ${
+                className={`flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors ${
                   isSelected
                     ? tone === 'danger'
                       ? 'bg-danger-soft text-danger'
@@ -120,7 +120,7 @@ export function TokenMultiSelect({
                     {option.value}
                   </span>
                 </span>
-                <span className="shrink-0 text-[11px] text-ink-3 tnum">
+                <span className="shrink-0 text-[12px] text-ink-3 tnum">
                   {formatInt(option.count)}
                 </span>
               </button>
@@ -128,7 +128,7 @@ export function TokenMultiSelect({
           )
         })}
         {shown.length === 0 ? (
-          <li className="px-2 py-2 text-[11px] text-ink-3">일치하는 항목이 없습니다.</li>
+          <li className="px-2 py-2 text-[12px] text-ink-3">일치하는 항목이 없습니다.</li>
         ) : null}
       </ul>
 
@@ -136,7 +136,7 @@ export function TokenMultiSelect({
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="mt-1.5 text-[11px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+          className="mt-1.5 text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
         >
           {formatInt(hiddenCount)}개 더 보기
         </button>
@@ -146,7 +146,7 @@ export function TokenMultiSelect({
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="mt-1.5 ml-2 text-[11px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+          className="mt-1.5 ml-2 text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
         >
           접기
         </button>

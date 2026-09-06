@@ -14,3 +14,35 @@ export async function readLogo(file: File): Promise<string> {
     return canvas.toDataURL('image/png')
   } finally { bitmap.close() }
 }
+
+/*
+ * 로고는 기기별 설정이다. 영업 담당자가 접속할 때마다 다시 올리지 않도록
+ * 이 브라우저에만 남긴다. 서버·데이터베이스로는 보내지 않는다.
+ */
+const STORAGE_KEY = 'oem-crm.export-logo'
+
+/*
+ * 읽은 값을 붙들어 둔다. 로고는 수십만 자의 data URL 이고 useSyncExternalStore 의
+ * 스냅숏으로 쓰이므로, 매 렌더마다 저장소를 다시 읽지 않고 같은 문자열을 돌려준다.
+ */
+let cached: string | null | undefined
+
+/** 저장해 둔 로고. 사생활 보호 모드처럼 저장소를 못 읽는 환경에서는 null 이다. */
+export function loadStoredLogo(): string | null {
+  if (cached !== undefined) return cached
+  try {
+    const value = localStorage.getItem(STORAGE_KEY)
+    cached = value && value.startsWith('data:image/png;base64,') ? value : null
+  } catch { cached = null }
+  return cached
+}
+
+/** 저장에 성공했는지 돌려준다. 실패해도 이번 화면의 내보내기에는 그대로 쓴다. */
+export function storeLogo(dataUrl: string | null): boolean {
+  cached = dataUrl
+  try {
+    if (dataUrl === null) localStorage.removeItem(STORAGE_KEY)
+    else localStorage.setItem(STORAGE_KEY, dataUrl)
+    return true
+  } catch { return false }
+}

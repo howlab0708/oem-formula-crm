@@ -20,18 +20,18 @@ export function RangeFields({ label, unit, min, max, onChange, hint, disabled }:
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
-        <label className="text-[12px] font-semibold text-ink">{label}</label>
+        <label className="text-[13px] font-semibold text-ink">{label}</label>
         {min !== null || max !== null ? (
           <button
             type="button"
             onClick={() => onChange(null, null)}
-            className="text-[11px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+            className="text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
           >
             해제
           </button>
         ) : null}
       </div>
-      {hint ? <p className="mt-1 text-[11px] leading-4 text-ink-3">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-[12px] leading-4 text-ink-3">{hint}</p> : null}
 
       <div className="mt-2 flex items-center gap-2">
         <NumberField
@@ -41,7 +41,7 @@ export function RangeFields({ label, unit, min, max, onChange, hint, disabled }:
           disabled={disabled}
           onChange={(next) => onChange(next, max)}
         />
-        <span aria-hidden className="text-[12px] text-ink-3">
+        <span aria-hidden className="text-[13px] text-ink-3">
           ~
         </span>
         <NumberField
@@ -78,9 +78,9 @@ function NumberField({
         value={value === null ? '' : String(value)}
         placeholder={placeholder}
         onChange={(event) => onChange(parse(event.target.value))}
-        className="w-full rounded-md border border-line bg-surface py-1.5 pr-9 pl-2.5 text-[12px] text-ink tnum placeholder:text-ink-3 disabled:bg-surface-sunken disabled:text-ink-3"
+        className="w-full rounded-md border border-line bg-surface py-1.5 pr-9 pl-2.5 text-[13px] text-ink tnum placeholder:text-ink-3 disabled:bg-surface-sunken disabled:text-ink-3"
       />
-      <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-[11px] text-ink-3">
+      <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-[12px] text-ink-3">
         {unit}
       </span>
     </span>

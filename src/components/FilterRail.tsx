@@ -57,7 +57,7 @@ export function FilterRail({
       {savedSearches}
 
       <Section>
-        <label htmlFor="query" className="text-[12px] font-semibold text-ink">
+        <label htmlFor="query" className="text-[13px] font-semibold text-ink">
           제품명 · 브랜드명 · 제조원 검색
         </label>
         <input
@@ -66,7 +66,7 @@ export function FilterRail({
           value={filters.query}
           onChange={(event) => patch({ query: event.target.value }, 'query')}
           placeholder="예: 밀크씨슬, 종근당, 서흥"
-          className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-2 text-[12px] text-ink placeholder:text-ink-3"
+          className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-2 text-[13px] text-ink placeholder:text-ink-3"
         />
       </Section>
 
@@ -81,7 +81,7 @@ export function FilterRail({
         />
         {filters.mains.length > 1 ? (
           <div className="mt-3 flex items-center gap-2">
-            <span className="text-[11px] text-ink-3">조합 방식</span>
+            <span className="text-[12px] text-ink-3">조합 방식</span>
             <div className="flex rounded-md border border-line p-0.5">
               {(
                 [
@@ -94,7 +94,7 @@ export function FilterRail({
                   type="button"
                   aria-pressed={filters.mainMode === value}
                   onClick={() => patch({ mainMode: value })}
-                  className={`rounded-[5px] px-2 py-1 text-[11px] transition-colors ${
+                  className={`rounded-[5px] px-2 py-1 text-[12px] transition-colors ${
                     filters.mainMode === value
                       ? 'bg-surface-sunken font-medium text-ink'
                       : 'text-ink-3 hover:text-ink-2'
@@ -153,10 +153,10 @@ export function FilterRail({
       </Section>
 
       <Section>
-        <label htmlFor="marker" className="text-[12px] font-semibold text-ink">
+        <label htmlFor="marker" className="text-[13px] font-semibold text-ink">
           기능성 지표성분 함량
         </label>
-        <p className="mt-1 text-[11px] leading-4 text-ink-3 keep-all">
+        <p className="mt-1 text-[12px] leading-4 text-ink-3 keep-all">
           지표성분을 고르면 대시보드의 함량 분포도 같은 성분으로 바뀝니다.
         </p>
         <select
@@ -171,7 +171,7 @@ export function FilterRail({
             const [name, unit] = value.split('|')
             patch({ marker: { name, unit, min: null, max: null } })
           }}
-          className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-2 text-[12px] text-ink"
+          className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-2 text-[13px] text-ink"
         >
           <option value="">지표성분 선택 안 함</option>
           {markers.map((marker) => (
