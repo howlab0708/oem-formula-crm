@@ -3,7 +3,7 @@ import type { FilterState } from './filters'
 import { mainIngredientKey, mainIngredientLabel } from './ingredientNames'
 import { parseUnitWeightMg, isPillForm } from './unitWeight'
 import { standardUnitWeightMg } from './standardUnitWeight'
-import { compareRda, DEFAULT_RDA_PROFILE, rdaKey } from './rda'
+import { compareRda, DEFAULT_RDA_PROFILE, nutrientKey, nutrientReference, rdaKey } from './rda'
 import type { Marker, Product } from './types'
 
 const NUMBER = String.raw`([0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?)`
@@ -153,6 +153,9 @@ export function buildDashboardSummary(products: Product[], filters: Pick<FilterS
   const weights: number[] = []
   const manufacturers = new Set<string>()
   const groups = new Map<string, Array<Observation & { comparison: ReturnType<typeof compareRda> }>>()
+  // 비타민·무기질만 따로 모은다. 이름의 항목 기호와 꼬리표를 걷어낸 뒤 같은 영양소끼리 합친다.
+  // 영양소별로 '이 함량을 쓴 제품 수'를 세어 둔다. 가장 많이 쓴 함량은 여기서 고른다.
+  const nutrients = new Map<string, Map<number, number>>()
   let recognizedCount = 0, contentProducts = 0, comparableCount = 0, highCount = 0, manufacturerKnownCount = 0
   const rangeChecks = { tablet: { count: 0, outside: 0 }, capsule: { count: 0, outside: 0 } }
   const selectedMainKeys = new Set(filters.mains.map(rdaKey))
@@ -187,16 +190,33 @@ export function buildDashboardSummary(products: Product[], filters: Pick<FilterS
         comparable = true
         if (comparison.ratio >= 1 - 1e-10) high = true
       }
+      const nutrient = nutrientKey(observation.name)
+      const reference = nutrient === null ? null : nutrientReference(nutrient, profile)
+      if (nutrient !== null && reference !== null && observation.valueMg !== null) {
+        // 기준값과 같은 단위로 맞춰 담는다. μg 기준 영양소는 mg 값을 μg 으로 올린다.
+        // 나눗셈에서 생긴 끝자리 오차로 같은 함량이 갈라지지 않게 표시 자릿수까지만 남긴다.
+        const value = Math.round(observation.valueMg * (reference.unit.startsWith('μg') ? 1000 : 1) * 1000) / 1000
+        const counts = nutrients.get(nutrient) ?? new Map<number, number>()
+        counts.set(value, (counts.get(value) ?? 0) + 1)
+        nutrients.set(nutrient, counts)
+      }
     }
     if (comparable) comparableCount++
     if (high) highCount++
   }
-  const rows = [...groups.entries()].map(([key, observations]) => {
-    const eligible = observations.filter(o => o.comparison.ratio !== null)
-    return { key, name: observations[0].name, unit: observations[0].unit, count: observations.length,
-      median: median(observations.map(o => o.value))!, rda: observations[0].comparison.amount,
-      rdaUnit: observations[0].comparison.unit, comparableCount: eligible.length,
-      highShare: eligible.length ? eligible.filter(o => o.comparison.ratio! >= 1 - 1e-10).length / eligible.length : null }
+  const rows = [...nutrients.entries()].map(([key, counts]) => {
+    const reference = nutrientReference(key, profile)!
+    // 가장 많이 쓴 함량. 같은 제품 수라면 작은 값을 골라 결과가 흔들리지 않게 한다.
+    let common = { value: 0, count: 0 }
+    let total = 0
+    for (const [value, count] of counts) {
+      total += count
+      if (count > common.count || (count === common.count && value < common.value)) common = { value, count }
+    }
+    return { key, name: reference.label, count: total, common: common.value, commonCount: common.count,
+      // 기준값은 공식 단위 그대로(μg RAE 등), 제품 함량은 순수 질량 단위로 보여준다.
+      amount: reference.amount, unit: reference.unit, basis: reference.basis,
+      massUnit: reference.unit.startsWith('μg') ? 'μg' : 'mg' }
   }).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ko'))
   return {
     unitWeight: { median: median(weights), count: weights.length, rangeChecks },

@@ -1,5 +1,6 @@
 'use client'
 
+import { useId, useState } from 'react'
 import { StatTile } from '@/components/StatTile'
 import type { Briefing } from '@/lib/export/briefing'
 import { DASHBOARD_REFERENCE, type DashboardSummary } from '@/lib/dashboardSummary'
@@ -12,6 +13,8 @@ export function DashboardSummaryCards({ briefing, summary, rdaProfile, onRdaProf
 }) {
   const { unitWeight, content } = summary
   const empty = briefing.referenceCount === 0
+  const [collapsed, setCollapsed] = useState(false)
+  const bodyId = useId()
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="시장 배합비 핵심 지표">
@@ -41,37 +44,61 @@ export function DashboardSummaryCards({ briefing, summary, rdaProfile, onRdaProf
           <span className="ml-2 text-ink-3">제조사 확인 {formatInt(summary.manufacturerKnownCount)}건</span></p>
       </div>
 
-      {/* 집계 기준은 처음부터 펼쳐 둔다. 접었다 펴는 것은 그대로 사용자 몫이다. */}
-      <details open className="group rounded-lg border border-line bg-surface text-[13px] text-ink-2">
-        <summary className="cursor-pointer px-5 py-3 font-medium text-ink focus-visible:outline-2 focus-visible:outline-accent">원료별 1일 함량과 집계 기준 확인</summary>
-        <div className="border-t border-line px-5 py-4">
-          <p className="leading-5 keep-all">현재 조건에 맞는 제품에서 선택한 지표성분을 우선 표시합니다. 지표성분을 선택하지 않았다면 선택한 주원료, 주원료도 선택하지 않았다면 전체 지표성분을 집계합니다. 함량이 확인된 표본 수가 많은 순서입니다.</p>
+      <section className="rounded-lg border border-line bg-surface text-[13px] text-ink-2">
+        {/* 조건 레일의 묶음과 같은 방식으로 연다. 처음에는 펼쳐 두고 접는 것은 사용자 몫이다. */}
+        <div className="flex items-center justify-between gap-2 px-5 py-2.5">
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-expanded={!collapsed}
+            aria-controls={bodyId}
+            className="-mx-1.5 flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-left font-medium text-ink transition-colors hover:bg-surface-sunken"
+          >
+            <span aria-hidden className={`grid h-5 w-5 shrink-0 place-items-center text-[13px] text-ink-3 transition-transform ${collapsed ? '' : 'rotate-90'}`}>▶</span>
+            <span className="truncate">성분별 1일 권장 섭취량</span>
+          </button>
+          {!collapsed ? (
+            <button
+              type="button"
+              onClick={() => setCollapsed(true)}
+              aria-controls={bodyId}
+              aria-label="성분별 1일 권장 섭취량 접기"
+              className="shrink-0 rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken"
+            >
+              접기
+            </button>
+          ) : null}
+        </div>
+        <div id={bodyId} hidden={collapsed} className="border-t border-line px-5 py-4">
+          <p className="leading-5 keep-all">현재 조건에 맞는 제품의 지표성분 중 비타민·무기질만 모았습니다. 같은 영양소의 다른 표기는 하나로 합쳤습니다. 기준값은 {RDA_VERSION}의 성인 성별·연령별 값이고, 가장 많이 쓴 함량은 이 조건에서 같은 1일 함량을 쓴 제품이 가장 많은 값과 그 제품 수입니다. 함량이 확인된 표본 수가 많은 순서입니다.</p>
           {content.rows.length ? <div className="mt-3 max-h-80 overflow-auto">
-            <table className="w-full min-w-[620px] text-left text-[13px]">
-              <caption className="sr-only">주원료 지표성분별 하루 함량 중앙값과 권장섭취량</caption>
-              <thead className="sticky top-0 bg-surface text-ink-3"><tr>{['지표성분', '1일 함량 중앙값', '권장섭취량', '고함량 제품 비율', '함량 확인 / 비교 가능'].map(label => <th scope="col" key={label} className="border-b border-line px-3 py-2 font-medium">{label}</th>)}</tr></thead>
+            <table className="w-full min-w-[560px] text-left text-[13px]">
+              <caption className="sr-only">비타민·무기질별 1일 권장 섭취량과 조건 내 최다 사용 함량</caption>
+              <thead className="sticky top-0 bg-surface text-ink-3"><tr>{['성분', '1일 권장 섭취량', '가장 많이 쓴 함량'].map(label => <th scope="col" key={label} className="border-b border-line px-3 py-2 font-medium">{label}</th>)}</tr></thead>
               <tbody>{content.rows.map(row => <tr key={row.key}>
                 <th scope="row" className="border-b border-line px-3 py-2 font-medium text-ink">{row.name}</th>
-                <td className="border-b border-line px-3 py-2 tabular-nums">{amount(row.median, row.unit)}</td>
-                <td className="border-b border-line px-3 py-2">{row.rda === null ? '권장섭취량 없음·미등록' : amount(row.rda, row.rdaUnit)}</td>
-                <td className="border-b border-line px-3 py-2">{row.highShare === null ? '비교 불가' : formatPercent(row.highShare, 1)}</td>
-                <td className="border-b border-line px-3 py-2 whitespace-nowrap">{formatInt(row.count)} / {formatInt(row.comparableCount)}건</td>
+                <td className="border-b border-line px-3 py-2 whitespace-nowrap">{amount(row.amount, row.unit)}
+                  <span className="ml-1 text-ink-3">{row.basis === 'AI' ? '(충분섭취량)' : '(권장섭취량)'}</span></td>
+                <td className="border-b border-line px-3 py-2 whitespace-nowrap tabular-nums">{amount(row.common, row.massUnit)}
+                  <span className="ml-1 text-ink-3">{formatInt(row.commonCount)}건</span></td>
               </tr>)}</tbody>
             </table>
-          </div> : <p className="mt-3 rounded bg-canvas p-3">{empty ? '조건에 맞는 제품이 없습니다.' : '현재 조건에서 1일 함량을 확정할 수 있는 표본이 없습니다. 섭취방법과 지표성분의 함량 기준을 함께 확인해야 합니다.'}</p>}
+          </div> : <p className="mt-3 rounded bg-canvas p-3">{empty ? '조건에 맞는 제품이 없습니다.' : '현재 조건에서 1일 함량을 확정할 수 있는 비타민·무기질 표본이 없습니다. 섭취방법과 지표성분의 함량 기준을 함께 확인해야 합니다.'}</p>}
           <ul className="mt-4 list-disc space-y-1 pl-4 text-[12px] leading-5 text-ink-3">
             <li>표준 1회분은 1정·1캡슐·1포 등 최소 물리적 단위입니다. 명시된 단위 중량 또는 총 내용량 ÷ 물리적 개수만 사용하며, 일수·하루 섭취 횟수로 나누지 않습니다. 정제·캡슐과 액상의 복합 포장, 제형에 맞는 개수를 확인할 수 없는 표본은 제외합니다.</li>
             <li>참고 범위 밖 표본: 정제(200~1,200mg) {formatInt(unitWeight.rangeChecks.tablet.outside)} / {formatInt(unitWeight.rangeChecks.tablet.count)}건, 캡슐(300~800mg) {formatInt(unitWeight.rangeChecks.capsule.outside)} / {formatInt(unitWeight.rangeChecks.capsule.count)}건. 범위 밖 값도 제거하지 않고 집계합니다.</li>
             <li>성분의 1일 함량은 해당 성분의 표시량 분모와 하루 총중량 또는 명시된 1일 함량으로 계산합니다. 원료 분말 전체의 투입 중량과는 다릅니다.</li>
             <li>고함량 제품 비율 = 선택된 원료 중 권장섭취량 100% 이상인 성분이 하나라도 있는 제품 수 ÷ 권장량 비교 가능한 제품 수. 한 제품은 한 번만 셉니다.</li>
-            <li>{RDA_VERSION}의 성인 성별·연령별 권장섭취량(RNI, 요청하신 RDA에 해당)을 사용합니다. 충분섭취량·상한섭취량·식약처 기능성 범위로 대체하지 않습니다. 임신·수유부 기준은 포함하지 않습니다.</li>
-            <li>권장섭취량이 없거나 미등록인 원료, 하루 함량·단위가 불명확한 표본은 비교에서 제외합니다. 비타민A는 RAE, 엽산은 DFE 당량 표기가 확인되어야 비교합니다.</li>
+            <li>{RDA_VERSION}의 성인 성별·연령별 값을 씁니다. 권장섭취량(RNI)이 정해진 영양소는 그 값을, 권장섭취량 자체가 없는 비타민 D·E·K, 판토텐산, 비오틴, 망간, 크롬, 칼륨 등은 충분섭취량(AI)을 표시하고 괄호로 구분합니다. 상한섭취량·식약처 기능성 범위로 대체하지 않고, 임신·수유부 기준은 포함하지 않습니다.</li>
+            <li>위 표는 비타민·무기질만 담습니다. 기준규격 원문에서 잘려 나온 항목 기호와 꼬리표(`- 아연`, `아연(%)`, `아연 함량`, `아연(정제)`)를 걷어내고, 같은 비타민의 동족체 표기(티아민·리보플라빈·콜레칼시페롤 등)까지 하나로 합쳤습니다. 무기질의 염 표기(산화아연 등)는 표시값이 염 전체 중량인지 원소 중량인지 이름만으로 가릴 수 없어 합치지 않습니다.</li>
+            <li>가장 많이 쓴 함량은 1일 함량이 확정된 제품을 함량별로 세어 제품 수가 가장 많은 값을 고른 것입니다(최빈값). 제품 수가 같으면 작은 값을 씁니다. 끝자리 오차로 같은 함량이 갈라지지 않도록 소수점 셋째 자리까지만 보고 셉니다.</li>
+            <li>고함량 제품 비율은 권장섭취량(RNI)이 있는 영양소만으로 셉니다. 하루 함량·단위가 불명확한 표본은 비교에서 제외하며, 비타민A는 RAE, 엽산은 DFE 당량 표기가 확인되어야 비교합니다.</li>
             <li>개별인정형 비율은 원료명의 개별인정형 표기 또는 기존 원료 목록의 인정 원료명과 정확히 일치한 제품 수 ÷ 조건 일치 제품 수입니다. 고시형과 동명이거나 미확인인 원료는 이름만으로 추정하지 않습니다. 제조사는 공백 차이를 통합하고 미상 표기를 제외합니다.</li>
           </ul>
           <a href={RDA_SOURCE} target="_blank" rel="noreferrer" className="mt-3 mr-4 inline-block text-[12px] underline underline-offset-2">{RDA_VERSION} · 권장섭취량 출처</a>
           <a href={DASHBOARD_REFERENCE.sourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-[12px] underline underline-offset-2">식약처 건강기능식품 공전 · 기존 원료 자료 검토일 {DASHBOARD_REFERENCE.reviewedOn}</a>
         </div>
-      </details>
+      </section>
     </div>
   )
 }

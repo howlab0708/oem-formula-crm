@@ -71,8 +71,32 @@ test('mixed mass units compare correctly; AI-only and non-RDA ingredients exclud
   assert.equal(result.content.comparableCount, 2)
   assert.equal(result.content.highCount, 1)
   assert.equal(result.content.highShare, .5)
-  assert.equal(result.content.rows.find(r => r.name === '비타민D').highShare, null)
   assert.equal(buildDashboardSummary([r], EMPTY_FILTERS).content.highShare, null)
+  // 표는 비타민·무기질만 담는다. 권장섭취량이 없는 영양소는 충분섭취량을 그렇다고 밝히고 쓴다.
+  assert.equal(result.content.rows.some(row => row.name === '실리마린'), false)
+  const vitaminD = result.content.rows.find(row => row.name === '비타민D')
+  assert.deepEqual({ basis: vitaminD.basis, amount: vitaminD.amount, unit: vitaminD.unit }, { basis: 'AI', amount: 10, unit: 'μg' })
+  assert.deepEqual({ common: vitaminD.common, commonCount: vitaminD.commonCount }, { common: 3, commonCount: 1 })
+  const vitaminC = result.content.rows.find(row => row.name === '비타민C')
+  // 30mg 과 100mg 이 한 건씩이라 동수다. 이때는 작은 값을 쓴다.
+  assert.deepEqual({ basis: vitaminC.basis, amount: vitaminC.amount, count: vitaminC.count, common: vitaminC.common },
+    { basis: 'RNI', amount: 100, count: 2, common: 30 })
+})
+
+test('marker name decorations and vitamer spellings collapse into one nutrient row', () => {
+  const spec = value => `1일 1회 2정(1000mg)`
+  const of = (marker, value) => product(spec(), `${marker}: 표시량(${value}mg/1000mg)의 80~150%`)
+  const rows = buildDashboardSummary(
+    [of('- 아연', 5), of('아연(%)', 5), of('아연 함량', 5), of('(다)아연', 3), of('■ 아연', 7), of('아연(정제2)', 800)],
+    EMPTY_FILTERS).content.rows
+  assert.equal(rows.length, 1)
+  // 여섯 표기가 한 줄로 합쳐지고, 800mg 같은 튀는 표본이 있어도 최빈값은 흔들리지 않는다.
+  assert.deepEqual({ name: rows[0].name, count: rows[0].count, common: rows[0].common, commonCount: rows[0].commonCount },
+    { name: '아연', count: 6, common: 5, commonCount: 3 })
+  // 비타민 동족체는 합치고, 무기질의 염 이름은 합치지 않는다.
+  const vitamers = buildDashboardSummary([of('티아민', 1), of('비타민B1', 2)], EMPTY_FILTERS).content.rows
+  assert.deepEqual(vitamers.map(r => r.name), ['비타민B1'])
+  assert.equal(buildDashboardSummary([of('산화아연', 5)], EMPTY_FILTERS).content.rows.length, 0)
 })
 
 test('sex/age profile changes the RNI and equivalent-unit evidence is required', () => {
