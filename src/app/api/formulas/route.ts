@@ -7,7 +7,6 @@ import {
   getQuoteVersion,
   listFormulaCompanies,
   listFormulas,
-  listIngredientPrices,
   listQuoteVersions,
   saveIngredientPrices,
   updateFormula,
@@ -41,9 +40,6 @@ export async function GET(request: Request) {
   if (!isDatabaseConfigured()) return unavailable()
   const params = new URL(request.url).searchParams
   try {
-    // 원료단가 기억장. 자동완성이 쓰는 목록이라 배합비 목록과 별도로 받는다.
-    if (params.get('prices') === '1') return json({ prices: await listIngredientPrices() })
-
     if (params.has('id')) {
       const id = params.get('id')
       if (!isUuid(id)) return json({ error: '배합비 주소를 확인해 주세요.' }, 400)

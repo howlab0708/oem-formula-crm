@@ -17,7 +17,7 @@ import { calculate, calculateTiers, formatWon } from '@/lib/formulaDesign/calc'
 import { emptySheet, SAMPLE_SHEETS } from '@/lib/formulaDesign/preset'
 import { sheetReducer, type SheetAction } from '@/lib/formulaDesign/reducer'
 import { buildSuggestionIndex } from '@/lib/formulaDesign/suggest'
-import type { FormulaRecord, FormulaSheet } from '@/lib/formulaDesign/types'
+import type { FormulaRecord, FormulaSheet, IngredientPrice } from '@/lib/formulaDesign/types'
 import {
   createFormula,
   deleteFormula,
@@ -33,6 +33,7 @@ import { MaterialGrid } from './MaterialGrid'
 import { QuotePanel } from './QuotePanel'
 import { SpecPanel } from './SpecPanel'
 import { FormulaLibrary } from './FormulaLibrary'
+import { PriceBookPanel } from './PriceBookPanel'
 import { SheetExportPanel } from './SheetExportPanel'
 
 const buttonClass =
@@ -59,8 +60,9 @@ export default function FormulaDesigner({ referenceNames }: Props) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const [prices, setPrices] = useState<{ name: string; unitPrice: number; note: string; updatedAt: string }[]>([])
+  const [prices, setPrices] = useState<IngredientPrice[]>([])
   const [libraryOpen, setLibraryOpen] = useState(false)
+  const [priceBookOpen, setPriceBookOpen] = useState(false)
   const [refresh, setRefresh] = useState(0)
   const [notes, setNotes] = useState<NoteSummary[]>([])
   const dirty = useRef(false)
@@ -279,6 +281,14 @@ export default function FormulaDesigner({ referenceNames }: Props) {
             >
               저장된 배합비
             </button>
+            <button
+              type="button"
+              className={buttonClass}
+              onClick={() => setPriceBookOpen((open) => !open)}
+              aria-expanded={priceBookOpen}
+            >
+              원료단가 {prices.length > 0 ? `(${prices.length.toLocaleString('ko-KR')})` : ''}
+            </button>
             {saved ? (
               <button type="button" className={`${buttonClass} hover:text-danger`} onClick={remove} disabled={busy}>
                 삭제
@@ -331,6 +341,14 @@ export default function FormulaDesigner({ referenceNames }: Props) {
           </p>
         ) : null}
       </header>
+
+      {priceBookOpen ? (
+        <PriceBookPanel
+          prices={prices}
+          onChanged={() => setRefresh((value) => value + 1)}
+          onClose={() => setPriceBookOpen(false)}
+        />
+      ) : null}
 
       {libraryOpen ? (
         <FormulaLibrary

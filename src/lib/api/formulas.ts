@@ -48,8 +48,17 @@ export function fetchVersionSheet(id: string, version: number) {
   return request<{ sheet: FormulaSheet }>(`/api/formulas?id=${encodeURIComponent(id)}&version=${version}`)
 }
 
+/** 원료단가 기억장. 배합비와 다른 표라서 주소도 다르다. */
 export function fetchIngredientPrices(signal?: AbortSignal) {
-  return request<{ prices: IngredientPrice[] }>('/api/formulas?prices=1', { signal })
+  return request<{ prices: IngredientPrice[] }>('/api/ingredient-prices', { signal })
+}
+
+export function deleteIngredientPrice(name: string) {
+  return request<{ deleted: number }>('/api/ingredient-prices', jsonInit('DELETE', { name }))
+}
+
+export function clearIngredientPrices() {
+  return request<{ deleted: number }>('/api/ingredient-prices', jsonInit('DELETE', { all: true }))
 }
 
 export type FormulaPayload = {

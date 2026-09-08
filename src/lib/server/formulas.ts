@@ -281,6 +281,23 @@ export async function listIngredientPrices(): Promise<IngredientPrice[]> {
     updated_at::text as "updatedAt" from oem_ingredient_prices order by updated_at desc limit 2000`
 }
 
+/**
+ * 원료단가 한 건을 지운다. 표기 차이를 무시한 이름으로 찾으므로
+ * 화면에 보이는 이름을 그대로 넘기면 된다.
+ */
+export async function deleteIngredientPrice(name: string): Promise<number> {
+  const sql = await database()
+  const rows = await sql`delete from oem_ingredient_prices where name_key = ${nameKey(name)} returning name_key`
+  return rows.length
+}
+
+/** 원료단가 기억장을 비운다. 배합비·견적은 건드리지 않는다(별도 표). */
+export async function clearIngredientPrices(): Promise<number> {
+  const sql = await database()
+  const rows = await sql`delete from oem_ingredient_prices returning name_key`
+  return rows.length
+}
+
 /** 저장할 때 시트에 적힌 단가를 기억장에 올린다. 같은 원료는 최근 값으로 덮는다. */
 export async function saveIngredientPrices(rows: { name: string; unitPrice: number; note: string }[]) {
   if (!rows.length) return
