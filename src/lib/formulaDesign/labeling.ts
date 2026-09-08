@@ -17,6 +17,8 @@
  * 이론값은 힌트로만 보여주고, 넣을지는 사람이 정한다.
  */
 
+import { rdaKey } from '../rda'
+
 /**
  * 표시 단위 환산 계수. 표시량 1 단위가 기준 성분 몇 mg(또는 ㎍)인지가 아니라,
  * **표시 당량 → 실제 성분량** 으로 나눌 값이다.
@@ -161,52 +163,60 @@ export function potencyHint(name: string): { percent: number; basis: string; not
 }
 
 /**
- * 일일영양성분 기준치(식품등의 표시기준). 표시량 옆의 `%` 를 계산하는 분모다.
+ * 1일 영양성분 기준치. 표시량 옆의 `%` 를 계산하는 분모다.
  *
- * 출처를 값마다 남겼다. 고객 문서에 나가는 숫자라 제가 확신하지 못하는 값을 조용히
- * 채우면 안 된다.
+ * 출처: 식품의약품안전처 「식품등의 표시기준」 고시값(2026-09-08 확인).
+ * 이 표는 건강기능식품 공전의 일일섭취기준(`functionalIngredients` 의 `dailyIntake`)과
+ * 다른 표다. 공전 값은 "얼마까지 넣을 수 있는가", 이 표는 "표시량이 하루 기준의 몇
+ * 퍼센트인가" 를 정한다. 화면에서 두 값을 나란히 보여주므로 섞지 않는다.
  *
- *   quote    받은 OEM 견적서에 `함량(비율%)` 이 함께 적혀 있어 역산으로 확인한 값
- *            (예: `나이아신 50mg(333%)` → 15mg)
- *   design   견적서의 표시량이 기준치 100% 설계로 보여 추정한 값. 확인이 필요하다.
- *   unknown  근거가 없어 비워 둔 값. `%` 를 계산하지 않는다.
+ * 값마다 출처를 남긴다. 근거 없는 숫자를 조용히 채우면 고객 문서에 틀린 %가 나간다.
+ *   official  표시기준 고시값
+ *   unknown   고시값을 확인하지 못한 항목. `%` 를 계산하지 않고 화면에 알린다.
  */
-export type NrvSource = 'quote' | 'design' | 'unknown'
+export type NrvSource = 'official' | 'unknown'
 
 export type NrvEntry = { basis: string; amount: number; unit: string; source: NrvSource }
 
 export const DAILY_VALUES: NrvEntry[] = [
-  // 견적서에서 역산으로 확인한 값
-  { basis: '비타민 B1', amount: 1.2, unit: 'mg', source: 'quote' },
-  { basis: '비타민 B2', amount: 1.4, unit: 'mg', source: 'quote' },
-  { basis: '비타민 B6', amount: 1.5, unit: 'mg', source: 'quote' },
-  { basis: '비타민 B12', amount: 2.4, unit: '㎍', source: 'quote' },
-  { basis: '나이아신', amount: 15, unit: 'mg', source: 'quote' },
-  { basis: '판토텐산', amount: 5, unit: 'mg', source: 'quote' },
-  { basis: '비오틴', amount: 30, unit: '㎍', source: 'quote' },
-  { basis: '엽산', amount: 400, unit: '㎍ DFE', source: 'quote' },
-  // 견적서 표시량이 100% 설계로 보이는 값. 표시기준 원문 확인이 필요하다.
-  { basis: '셀레늄', amount: 55, unit: '㎍', source: 'design' },
-  { basis: '망간', amount: 3, unit: 'mg', source: 'design' },
-  { basis: '비타민 E', amount: 11, unit: 'mg α-TE', source: 'design' },
-  // 근거를 확인하지 못한 값. 채우지 않고 화면에 '확인 필요' 로 알린다.
-  { basis: '비타민 A', amount: 0, unit: '㎍ RAE', source: 'unknown' },
-  { basis: '비타민 C', amount: 0, unit: 'mg', source: 'unknown' },
-  { basis: '비타민 D', amount: 0, unit: '㎍', source: 'unknown' },
-  { basis: '비타민 K', amount: 0, unit: '㎍', source: 'unknown' },
-  { basis: '칼슘', amount: 0, unit: 'mg', source: 'unknown' },
-  { basis: '철', amount: 0, unit: 'mg', source: 'unknown' },
-  { basis: '아연', amount: 0, unit: 'mg', source: 'unknown' },
-  { basis: '마그네슘', amount: 0, unit: 'mg', source: 'unknown' },
-  { basis: '요오드', amount: 0, unit: '㎍', source: 'unknown' },
-  { basis: '구리', amount: 0, unit: 'mg', source: 'unknown' },
-  { basis: '인', amount: 0, unit: 'mg', source: 'unknown' },
-  { basis: '칼륨', amount: 0, unit: 'mg', source: 'unknown' },
-  { basis: '크롬', amount: 0, unit: '㎍', source: 'unknown' },
-  { basis: '몰리브덴', amount: 0, unit: '㎍', source: 'unknown' },
+  // 비타민
+  { basis: '비타민 A', amount: 700, unit: '㎍ RAE', source: 'official' },
+  { basis: '비타민 D', amount: 10, unit: '㎍', source: 'official' },
+  { basis: '비타민 E', amount: 11, unit: 'mg α-TE', source: 'official' },
+  { basis: '비타민 K', amount: 70, unit: '㎍', source: 'official' },
+  { basis: '비타민 B1', amount: 1.2, unit: 'mg', source: 'official' },
+  { basis: '비타민 B2', amount: 1.4, unit: 'mg', source: 'official' },
+  { basis: '나이아신', amount: 15, unit: 'mg NE', source: 'official' },
+  { basis: '판토텐산', amount: 5, unit: 'mg', source: 'official' },
+  { basis: '비타민 B6', amount: 1.5, unit: 'mg', source: 'official' },
+  { basis: '비오틴', amount: 30, unit: '㎍', source: 'official' },
+  { basis: '엽산', amount: 400, unit: '㎍', source: 'official' },
+  { basis: '비타민 B12', amount: 2.4, unit: '㎍', source: 'official' },
+  { basis: '비타민 C', amount: 100, unit: 'mg', source: 'official' },
+  // 무기질
+  { basis: '칼슘', amount: 700, unit: 'mg', source: 'official' },
+  { basis: '철', amount: 12, unit: 'mg', source: 'official' },
+  { basis: '마그네슘', amount: 315, unit: 'mg', source: 'official' },
+  { basis: '인', amount: 700, unit: 'mg', source: 'official' },
+  { basis: '아연', amount: 8.5, unit: 'mg', source: 'official' },
+  { basis: '셀레늄', amount: 55, unit: '㎍', source: 'official' },
+  { basis: '망간', amount: 3.0, unit: 'mg', source: 'official' },
+  { basis: '구리', amount: 0.8, unit: 'mg', source: 'official' },
+  { basis: '요오드', amount: 150, unit: '㎍', source: 'official' },
+  { basis: '몰리브덴', amount: 25, unit: '㎍', source: 'official' },
+  { basis: '크롬', amount: 30, unit: '㎍', source: 'official' },
+  { basis: '칼륨', amount: 3500, unit: 'mg', source: 'official' },
+  { basis: '나트륨', amount: 2000, unit: 'mg', source: 'official' },
 ]
 
-const nrvKey = (value: string) => value.normalize('NFKC').toLocaleLowerCase('ko-KR').replace(/[\s·+()-]/g, '')
+/**
+ * 기준 성분 이름을 표의 열쇠로 맞춘다.
+ *
+ * 같은 영양소가 여러 이름으로 온다 - 공전은 `셀레늄(셀렌)` 인데 배합비에는 `셀렌` 으로
+ * 적히고, `니아신`·`아이오딘`·`티아민` 같은 표기도 섞인다. `rda.ts` 에 이미 검토된
+ * 동족체 별칭표가 있으므로 그것을 쓴다(여기에 같은 표를 또 만들지 않는다).
+ */
+const nrvKey = (value: string) => rdaKey(value)
 const NRV_INDEX = new Map(DAILY_VALUES.map((entry) => [nrvKey(entry.basis), entry]))
 
 export function dailyValueFor(basis: string | undefined): NrvEntry | null {
@@ -221,8 +231,12 @@ export type NrvResult =
   | { state: 'unreadable' }
 
 /**
- * 표시량이 일일영양성분 기준치의 몇 %인지. 기준치를 확인하지 못한 영양소는
+ * 표시량이 1일 영양성분 기준치의 몇 %인지. 기준치를 확인하지 못한 영양소는
  * 계산하지 않고 `needs-check` 를 돌려준다 - 근거 없는 숫자를 고객 문서에 넣지 않는다.
+ *
+ * 표시량에 적힌 숫자를 그대로 기준치와 견준다. `400㎍ DFE` 처럼 당량 표기가 붙어도
+ * 숫자와 자릿수(㎍·mg)만 읽는다 - 실제 견적서가 그렇게 계산한다(`엽산 980㎍` 을
+ * 400 과 견주어 245%). 당량 환산은 표시량을 정할 때 이미 반영된 것으로 본다.
  */
 export function dailyValuePercent(basis: string | undefined, labelAmount: string): NrvResult {
   const entry = dailyValueFor(basis)

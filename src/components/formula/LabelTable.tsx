@@ -217,12 +217,10 @@ function LabelRow({
           <button
             type="button"
             onClick={() => onPatch(row.id, { labelPercent: `${Math.round(nrv.percent)}%` })}
-            title={`기준치 ${nrv.entry.amount}${nrv.entry.unit} 기준. 출처: ${
-              nrv.entry.source === 'quote' ? '받은 견적서에서 역산 확인' : '견적서 표시량이 100% 설계로 보여 추정 - 표시기준 원문 확인 필요'
-            }`}
+            title={`1일 영양성분 기준치 ${nrv.entry.amount}${nrv.entry.unit} 기준 (식품등의 표시기준 고시값). 누르면 채웁니다.`}
             className="mx-2 mb-1 block w-full text-right text-[11px] text-accent-strong underline underline-offset-2"
           >
-            {Math.round(nrv.percent).toLocaleString('ko-KR')}%{nrv.entry.source === 'design' ? ' (추정)' : ''}
+            {Math.round(nrv.percent).toLocaleString('ko-KR')}%
           </button>
         ) : nrv.state === 'needs-check' ? (
           <span className="mx-2 mb-1 block text-right text-[11px] text-ink-3">기준치 확인 필요</span>
