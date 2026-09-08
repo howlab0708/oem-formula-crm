@@ -406,7 +406,12 @@ export default function FormulaDesigner({ referenceNames }: Props) {
 
       <QuotePanel quote={sheet.quote} totals={totals} tiers={tiers} dispatch={act} />
 
-      <LabelTable materials={totals.materials} intakeGuide={sheet.spec.intakeGuide} dispatch={act} />
+      <LabelTable
+        materials={totals.materials}
+        intakeGuide={sheet.spec.intakeGuide}
+        unitWeightMg={sheet.spec.unitWeightMg}
+        dispatch={act}
+      />
 
       <SheetExportPanel sheet={sheet} totals={totals} tiers={tiers} />
 

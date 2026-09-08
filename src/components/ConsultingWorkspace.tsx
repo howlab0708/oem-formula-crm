@@ -51,7 +51,7 @@ const FormulaDesigner = dynamic(() => import('@/components/formula/FormulaDesign
   loading: () => <p role="status" className="p-6 text-[14px] text-ink-2">배합 설계 화면을 불러오는 중…</p>,
 })
 
-export default function ConsultingWorkspace() {
+export default function ConsultingWorkspace({ deployLabel }: { deployLabel: string }) {
   const [dataset, setDataset] = useState<StoredDataset | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loadAttempt, setLoadAttempt] = useState(0)
@@ -103,6 +103,7 @@ export default function ConsultingWorkspace() {
       initialProducts={dataset.products ?? SEED_PRODUCTS}
       initialMeta={dataset.meta}
       initialSource={dataset.products ? 'db' : 'seed'}
+      deployLabel={deployLabel}
     />
   )
 }
@@ -111,10 +112,13 @@ function LoadedConsultingWorkspace({
   initialProducts,
   initialSource,
   initialMeta,
+  deployLabel,
 }: {
   initialProducts: Product[]
   initialSource: 'seed' | 'db'
   initialMeta: DatasetMeta | null
+  /** 회사 이름표(`APP_LABEL`). 배포가 여러 개일 때 화면만 보고 구분하려고 붙인다. */
+  deployLabel: string
 }) {
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [source, setSource] = useState<'seed' | 'csv' | 'db'>(initialSource)
@@ -332,6 +336,8 @@ function LoadedConsultingWorkspace({
           </button> : null}
           <div className="min-w-0">
             <h1 className="truncate text-[15px] leading-5 font-semibold text-ink">
+              {/* 회사 이름표를 제목 앞에 둔다. 좁아지면 뒤가 먼저 잘리므로 구분할 이름이 앞에 있어야 한다. */}
+              {deployLabel ? <span className="text-accent-strong">{deployLabel} · </span> : null}
               건기식 OEM 배합비 솔루션
             </h1>
             <p className="truncate text-[12px] leading-4 text-ink-3">

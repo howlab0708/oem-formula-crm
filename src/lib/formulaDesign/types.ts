@@ -39,6 +39,13 @@ export type MaterialRow = {
   basis?: string
   /** 표시량(1일 섭취량 기준, 예: `1.2mg`). 염·혼합제제는 투입량과 다르므로 별도 입력. */
   labelAmount: string
+  /**
+   * 역가(%). 원료 1mg 에 기준 성분이 몇 % 들어있는지. 원료 규격서(CoA)의 값이다.
+   * 이 값이 있으면 표시량에서 배합비율을 역산할 수 있다(`labeling.ts`).
+   */
+  potency: string
+  /** 오버차지(%). 유통 중 감소를 감안한 과량 투입. 보통 10~30%. */
+  overage: string
   /** 일일영양성분 기준치 대비 비율. 표시기준 값을 연구원이 직접 넣는다(예: `100%`). */
   labelPercent: string
   /** 고객용 ‘구성 및 포장지’ 표에 넣을 기능성 원료인지. 부형제는 false. */

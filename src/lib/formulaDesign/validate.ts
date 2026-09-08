@@ -94,6 +94,8 @@ function materialRow(value: unknown, index: number): MaterialRow {
     dailyIntake: text(row.dailyIntake, '일일섭취기준') || undefined,
     basis: text(row.basis, '기준 성분') || undefined,
     labelAmount: text(row.labelAmount, '표시량', 60),
+    potency: numeric(row.potency, '역가'),
+    overage: numeric(row.overage, '오버차지'),
     labelPercent: text(row.labelPercent, '기준치 대비', 40),
     functional: row.functional === true,
   }

@@ -35,6 +35,8 @@ export function newMaterialRow(overrides: Partial<MaterialRow> = {}): MaterialRo
     note: '',
     labelAmount: '',
     labelPercent: '',
+    potency: '',
+    overage: '',
     functional: false,
     ...overrides,
   }
