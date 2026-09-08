@@ -37,33 +37,51 @@ export function MaterialGrid({ materials, totals, lossPercent, index, dispatch }
 
   const patch = (id: string, next: Partial<MaterialRow>) => dispatch({ type: 'material', id, patch: next })
 
-  /** 자동완성으로 고른 원료의 DB 정보를 줄에 얹는다. 단가는 비어 있을 때만 채운다. */
+  /**
+   * 후보에서 기준 정보만 뽑는다. 원료명은 여기 넣지 않는다 -
+   * 원료명은 발주·투입에 쓰는 이름이라 공전 이름으로 바꾸면 배합표가 틀어진다
+   * (산화아연을 투입하고 원료명을 아연으로 적을 수는 없다). 공전 이름은 기준 성분으로 간다.
+   */
+  const standardsOf = (found: Suggestion): Partial<MaterialRow> => ({
+    ingredientId: found.ingredientId,
+    basis: found.basis,
+    dailyIntake: found.dailyIntake,
+    functionality: found.functionality,
+    functional: found.source === 'ingredient',
+    unitPrice: found.unitPrice ? String(found.unitPrice) : '',
+    note: found.note ?? '',
+  })
+
+  /** 목록에서 고른 후보를 줄에 얹는다. 단가·비고는 비어 있을 때만 채운다. */
   const applySuggestion = (row: MaterialRow, suggestion: Suggestion) => {
+    const standards = standardsOf(suggestion)
     patch(row.id, {
+      ...standards,
+      // 고른 후보의 이름을 쓴다. 원료 형태로 연결된 후보는 연구원이 친 이름을 그대로 담고 있다.
       name: suggestion.name,
-      ingredientId: suggestion.ingredientId,
-      basis: suggestion.basis,
-      dailyIntake: suggestion.dailyIntake,
-      functionality: suggestion.functionality,
       functional: suggestion.source === 'ingredient' ? true : row.functional,
-      unitPrice: row.unitPrice || (suggestion.unitPrice ? String(suggestion.unitPrice) : ''),
-      note: row.note || suggestion.note || '',
+      unitPrice: row.unitPrice || standards.unitPrice || '',
+      note: row.note || standards.note || '',
     })
   }
 
-  /** 자동완성 후보 중 이름이 정확히 같은 것에서 기준 정보만 뽑는다(붙여넣기용). */
+  /** 직접 입력·붙여넣은 이름에 기준 정보만 얹는다(이름은 건드리지 않는다). */
   const standardsFor = (name: string): Partial<MaterialRow> | null => {
     const found = exactSuggestion(index, name)
-    if (!found) return null
-    return {
-      ingredientId: found.ingredientId,
-      basis: found.basis,
-      dailyIntake: found.dailyIntake,
-      functionality: found.functionality,
-      functional: found.source === 'ingredient',
-      unitPrice: found.unitPrice ? String(found.unitPrice) : '',
-      note: found.note ?? '',
-    }
+    return found ? standardsOf(found) : null
+  }
+
+  /** 목록에서 고르지 않고 적어 넣은 이름을 공전 원료에 연결한다. 연결되지 않으면 그대로 둔다. */
+  const attachStandards = (row: MaterialRow, name: string) => {
+    const standards = standardsFor(name)
+    if (!standards) return
+    patch(row.id, {
+      ...standards,
+      // 이미 켜 둔 기능성 표시는 끄지 않는다.
+      functional: standards.functional || row.functional,
+      unitPrice: row.unitPrice || standards.unitPrice || '',
+      note: row.note || standards.note || '',
+    })
   }
 
   const onPaste = (event: React.ClipboardEvent, rowIndex: number, column: number) => {
@@ -140,6 +158,7 @@ export function MaterialGrid({ materials, totals, lossPercent, index, dispatch }
                 onPaste={onPaste}
                 onPatch={patch}
                 onApply={applySuggestion}
+                onAttachStandards={attachStandards}
                 onRemove={() => dispatch({ type: 'remove', block: 'materials', id: calc.row.id })}
                 onFillRemainder={() => dispatch({ type: 'fill-remainder', id: calc.row.id })}
               />
@@ -188,6 +207,7 @@ type RowProps = {
   onPaste: (event: React.ClipboardEvent, rowIndex: number, column: number) => void
   onPatch: (id: string, patch: Partial<MaterialRow>) => void
   onApply: (row: MaterialRow, suggestion: Suggestion) => void
+  onAttachStandards: (row: MaterialRow, name: string) => void
   onRemove: () => void
   onFillRemainder: () => void
 }
@@ -200,6 +220,7 @@ function MaterialRowView({
   onPaste,
   onPatch,
   onApply,
+  onAttachStandards,
   onRemove,
   onFillRemainder,
 }: RowProps) {
@@ -220,6 +241,7 @@ function MaterialRowView({
           cellProps={cell(0)}
           onChange={(name) => onPatch(row.id, { name })}
           onApply={(suggestion) => onApply(row, suggestion)}
+          onAttach={(name) => onAttachStandards(row, name)}
         />
       </td>
       <td className="p-0">
@@ -307,12 +329,14 @@ function IngredientNameCell({
   cellProps,
   onChange,
   onApply,
+  onAttach,
 }: {
   row: MaterialRow
   index: SuggestionIndex
   cellProps: Record<string, unknown>
   onChange: (name: string) => void
   onApply: (suggestion: Suggestion) => void
+  onAttach: (name: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
@@ -344,11 +368,9 @@ function IngredientNameCell({
         onBlur={() => {
           // 클릭으로 고르는 경우가 있어 한 틱 뒤에 닫는다.
           setTimeout(() => setOpen(false), 120)
-          // 붙여넣기·직접 입력한 이름이 DB 와 정확히 같으면 기준 정보를 얹어 준다.
-          if (!row.ingredientId && row.name) {
-            const exact = exactSuggestion(index, row.name)
-            if (exact) onApply(exact)
-          }
+          // 목록에서 고르지 않고 직접 적은 이름도 공전 원료로 연결되면 기준 정보를 얹는다.
+          // 이름은 그대로 둔다 - 적어 넣은 원료명이 발주에 쓰는 이름이다.
+          if (!row.ingredientId && row.name) onAttach(row.name)
         }}
         onKeyDown={(event) => {
           if (open && matches.length) {

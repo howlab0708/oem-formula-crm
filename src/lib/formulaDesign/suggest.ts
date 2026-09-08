@@ -16,7 +16,10 @@ import {
   ingredientCategoryLabels,
   type FunctionalIngredient,
 } from '../functionalIngredients'
+import { aliasCandidates, nameKey, sourceFormOf } from './ingredientAliases'
 import type { IngredientPrice } from './types'
+
+export { nameKey }
 
 export type SuggestionSource = 'ingredient' | 'price' | 'reference'
 
@@ -35,14 +38,6 @@ export type Suggestion = {
   note?: string
   /** 인정 기준이 여러 개면 화면에서 확인을 요구한다. */
   standardCount?: number
-}
-
-/** 원료 조회 화면과 같은 정규화. 표기 차이를 무시하고 이름만 남긴다. */
-export function nameKey(value: string): string {
-  return value
-    .normalize('NFKC')
-    .toLocaleLowerCase('ko-KR')
-    .replace(/[\s·･ㆍ+()®™Ⓡ_‐‑–—-]/g, '')
 }
 
 function ingredientIntake(ingredient: FunctionalIngredient): { amount: string; basis: string } {
@@ -78,9 +73,32 @@ const catalogText = new Map(
   ]),
 )
 
+/**
+ * 공전 이름이 품고 있는 동의어를 열쇠로 함께 등록한다.
+ *   `셀레늄(셀렌)`               → 셀레늄, 셀렌
+ *   `EPA 및 DHA 함유 유지(오메가3)` → epa및dha함유유지, 오메가3
+ *   `구아검/구아검가수분해물`      → 구아검, 구아검가수분해물
+ * 이름을 손으로 적지 않고 카탈로그에서 뽑으므로, 공전 자료가 갱신되면 함께 따라온다.
+ */
+function catalogAliasKeys(name: string): string[] {
+  const text = name.normalize('NFKC')
+  const inner = [...text.matchAll(/\(([^)]*)\)/g)].map((match) => match[1])
+  const outer = text.replace(/\([^)]*\)/g, ' ')
+  const keys = [nameKey(text)]
+  for (const part of [outer, ...inner]) {
+    for (const piece of part.split(/[/,]/)) {
+      const key = nameKey(piece)
+      if (key && !keys.includes(key)) keys.push(key)
+    }
+  }
+  return keys
+}
+
 export type SuggestionIndex = {
   all: Suggestion[]
   byKey: Map<string, Suggestion>
+  /** 동의어·원료 형태까지 포함한 연결 색인. 이름으로 공전 원료를 찾을 때 쓴다. */
+  aliases: Map<string, Suggestion>
 }
 
 /**
@@ -92,7 +110,15 @@ export function buildSuggestionIndex(
   referenceNames: string[],
 ): SuggestionIndex {
   const byKey = new Map<string, Suggestion>()
-  for (const item of catalogSuggestions) byKey.set(item.key, { ...item })
+  const aliases = new Map<string, Suggestion>()
+  catalogSuggestions.forEach((item, position) => {
+    const entry = { ...item }
+    byKey.set(item.key, entry)
+    // 공전 이름이 품은 동의어를 연결 색인에 넣는다. 먼저 등록된 쪽을 남긴다.
+    for (const key of catalogAliasKeys(functionalIngredients[position].name)) {
+      if (!aliases.has(key)) aliases.set(key, entry)
+    }
+  })
 
   for (const name of referenceNames) {
     const key = nameKey(name)
@@ -124,12 +150,30 @@ export function buildSuggestionIndex(
     }
   }
 
-  return { all: [...byKey.values()], byKey }
+  return { all: [...byKey.values()], byKey, aliases }
 }
 
-/** 이름이 정확히 같은(표기 차이 무시) 후보. 붙여넣기로 채운 이름에 정보를 얹을 때 쓴다. */
+/**
+ * 이름으로 공전 원료를 찾는다. 직접 입력·붙여넣기로 채운 이름에 기준 정보를 얹을 때 쓴다.
+ *
+ * 표기가 정확히 같지 않아도 연결한다 - 꼬리표(`엽산(고시형)`), 공전 이름의 동의어
+ * (`셀렌` → `셀레늄(셀렌)`), 제제 표기(`비타민c혼합제제`), 원료 형태(`산화아연` → `아연`,
+ * `비타민B1염산염` → `비타민 B1`)까지 본다. 자세한 근거는 `ingredientAliases.ts` 참고.
+ */
 export function exactSuggestion(index: SuggestionIndex, name: string): Suggestion | null {
+  for (const key of aliasCandidates(name)) {
+    const found = index.byKey.get(key) ?? index.aliases.get(key)
+    // 이름만 같은 레퍼런스·단가 항목은 기준 정보를 갖고 있지 않으므로 계속 찾는다.
+    if (found?.source === 'ingredient') return found
+  }
+  // 공전 원료로 연결되지 않으면 이름이 같은 단가·레퍼런스 항목이라도 돌려준다.
   return index.byKey.get(nameKey(name)) ?? null
+}
+
+/** 이 이름이 어떤 원료 형태로 연결됐는지. 화면에 근거를 보여줄 때 쓴다. */
+export function linkReason(name: string): string | null {
+  const source = sourceFormOf(name)
+  return source ? `${source} 공급 원료로 연결` : null
 }
 
 /** 이름이 짧을수록·앞에서 일치할수록·기능성 원료일수록 위로 올린다. */
@@ -165,5 +209,22 @@ export function suggestIngredients(
       a.item.name.length - b.item.name.length ||
       a.item.name.localeCompare(b.item.name, 'ko-KR'),
   )
-  return scored.slice(0, limit).map((entry) => entry.item)
+  const result = scored.slice(0, limit).map((entry) => entry.item)
+
+  /*
+   * 이름만으로는 글자가 겹치지 않는 연결을 맨 앞에 얹는다.
+   * `산화아연` 을 치면 글자가 겹치는 후보가 없어 목록이 비지만, 원료 형태 표를 보면
+   * 아연이다. 이걸 안 올려 주면 연구원은 아연을 손으로 다시 찾아야 한다.
+   *
+   * 이때 넣는 이름은 연구원이 친 이름 그대로다. 원료명은 발주·투입에 쓰는 이름이라
+   * 공전 이름으로 바꿔 버리면 배합표가 틀어진다 - 산화아연을 넣고 아연이라고 적을 수는 없다.
+   * 공전 이름은 기준 성분(basis) 으로만 들어간다.
+   */
+  const typed = query.trim()
+  const linked = exactSuggestion(index, query)
+  if (linked?.source === 'ingredient' && !result.some((item) => item.key === linked.key)) {
+    const reason = linkReason(query) ?? `${linked.name} 기준으로 연결`
+    return [{ ...linked, name: typed, hint: `${reason} · ${linked.hint}` }, ...result].slice(0, limit)
+  }
+  return result
 }
