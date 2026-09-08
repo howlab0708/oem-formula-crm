@@ -2,9 +2,10 @@
 
 import { useRef } from 'react'
 
-export type WorkspaceTab = 'consulting' | 'ingredients' | 'notes'
+export type WorkspaceTab = 'consulting' | 'design' | 'ingredients' | 'notes'
 const tabs = [
   { id: 'consulting', label: '배합비 검색' },
+  { id: 'design', label: '배합 설계' },
   { id: 'ingredients', label: '기능성 원료' },
   { id: 'notes', label: '노트' },
 ] as const

@@ -91,6 +91,24 @@ export async function downloadCanvasAsPdf(canvas: HTMLCanvasElement, fileName: s
   doc.save(fileName)
 }
 
+/**
+ * 이미 A4 비율로 그려 둔 캔버스들을 한 장씩 페이지로 넣는다.
+ *
+ * 위 `downloadCanvasAsPdf` 는 긴 캔버스 하나를 잘라 붙이므로 표가 페이지 경계에서
+ * 반으로 잘린다. 고객에게 나가는 배합 제안서는 페이지별로 그려 두고 이 함수로 담는다.
+ */
+export async function downloadPagesAsPdf(pages: HTMLCanvasElement[], fileName: string) {
+  if (!pages.length) throw new Error('내보낼 페이지가 없습니다.')
+  const { jsPDF } = await import('jspdf')
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4', compress: true })
+  pages.forEach((page, index) => {
+    if (index > 0) doc.addPage()
+    // 페이지 캔버스가 이미 A4 비율이라 여백 없이 전면에 배치한다(캔버스 안에 여백이 있다).
+    doc.addImage(page.toDataURL('image/jpeg', JPEG_QUALITY), 'JPEG', 0, 0, A4.width, A4.height)
+  })
+  doc.save(fileName)
+}
+
 export async function copyText(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text)

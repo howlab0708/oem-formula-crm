@@ -8,3 +8,7 @@ next-env.d.ts
 
 # Claude Code 개인 설정(권한 허용 규칙). 공유하지 않는다.
 .claude/settings.local.json
+
+# 공장에서 받은 실제 견적서 숫자(원료단가·가공비·마진). 저장소가 공개라 올리지 않는다.
+# scripts/verify-formula-calc.mjs 가 이 파일이 있을 때만 실제 금액과 대조한다.
+fixtures/*.local.json

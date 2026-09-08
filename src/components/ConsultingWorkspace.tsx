@@ -47,6 +47,10 @@ const FormulaNotes = dynamic(() => import('@/components/FormulaNotes'), {
   loading: () => <p role="status" className="p-6 text-[14px] text-ink-2">노트를 불러오는 중…</p>,
 })
 
+const FormulaDesigner = dynamic(() => import('@/components/formula/FormulaDesigner'), {
+  loading: () => <p role="status" className="p-6 text-[14px] text-ink-2">배합 설계 화면을 불러오는 중…</p>,
+})
+
 export default function ConsultingWorkspace() {
   const [dataset, setDataset] = useState<StoredDataset | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -133,6 +137,7 @@ function LoadedConsultingWorkspace({
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('consulting')
   const [ingredientsVisited, setIngredientsVisited] = useState(false)
   const [notesVisited, setNotesVisited] = useState(false)
+  const [designVisited, setDesignVisited] = useState(false)
 
   // 조건 반영이 끝난 화면의 상단으로 즉시 이동한다. 왼쪽 조건 목록의 스크롤은 유지한다.
   useLayoutEffect(() => {
@@ -208,6 +213,16 @@ function LoadedConsultingWorkspace({
   )
 
   const markers = useMemo(() => markerCatalog(products, 60), [products])
+
+  /**
+   * 배합 설계 탭의 원료명 자동완성 보조 목록.
+   * 부형제(결정셀룰로오스·스테아린산마그네슘 등)는 기능성 원료 DB 에 없으므로
+   * 레퍼런스에서 실제로 쓰인 부원료·주원료 이름을 후보로 함께 넣는다.
+   */
+  const referenceNames = useMemo(
+    () => [...options.subs.map((option) => option.value), ...options.mains.map((option) => option.value)],
+    [options.subs, options.mains],
+  )
 
   const filtered = useMemo(() => applyFilters(products, filters), [products, filters])
 
@@ -337,6 +352,7 @@ function LoadedConsultingWorkspace({
         setActiveTab(tab)
         if (tab === 'ingredients') setIngredientsVisited(true)
         if (tab === 'notes') setNotesVisited(true)
+        if (tab === 'design') setDesignVisited(true)
       }} />
 
       <div id="workspace-panel-consulting" role="tabpanel" aria-labelledby="workspace-tab-consulting"
@@ -441,6 +457,11 @@ function LoadedConsultingWorkspace({
             />
           </div>
         </main>
+      </div>
+
+      <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design"
+        hidden={activeTab !== 'design'} className={activeTab === 'design' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
+        {designVisited ? <FormulaDesigner referenceNames={referenceNames} /> : null}
       </div>
 
       <div id="workspace-panel-ingredients" role="tabpanel" aria-labelledby="workspace-tab-ingredients"
