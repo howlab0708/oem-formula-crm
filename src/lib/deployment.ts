@@ -27,3 +27,14 @@ export function pageTitle(): string {
   const label = deployLabel()
   return label ? `${label} · ${BASE_TITLE}` : BASE_TITLE
 }
+
+/**
+ * 로그인 화면의 탭 제목. 여기도 이름표를 앞에 붙인다.
+ *
+ * 로그인 전 화면이 가장 위험하다 - 두 회사 사이트가 똑같이 보이는데 여기서 헷갈리면
+ * 다른 회사 사이트에 그 회사 비밀번호를 입력하게 된다.
+ */
+export function loginTitle(): string {
+  const label = deployLabel()
+  return label ? `${label} 로그인 · ${BASE_TITLE}` : `로그인 · ${BASE_TITLE}`
+}

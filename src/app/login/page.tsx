@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import { safeNextPath } from '@/lib/auth'
+import { deployLabel, loginTitle } from '@/lib/deployment'
 
 export const metadata: Metadata = {
-  title: '로그인 · 건기식 OEM 배합비 솔루션',
+  // 회사 이름표를 앞에 붙인다. 두 회사 사이트를 탭으로 구분해야 한다.
+  title: loginTitle(),
   robots: { index: false, follow: false },
 }
 
@@ -15,13 +17,24 @@ export default async function LoginPage({ searchParams }: Props) {
   const next = safeNextPath(params.next)
   const wrongPassword = params.error === '1'
   const missingConfig = params.setup === '1'
+  const label = deployLabel()
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-canvas px-4 py-10">
       <div className="w-full max-w-sm">
+        {/*
+          회사 이름표를 비밀번호 칸보다 먼저, 크게 보여준다. 로그인 전에는 화면에 다른
+          단서가 없어서, 여기서 회사를 헷갈리면 다른 회사 사이트에 그 회사 비밀번호를
+          입력하게 된다. 회사가 한 곳이면(APP_LABEL 없음) 지금까지처럼 보인다.
+        */}
+        {label ? (
+          <p className="text-[15px] leading-5 font-semibold text-accent-strong">{label}</p>
+        ) : null}
         <h1 className="text-[18px] leading-6 font-semibold text-ink">건기식 OEM 배합비 솔루션</h1>
         <p className="mt-1.5 text-[13px] leading-5 text-ink-3 keep-all">
-          사내 영업용 도구입니다. 전달받은 비밀번호를 입력하세요.
+          {label
+            ? `${label} 전용 주소입니다. 전달받은 비밀번호를 입력하세요.`
+            : '사내 영업용 도구입니다. 전달받은 비밀번호를 입력하세요.'}
         </p>
 
         {missingConfig ? (
