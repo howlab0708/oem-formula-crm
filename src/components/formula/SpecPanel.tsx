@@ -7,7 +7,7 @@
  * 수량이 전부 나온다. 그래서 이 블록만 고쳐도 표 세 개가 같이 다시 계산된다.
  */
 
-import { formatKg, packageLabel } from '@/lib/formulaDesign/calc'
+import { formatKg, num, packageLabel } from '@/lib/formulaDesign/calc'
 import type { Totals } from '@/lib/formulaDesign/calc'
 import type { SheetAction } from '@/lib/formulaDesign/reducer'
 import type { PackagingSpec } from '@/lib/formulaDesign/types'
@@ -16,6 +16,20 @@ import { FORM_TYPES } from '@/lib/types'
 const fieldClass =
   'w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] text-ink placeholder:text-ink-3'
 
+/**
+ * 목적격 조사. 앞말에 받침이 있으면 `을`, 없으면 `를`.
+ *
+ * 빠진 칸 이름을 이어 붙여 문장을 만들므로 조사가 그때마다 달라진다
+ * (`1회분 중량을` / `1세트 개수를` / `수량을`).
+ */
+function objectParticle(word: string): string {
+  const last = word.trim().at(-1)
+  if (!last) return '를'
+  const code = last.charCodeAt(0)
+  if (code < 0xac00 || code > 0xd7a3) return '를'
+  return (code - 0xac00) % 28 === 0 ? '를' : '을'
+}
+
 type Props = { spec: PackagingSpec; totals: Totals; dispatch: (action: SheetAction) => void }
 
 export function SpecPanel({ spec, totals, dispatch }: Props) {
@@ -23,6 +37,21 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
     dispatch({ type: 'spec', key, value: event.target.value })
 
   const label = packageLabel(spec)
+
+  /*
+   * 아래 표가 전부 0 으로 나오는 원인은 거의 늘 이 세 칸이다. 무엇이 비었는지 이름으로
+   * 말해 준다 - 안내문(placeholder)을 이미 채워진 값으로 착각하고, 원가가 0 인 이유를
+   * 화면 위쪽 세 칸에서 찾지 못하는 일이 처음 쓸 때 실제로 생긴다.
+   */
+  const missing = (
+    [
+      ['1회분 중량', spec.unitWeightMg],
+      ['1세트 개수', spec.unitsPerSet],
+      ['수량', spec.setCount],
+    ] as const
+  )
+    .filter(([, value]) => num(value) <= 0)
+    .map(([name]) => name)
 
   return (
     <section aria-labelledby="spec-panel-title" className="rounded-lg border border-line bg-surface p-3">
@@ -33,13 +62,24 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
         <p className="text-[12px] text-ink-3">
           {label ? (
             <>
-              규격 <span className="font-medium text-ink">{label}</span> · 총 배합량{' '}
-              <span className="tnum font-medium text-ink">{formatKg(totals.totalBatchKg, 2)}kg</span> · 총{' '}
-              <span className="tnum font-medium text-ink">{totals.totalUnits.toLocaleString('ko-KR')}</span>개
+              규격 <span className="font-medium text-ink">{label}</span>
+              {missing.length === 0 ? (
+                <>
+                  {' '}· 총 배합량{' '}
+                  <span className="tnum font-medium text-ink">{formatKg(totals.totalBatchKg, 2)}kg</span> · 총{' '}
+                  <span className="tnum font-medium text-ink">{totals.totalUnits.toLocaleString('ko-KR')}</span>개
+                </>
+              ) : (
+                ' · '
+              )}
             </>
-          ) : (
-            '1정 중량과 1세트 개수를 입력하면 규격과 배합 총량이 계산됩니다.'
-          )}
+          ) : null}
+          {missing.length > 0 ? (
+            <span className="font-medium text-accent-strong">
+              {missing.join(' · ')}
+              {objectParticle(missing[missing.length - 1])} 입력하면 원가가 계산됩니다
+            </span>
+          ) : null}
         </p>
       </div>
 
@@ -64,13 +104,13 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
         </Field>
 
         <Field label="1회분 중량 (mg)" hint="1정·1캡슐·1포의 중량">
-          <input className={`${fieldClass} text-right tnum`} value={spec.unitWeightMg} onChange={set('unitWeightMg')} inputMode="numeric" placeholder="800" />
+          <input className={`${fieldClass} text-right tnum`} value={spec.unitWeightMg} onChange={set('unitWeightMg')} inputMode="numeric" placeholder="예: 800" />
         </Field>
         <Field label="1세트 개수" hint="한 통에 들어가는 정 수">
-          <input className={`${fieldClass} text-right tnum`} value={spec.unitsPerSet} onChange={set('unitsPerSet')} inputMode="numeric" placeholder="60" />
+          <input className={`${fieldClass} text-right tnum`} value={spec.unitsPerSet} onChange={set('unitsPerSet')} inputMode="numeric" placeholder="예: 60" />
         </Field>
         <Field label="수량 (set)" hint="발주 수량">
-          <input className={`${fieldClass} text-right tnum`} value={spec.setCount} onChange={set('setCount')} inputMode="numeric" placeholder="1000" />
+          <input className={`${fieldClass} text-right tnum`} value={spec.setCount} onChange={set('setCount')} inputMode="numeric" placeholder="예: 1,000" />
         </Field>
         <Field label="Loss율 (%)" hint="원료 투입량 할증. 공장마다 3~10%">
           <input className={`${fieldClass} text-right tnum`} value={spec.lossPercent} onChange={set('lossPercent')} inputMode="decimal" placeholder="10" />
