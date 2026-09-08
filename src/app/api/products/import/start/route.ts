@@ -1,12 +1,19 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { validateProvenance } from '@/lib/datasetProvenance'
-import { isDatabaseConfigured, startImport } from '@/lib/db'
+import { canReplaceDataset, isDatabaseConfigured, startImport } from '@/lib/db'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
 /** 새 CSV 적재를 시작하고 이 적재를 식별할 세대 id 를 발급한다. */
 export async function POST(request: NextRequest) {
+  if (!canReplaceDataset()) {
+    return NextResponse.json(
+      { error: '이 배포에서는 제품 레퍼런스를 바꿀 수 없습니다. 데이터 관리 배포에서 올려 주세요.' },
+      { status: 403 },
+    )
+  }
+
   if (!isDatabaseConfigured()) {
     return NextResponse.json(
       { error: 'POSTGRES_URL 이 설정되어 있지 않습니다.' },

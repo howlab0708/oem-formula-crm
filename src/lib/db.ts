@@ -12,6 +12,7 @@
  */
 
 import postgres from 'postgres'
+import type { TransactionSql } from 'postgres'
 import type { DatasetProvenance } from './datasetProvenance'
 import type { Product } from './types'
 
@@ -53,6 +54,77 @@ export function getSql() {
     connect_timeout: 10,
   })
   return sqlInstance
+}
+
+/**
+ * 이 배포가 쓰는 회사 스키마 이름.
+ *
+ * 회사마다 배포를 따로 두고 `APP_TENANT` 만 다르게 준다. 값이 없으면 `public` -
+ * 회사가 한 곳뿐인 기존 배포가 그대로 동작한다.
+ *
+ * 제품 레퍼런스(`products`, `import_status`, `oem_cache.dataset_snapshots`)는 이
+ * 스키마에 넣지 않는다. 식약처 공개 데이터라 회사별로 가릴 이유가 없고, 159MB 를
+ * 회사마다 복사하면 무료 요금제 용량(500MB)에 세 곳부터 들어가지 않는다.
+ * 회사별로 나누는 것은 배합비·노트·원료단가·즐겨찾기뿐이다.
+ */
+export function tenantSchema(): string {
+  const raw = process.env.APP_TENANT?.trim()
+  if (!raw) return 'public'
+  // SQL 식별자로 그대로 들어가는 값이라 형태를 좁게 제한한다.
+  if (!/^[a-z_][a-z0-9_]{0,40}$/.test(raw)) {
+    throw new Error('APP_TENANT 는 소문자·숫자·밑줄만 쓸 수 있습니다(첫 글자는 문자 또는 밑줄).')
+  }
+  if (raw === 'pg_catalog' || raw.startsWith('pg_')) {
+    throw new Error('APP_TENANT 에 pg_ 로 시작하는 이름은 쓸 수 없습니다.')
+  }
+  return raw
+}
+
+/** 회사 데이터를 읽고 쓰는 트랜잭션. 이 안에서만 회사 표에 접근한다. */
+export type TenantSql = TransactionSql
+
+/**
+ * 회사 스키마로 한정한 트랜잭션을 열어 준다.
+ *
+ * `search_path` 에 이 회사 스키마만 넣는다 - `public` 을 뒤에 붙이지 않는 게 핵심이다.
+ * 붙이면 회사 스키마에 표가 없을 때 조용히 `public` 의 표로 넘어가, 다른 회사 데이터가
+ * 보이는 최악의 실패가 된다. 지금 형태에서는 표가 없으면 오류로 멈춘다.
+ *
+ * `set local` 이라 트랜잭션이 끝나면 되돌아간다. 커넥션 풀러가 접속을 돌려 써도
+ * 다음 요청에 설정이 새지 않는다.
+ *
+ * 회사 표를 다루는 모듈은 `getSql` 을 직접 쓰지 않고 이 함수만 쓴다.
+ * `scripts/verify-tenant-isolation.mjs` 가 그 규칙을 확인한다.
+ */
+export async function withTenant<T>(run: (tx: TenantSql) => Promise<T>): Promise<T> {
+  const schema = tenantSchema()
+  const sql = getSql()
+  return sql.begin(async (tx) => {
+    await tx.unsafe(`set local search_path to ${schema}`)
+    return run(tx)
+  }) as Promise<T>
+}
+
+/**
+ * 이 배포에서 제품 레퍼런스 CSV 를 갈아 끼울 수 있는지.
+ *
+ * 제품 레퍼런스는 회사별로 나누지 않고 한 벌만 둔다(용량 때문에). 그래서 어느
+ * 배포에서 CSV 를 올리면 다른 회사가 보는 데이터 기준일까지 함께 바뀐다.
+ * 식약처 공개 데이터를 관리하는 쪽(관리자 배포)에서만 올리도록 `APP_DATASET_ADMIN=1`
+ * 이 있을 때만 허용한다.
+ *
+ * 회사가 한 곳뿐이면(`APP_TENANT` 없음) 지금까지처럼 그냥 올릴 수 있다.
+ */
+export function canReplaceDataset(): boolean {
+  if (tenantSchema() === 'public') return true
+  return process.env.APP_DATASET_ADMIN === '1'
+}
+
+/** 회사 스키마를 만든다. 표 생성 전에 한 번 부른다. */
+export async function ensureTenantSchema(): Promise<void> {
+  const schema = tenantSchema()
+  if (schema === 'public') return
+  await getSql().unsafe(`create schema if not exists ${schema}`)
 }
 
 async function ensureSchema(): Promise<void> {

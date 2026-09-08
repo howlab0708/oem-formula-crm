@@ -1,11 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { finishImport, isDatabaseConfigured } from '@/lib/db'
+import { canReplaceDataset, finishImport, isDatabaseConfigured } from '@/lib/db'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
 /** 이 세대를 "완료"로 표시하고 이전 세대들은 지운다(연쇄삭제로 상품 행도 함께). */
 export async function POST(request: NextRequest) {
+  if (!canReplaceDataset()) {
+    return NextResponse.json(
+      { error: '이 배포에서는 제품 레퍼런스를 바꿀 수 없습니다. 데이터 관리 배포에서 올려 주세요.' },
+      { status: 403 },
+    )
+  }
+
   if (!isDatabaseConfigured()) {
     return NextResponse.json(
       { error: 'POSTGRES_URL 이 설정되어 있지 않습니다.' },

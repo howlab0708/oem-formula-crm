@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { insertBatch, isDatabaseConfigured } from '@/lib/db'
+import { canReplaceDataset, insertBatch, isDatabaseConfigured } from '@/lib/db'
 import type { Product } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -16,6 +16,13 @@ function isProduct(value: unknown): value is Product {
 
 /** 파싱된 Product 배열 한 조각을 적재한다. */
 export async function POST(request: NextRequest) {
+  if (!canReplaceDataset()) {
+    return NextResponse.json(
+      { error: '이 배포에서는 제품 레퍼런스를 바꿀 수 없습니다. 데이터 관리 배포에서 올려 주세요.' },
+      { status: 403 },
+    )
+  }
+
   if (!isDatabaseConfigured()) {
     return NextResponse.json(
       { error: 'POSTGRES_URL 이 설정되어 있지 않습니다.' },
