@@ -8,6 +8,12 @@
 import type { FormType, Product } from './types'
 import { isPillForm } from './unitWeight'
 import { compactSearchText, mainIngredientKey, mainIngredientLabel } from './ingredientNames'
+import {
+  ORIGIN_LABELS,
+  originOfForm,
+  productSources,
+  type SourceOrigin,
+} from './ingredientSource'
 
 export type MarkerFilter = {
   name: string
@@ -29,6 +35,14 @@ export type FilterState = {
   weightMin: number | null
   weightMax: number | null
   marker: MarkerFilter | null
+  /** 원료 형태를 볼 영양성분. 고르면 아래 두 조건이 이 성분에만 적용된다. */
+  sourceNutrient: string | null
+  /** 그 영양성분의 원료 형태 - 하나라도 포함 */
+  sourceForms: string[]
+  /** 그 영양성분의 원료 형태 - 하나라도 있으면 제외 */
+  sourceFormExclude: string[]
+  /** 원료 기원(효모·천연물·화학합성). 영양성분을 고르면 그 성분의 기원만 본다. */
+  sourceOrigins: SourceOrigin[]
 }
 
 export const EMPTY_FILTERS: FilterState = {
@@ -42,6 +56,10 @@ export const EMPTY_FILTERS: FilterState = {
   weightMin: null,
   weightMax: null,
   marker: null,
+  sourceNutrient: null,
+  sourceForms: [],
+  sourceFormExclude: [],
+  sourceOrigins: [],
 }
 
 function lower(values: string[]): Set<string> {
@@ -104,8 +122,47 @@ export function applyFilters(products: Product[], filters: FilterState): Product
       if (max !== null && marker.value > max) return false
     }
 
+    if (!matchesSource(product, filters)) return false
+
     return true
   })
+}
+
+/**
+ * 원료 형태 조건.
+ *
+ * 영양성분을 고르면 그 성분을 공급한 원료만 본다 - '아연 + 효모 유래' 는
+ * "아연을 건조효모로 넣은 제품" 이지, "아연이 있고 어딘가에 효모도 들어간 제품"
+ * 이 아니다. 영양성분을 고르지 않았을 때만 제품 전체의 원료를 훑는다.
+ */
+function matchesSource(product: Product, filters: FilterState): boolean {
+  const { sourceNutrient, sourceForms, sourceFormExclude, sourceOrigins } = filters
+  if (!sourceNutrient && sourceForms.length === 0 && sourceFormExclude.length === 0 && sourceOrigins.length === 0) {
+    return true
+  }
+
+  const sources = productSources(product)
+
+  if (sourceNutrient) {
+    const forms = sources.forms.get(sourceNutrient)
+    if (!forms) return false
+    if (sourceForms.length > 0 && !sourceForms.some((form) => forms.has(form))) return false
+    if (sourceFormExclude.some((form) => forms.has(form))) return false
+    if (sourceOrigins.length > 0) {
+      const matched = [...forms].some((form) => sourceOrigins.includes(originOfForm(form)))
+      if (!matched) return false
+    }
+    return true
+  }
+
+  const allForms = [...sources.forms.values()]
+  if (sourceForms.length > 0 && !allForms.some((forms) => sourceForms.some((form) => forms.has(form)))) return false
+  if (sourceFormExclude.length > 0 && allForms.some((forms) => sourceFormExclude.some((form) => forms.has(form)))) {
+    return false
+  }
+  if (sourceOrigins.length > 0 && !sourceOrigins.some((origin) => sources.origins.has(origin))) return false
+
+  return true
 }
 
 export function activeFilterCount(filters: FilterState): number {
@@ -118,6 +175,10 @@ export function activeFilterCount(filters: FilterState): number {
   count += filters.subExclude.length
   if (filters.weightMin !== null || filters.weightMax !== null) count += 1
   if (filters.marker) count += 1
+  // 영양성분 자체는 형태·기원을 고르기 위한 문맥이라, 조건이 붙었을 때만 센다.
+  if (filters.sourceNutrient && (filters.sourceForms.length > 0 || filters.sourceOrigins.length > 0)) count += 1
+  else count += filters.sourceForms.length + filters.sourceOrigins.length
+  count += filters.sourceFormExclude.length
   return count
 }
 
@@ -203,6 +264,37 @@ export function filterChips(filters: FilterState): FilterChip[] {
       group: '지표성분',
       label: `${name} ${rangeLabel(min, max, unit)}`,
       remove: (f) => ({ ...f, marker: null }),
+    })
+  }
+
+  // 형태·기원 칩은 어느 영양성분 얘기인지 함께 적는다. '혼합제제' 만 떠 있으면
+  // 무엇의 혼합제제인지 알 수 없어 내보낸 브리핑에서 조건을 되읽을 수 없다.
+  const scope = filters.sourceNutrient ? `${filters.sourceNutrient} ` : ''
+
+  for (const form of filters.sourceForms) {
+    chips.push({
+      key: `sourceForm:${form}`,
+      group: '원료 형태',
+      label: `${scope}${form}`,
+      remove: (f) => ({ ...f, sourceForms: f.sourceForms.filter((v) => v !== form) }),
+    })
+  }
+
+  for (const form of filters.sourceFormExclude) {
+    chips.push({
+      key: `sourceForm-:${form}`,
+      group: '원료 형태 제외',
+      label: `${scope}${form}`,
+      remove: (f) => ({ ...f, sourceFormExclude: f.sourceFormExclude.filter((v) => v !== form) }),
+    })
+  }
+
+  for (const origin of filters.sourceOrigins) {
+    chips.push({
+      key: `sourceOrigin:${origin}`,
+      group: '원료 기원',
+      label: `${scope}${ORIGIN_LABELS[origin]}`,
+      remove: (f) => ({ ...f, sourceOrigins: f.sourceOrigins.filter((v) => v !== origin) }),
     })
   }
 

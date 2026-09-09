@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { formatInt, formatMilligrams } from '@/lib/format'
+import { ORIGIN_LABELS, originOfForm, productSources } from '@/lib/ingredientSource'
 import type { Product } from '@/lib/types'
 
 type Props = {
@@ -46,6 +47,15 @@ export function DetailPanel({
     const id = window.setTimeout(() => setRendered(null), 220)
     return () => window.clearTimeout(id)
   }, [product])
+
+  // 판정 결과는 제품별로 캐시되므로(productSources) 여기서 매 렌더 계산해도 값싸다.
+  const sources = rendered ? productSources(rendered) : null
+  const sourceRows = sources
+    ? [...sources.forms.entries()]
+        .map(([nutrient, forms]) => ({ nutrient, forms: [...forms].sort((a, b) => a.localeCompare(b, 'ko')) }))
+        .sort((a, b) => a.nutrient.localeCompare(b.nutrient, 'ko'))
+    : []
+  const excipientForms = sources ? [...sources.excipientForms] : []
 
   useEffect(() => {
     if (!open) return
@@ -181,6 +191,44 @@ export function DetailPanel({
                 </p>
               ) : rendered.markers.length === 0 ? (
                 <p className="text-[13px] text-ink-3">표기 없음</p>
+              ) : null}
+            </Block>
+
+            {/* 원재료명에 적힌 형태를 성분별로 되짚어 준다 - 같은 아연도 산화아연과
+                건조효모는 취급·단가·라벨 소구가 다르다. */}
+            <Block label="영양성분 원료 형태">
+              {sourceRows.length ? (
+                <table className="w-full border-collapse text-[13px]">
+                  <tbody>
+                    {sourceRows.map((row) => (
+                      <tr key={row.nutrient} className="border-b border-line last:border-b-0">
+                        <td className="py-2 pr-3 align-top text-ink-2 keep-all">{row.nutrient}</td>
+                        <td className="py-2 text-right text-ink keep-all">
+                          {row.forms.map((form) => {
+                            const origin = originOfForm(form)
+                            return (
+                              <span key={form} className="block">
+                                {form}
+                                {/* 형태 이름이 이미 '(형태 미표기)' 라고 말하면 같은 말을 두 번 쓰지 않는다. */}
+                                {origin === 'unspecified' ? null : (
+                                  <span className="ml-1.5 text-[12px] text-ink-3">{ORIGIN_LABELS[origin]}</span>
+                                )}
+                              </span>
+                            )
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-[13px] text-ink-3">원재료명에서 영양성분 원료를 찾지 못했습니다.</p>
+              )}
+              {/* 영양원으로 세지 않은 이유를 남긴다. 조용히 빼면 왜 칼슘이 안 잡히는지 알 수 없다. */}
+              {excipientForms.length > 0 ? (
+                <p className="mt-2 text-[12px] leading-4 text-ink-3 keep-all">
+                  부형제로 판정해 영양원에서 뺀 원료: {excipientForms.join(' · ')}
+                </p>
               ) : null}
             </Block>
 

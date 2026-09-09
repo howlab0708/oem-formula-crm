@@ -35,6 +35,7 @@ import {
 import { formatInt } from '@/lib/format'
 import { filterHistoryReducer, INITIAL_FILTER_HISTORY, type FilterUpdate } from '@/lib/filterHistory'
 import { mainIngredientKey, uniqueMainIngredients } from '@/lib/ingredientNames'
+import { sourceFormOptions, sourceNutrientOptions } from '@/lib/ingredientSource'
 import { REFERENCE_PAGE_SIZE } from '@/lib/pagination'
 import { SEED_PRODUCTS } from '@/lib/seed'
 import type { FormType, Product } from '@/lib/types'
@@ -212,9 +213,17 @@ function LoadedConsultingWorkspace({
       forms: formOptions(products),
       manufacturers: manufacturerOptions(products),
       subs: subIngredientOptions(products),
+      sourceNutrients: sourceNutrientOptions(products),
     }),
     [products],
   )
+
+  // 형태 목록은 고른 영양성분에만 달려 있다. 성분을 바꿀 때 나머지 목록까지 다시 세지 않는다.
+  const sourceForms = useMemo(
+    () => (filters.sourceNutrient ? sourceFormOptions(products, filters.sourceNutrient) : []),
+    [products, filters.sourceNutrient],
+  )
+  const railOptions = useMemo(() => ({ ...options, sourceForms }), [options, sourceForms])
 
   const markers = useMemo(() => markerCatalog(products, 60), [products])
 
@@ -389,7 +398,7 @@ function LoadedConsultingWorkspace({
             }}
             onEndEdit={() => dispatchFilters({ type: 'end-edit' })}
             activeCount={activeCount}
-            options={options}
+            options={railOptions}
             markers={markers}
             savedSearches={<SavedSearches current={{ filters, rdaProfile, generation: datasetMeta?.generation ?? null, resultCount: filtered.length }} onRestore={restoreSaved} onNotice={setSavedNotice} />}
             importer={

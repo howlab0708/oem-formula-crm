@@ -1,6 +1,7 @@
 import type { FilterState } from './filters'
 import { FORM_TYPES } from './types'
 import { isRdaProfile } from './rda'
+import { ORIGIN_ORDER, type SourceOrigin } from './ingredientSource'
 
 export type SavedSearchInput = {
   name: string; scope: 'private' | 'team'; filters: FilterState; rdaProfile: string
@@ -22,8 +23,19 @@ const number = (v: unknown): number | null => {
   return v
 }
 const list = (v: unknown): string[] => {
+  if (v === undefined) return []
   if (!Array.isArray(v) || v.length > 200) throw new Error('선택한 조건이 너무 많습니다.')
   return [...new Set(v.map(item => text(item, 500)))]
+}
+// 원료 형태 조건은 나중에 붙었다. 그 전에 저장한 검색에는 이 칸이 없으므로 빈 값으로 읽는다.
+const origins = (v: unknown): SourceOrigin[] => {
+  const values = list(v)
+  if (values.some(value => !(ORIGIN_ORDER as string[]).includes(value))) throw new Error('원료 기원 조건을 확인해 주세요.')
+  return values as SourceOrigin[]
+}
+const optionalText = (v: unknown, max: number): string | null => {
+  if (v === undefined || v === null) return null
+  return text(v, max)
 }
 export function validateSavedSearch(value: unknown): SavedSearchInput {
   const body = object(value), f = object(body.filters)
@@ -35,6 +47,8 @@ export function validateSavedSearch(value: unknown): SavedSearchInput {
     forms: forms as FilterState['forms'], manufacturers: list(f.manufacturers), subInclude: list(f.subInclude), subExclude: list(f.subExclude),
     weightMin: number(f.weightMin), weightMax: number(f.weightMax),
     marker: marker ? { name: text(marker.name, 500), unit: text(marker.unit, 50), min: number(marker.min), max: number(marker.max) } : null,
+    sourceNutrient: optionalText(f.sourceNutrient, 100), sourceForms: list(f.sourceForms),
+    sourceFormExclude: list(f.sourceFormExclude), sourceOrigins: origins(f.sourceOrigins),
   }
   const name = text(body.name, 100).trim()
   if (!name || !['private','team'].includes(String(body.scope)) || !isRdaProfile(body.rdaProfile)) throw new Error('검색 이름·공개 범위·권장량 비교 대상을 확인해 주세요.')

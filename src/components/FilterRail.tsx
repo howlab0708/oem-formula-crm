@@ -4,8 +4,10 @@ import type { ReactNode } from 'react'
 import { RangeFields } from '@/components/filters/RangeFields'
 import { TokenMultiSelect } from '@/components/filters/TokenMultiSelect'
 import { FilterControls } from '@/components/filters/FilterControls'
+import { SourceFormPicker } from '@/components/filters/SourceFormPicker'
 import type { FilterState, Option } from '@/lib/filters'
 import { formatInt } from '@/lib/format'
+import type { SourceFormOption } from '@/lib/ingredientSource'
 import type { FormType } from '@/lib/types'
 
 export type MarkerOption = { name: string; unit: string; count: number }
@@ -23,6 +25,8 @@ type Props = {
     forms: Option[]
     manufacturers: Option[]
     subs: Option[]
+    sourceNutrients: Array<{ value: string; count: number }>
+    sourceForms: SourceFormOption[]
   }
   markers: MarkerOption[]
   savedSearches?: ReactNode
@@ -106,6 +110,30 @@ export function FilterRail({
             </div>
           </div>
         ) : null}
+      </Section>
+
+      <Section>
+        <SourceFormPicker
+          value={{
+            nutrient: filters.sourceNutrient,
+            forms: filters.sourceForms,
+            exclude: filters.sourceFormExclude,
+            origins: filters.sourceOrigins,
+          }}
+          onChange={(next) =>
+            patch(
+              {
+                sourceNutrient: next.nutrient,
+                sourceForms: next.forms,
+                sourceFormExclude: next.exclude,
+                sourceOrigins: next.origins,
+              },
+              'source',
+            )
+          }
+          nutrients={options.sourceNutrients}
+          forms={options.sourceForms}
+        />
       </Section>
 
       <Section>
