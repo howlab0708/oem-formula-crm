@@ -1,19 +1,24 @@
 'use client'
 
-import { useId, useState } from 'react'
+import { useId } from 'react'
 import { StatTile } from '@/components/StatTile'
+import { useCollapsedCard } from '@/hooks/useCollapsedCard'
 import type { Briefing } from '@/lib/export/briefing'
 import { DASHBOARD_REFERENCE, type DashboardSummary } from '@/lib/dashboardSummary'
 import { RDA_PROFILES, RDA_SOURCE, RDA_VERSION } from '@/lib/rda'
 import { formatInt, formatMilligrams, formatPercent } from '@/lib/format'
 
 const amount = (value: number, unit: string) => `${value.toLocaleString('ko-KR', { maximumFractionDigits: 3 })}${unit}`
+
+/** 접힘 상태를 저장할 열쇠. 차트 카드와 같은 규칙으로 제목을 그대로 쓴다. */
+const RDA_PANEL = '성분별 1일 권장 섭취량'
+
 export function DashboardSummaryCards({ briefing, summary, rdaProfile, onRdaProfileChange }: {
   briefing: Briefing; summary: DashboardSummary; rdaProfile: string; onRdaProfileChange: (value: string) => void
 }) {
   const { unitWeight, content } = summary
   const empty = briefing.referenceCount === 0
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useCollapsedCard(RDA_PANEL)
   const bodyId = useId()
   return (
     <div className="flex flex-col gap-3">
@@ -55,14 +60,14 @@ export function DashboardSummaryCards({ briefing, summary, rdaProfile, onRdaProf
             className="-mx-1.5 flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-left font-medium text-ink transition-colors hover:bg-surface-sunken"
           >
             <span aria-hidden className={`grid h-5 w-5 shrink-0 place-items-center text-[13px] text-ink-3 transition-transform ${collapsed ? '' : 'rotate-90'}`}>▶</span>
-            <span className="truncate">성분별 1일 권장 섭취량</span>
+            <span className="truncate">{RDA_PANEL}</span>
           </button>
           {!collapsed ? (
             <button
               type="button"
               onClick={() => setCollapsed(true)}
               aria-controls={bodyId}
-              aria-label="성분별 1일 권장 섭취량 접기"
+              aria-label={`${RDA_PANEL} 접기`}
               className="shrink-0 rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken"
             >
               접기
