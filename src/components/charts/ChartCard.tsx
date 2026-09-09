@@ -1,6 +1,7 @@
 'use client'
 
 import { useId, useState, type ReactNode } from 'react'
+import { FoldButton } from '@/components/FoldButton'
 import { useCollapsedCard } from '@/hooks/useCollapsedCard'
 
 export type TableView = {
@@ -75,8 +76,9 @@ export function ChartCard({
           ) : null}
         </div>
 
-        {!collapsed ? (
-          <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          {/* 차트·표 토글은 본문을 가리키므로 접었으면 감춘다. 여닫는 버튼은 남긴다. */}
+          {!collapsed ? (
             <div className="flex rounded-md border border-line p-0.5">
               {(['chart', 'table'] as const).map((value) => (
                 <button
@@ -95,17 +97,14 @@ export function ChartCard({
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={() => setCollapsed(true)}
-              aria-controls={panelId}
-              aria-label={`${title} 접기`}
-              className="rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken"
-            >
-              접기
-            </button>
-          </div>
-        ) : null}
+          ) : null}
+          <FoldButton
+            collapsed={collapsed}
+            onToggle={() => setCollapsed(!collapsed)}
+            label={title}
+            controls={panelId}
+          />
+        </div>
       </header>
 
       <div id={panelId} hidden={collapsed} className="flex-1 px-5 pb-5">

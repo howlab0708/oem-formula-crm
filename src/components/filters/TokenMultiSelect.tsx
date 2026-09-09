@@ -1,6 +1,7 @@
 'use client'
 
 import { useId, useMemo, useState } from 'react'
+import { FoldButton } from '@/components/FoldButton'
 import type { Option } from '@/lib/filters'
 import { formatInt } from '@/lib/format'
 import { compactSearchText } from '@/lib/ingredientNames'
@@ -95,18 +96,13 @@ export function TokenMultiSelect({
               {selected.length}개 해제
             </button>
           ) : null}
-          {/* 펼쳐져 있을 때만 나오는 닫기 버튼. 목록 아래의 `접기` 는 목록 길이만 줄인다. */}
-          {!collapsed ? (
-            <button
-              type="button"
-              onClick={() => setCollapsed(true)}
-              aria-controls={bodyId}
-              aria-label={`${label} 조건 접기`}
-              className="rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken"
-            >
-              접기
-            </button>
-          ) : null}
+          {/* 묶음 전체를 여닫는 버튼. 목록 아래의 `접기` 는 목록 길이만 줄인다. */}
+          <FoldButton
+            collapsed={collapsed}
+            onToggle={() => setCollapsed(!collapsed)}
+            label={`${label} 조건`}
+            controls={bodyId}
+          />
         </div>
       </div>
 

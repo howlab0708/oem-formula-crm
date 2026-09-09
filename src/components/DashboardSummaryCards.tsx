@@ -1,6 +1,7 @@
 'use client'
 
 import { useId } from 'react'
+import { FoldButton } from '@/components/FoldButton'
 import { StatTile } from '@/components/StatTile'
 import { useCollapsedCard } from '@/hooks/useCollapsedCard'
 import type { Briefing } from '@/lib/export/briefing'
@@ -62,17 +63,7 @@ export function DashboardSummaryCards({ briefing, summary, rdaProfile, onRdaProf
             <span aria-hidden className={`grid h-5 w-5 shrink-0 place-items-center text-[13px] text-ink-3 transition-transform ${collapsed ? '' : 'rotate-90'}`}>▶</span>
             <span className="truncate">{RDA_PANEL}</span>
           </button>
-          {!collapsed ? (
-            <button
-              type="button"
-              onClick={() => setCollapsed(true)}
-              aria-controls={bodyId}
-              aria-label={`${RDA_PANEL} 접기`}
-              className="shrink-0 rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken"
-            >
-              접기
-            </button>
-          ) : null}
+          <FoldButton collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} label={RDA_PANEL} controls={bodyId} />
         </div>
         <div id={bodyId} hidden={collapsed} className="border-t border-line px-5 py-4">
           <p className="leading-5 keep-all">현재 조건에 맞는 제품의 지표성분 중 비타민·무기질만 모았습니다. 같은 영양소의 다른 표기는 하나로 합쳤습니다. 기준값은 {RDA_VERSION}의 성인 성별·연령별 값이고, 가장 많이 쓴 함량은 이 조건에서 같은 1일 함량을 쓴 제품이 가장 많은 값과 그 제품 수입니다. 함량이 확인된 표본 수가 많은 순서입니다.</p>

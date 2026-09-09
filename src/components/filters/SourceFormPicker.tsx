@@ -1,6 +1,7 @@
 'use client'
 
 import { useId, useState } from 'react'
+import { FoldButton } from '@/components/FoldButton'
 import { formatInt } from '@/lib/format'
 import {
   ORIGIN_LABELS,
@@ -114,15 +115,23 @@ export function SourceFormPicker({ value, onChange, nutrients, forms }: Props) {
           </span>
           <span className="truncate">영양성분 원료 형태</span>
         </button>
-        {activeCount > 0 ? (
-          <button
-            type="button"
-            onClick={() => onChange({ ...value, forms: [], exclude: [], origins: [] })}
-            className="shrink-0 text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
-          >
-            {activeCount}개 해제
-          </button>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {activeCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => onChange({ ...value, forms: [], exclude: [], origins: [] })}
+              className="text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+            >
+              {activeCount}개 해제
+            </button>
+          ) : null}
+          <FoldButton
+            collapsed={collapsed}
+            onToggle={() => setCollapsed(!collapsed)}
+            label="영양성분 원료 형태 조건"
+            controls={bodyId}
+          />
+        </div>
       </div>
 
       <div id={bodyId} hidden={collapsed}>
