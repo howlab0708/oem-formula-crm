@@ -56,6 +56,10 @@ function parseLine(line) {
 }
 
 const byNutrient = new Map()
+// 성분별 '제품 수' 는 형태별 건수의 합이 아니다. 한 제품이 해조칼슘과 탄산칼슘을
+// 함께 쓰면 형태로는 2건이지만 제품은 1건이다. 화면 목록(sourceNutrientOptions)이
+// 세는 값과 맞추려면 제품을 따로 세야 한다.
+const nutrientProducts = new Map()
 const excipients = new Map()
 const missed = new Map()
 const NUTRIENT_HINT = /아연|셀레늄|셀렌|크롬|마그네슘|칼슘|비타민|엽산|비오틴|나이아신|판토텐|니코틴산|몰리브|망간|요오드|토코페롤|토코페릴|카로틴|헴철|제일철|제이철/
@@ -63,6 +67,7 @@ const prepCount = new Map()
 const originCount = new Map()
 let rows = 0
 let tokens = 0
+let droppedFromCalcium = 0
 
 const rl = readline.createInterface({
   input: fs.createReadStream(path.join(ROOT, 'DB ADD PLUS/C003.csv'), 'utf8'),
@@ -84,11 +89,15 @@ for await (const line of rl) {
 
   const sources = productSources(product)
   for (const [nutrient, forms] of sources.forms) {
+    nutrientProducts.set(nutrient, (nutrientProducts.get(nutrient) || 0) + 1)
     const bucket = byNutrient.get(nutrient) ?? new Map()
     for (const form of forms) bucket.set(form, (bucket.get(form) || 0) + 1)
     byNutrient.set(nutrient, bucket)
   }
   for (const form of sources.excipientForms) excipients.set(form, (excipients.get(form) || 0) + 1)
+  // 조건부 판정이 실제로 몇 제품을 빼냈는지. 다른 칼슘 원료가 함께 있어 그대로
+  // 남은 제품은 빠진 게 아니므로 세지 않는다.
+  if (sources.excipientForms.size > 0 && !sources.forms.has('칼슘')) droppedFromCalcium++
   for (const prep of sources.preps) prepCount.set(prep, (prepCount.get(prep) || 0) + 1)
   for (const origin of sources.origins) originCount.set(origin, (originCount.get(origin) || 0) + 1)
 
@@ -132,19 +141,22 @@ for (const name of [
 }
 
 console.log('\n=== 영양성분별 원료 형태 (제품 수) ===')
-const order = [...byNutrient.entries()].sort((a, b) => {
-  const sum = (m) => [...m.values()].reduce((x, y) => x + y, 0)
-  return sum(b[1]) - sum(a[1])
-})
-for (const [nutrient, bucket] of order) {
-  const total = [...bucket.values()].reduce((x, y) => x + y, 0)
-  console.log(`\n■ ${nutrient}  (원료가 확인된 제품 ${total.toLocaleString()}건)`)
+const order = [...nutrientProducts.entries()].sort((a, b) => b[1] - a[1])
+for (const [nutrient, products] of order) {
+  const bucket = byNutrient.get(nutrient)
+  const formSum = [...bucket.values()].reduce((x, y) => x + y, 0)
+  const overlap = formSum > products ? ` · 형태 표기 ${formSum.toLocaleString()}건(두 형태 이상 쓴 제품이 있다)` : ''
+  console.log(`\n■ ${nutrient}  (이 성분의 원료를 쓴 제품 ${products.toLocaleString()}건${overlap})`)
   for (const [form, count] of [...bucket.entries()].sort((a, b) => b[1] - a[1])) {
-    console.log(`    ${String(count).padStart(6)}  ${((count / total) * 100).toFixed(1).padStart(5)}%  ${form}`)
+    console.log(`    ${String(count).padStart(6)}  ${((count / products) * 100).toFixed(1).padStart(5)}%  ${form}`)
   }
 }
 
+const calciumProducts = nutrientProducts.get('칼슘') ?? 0
 console.log('\n=== 부형제로 판정해 영양원 집계에서 뺀 건 (제품 수) ===')
+console.log(
+  `  이 판정으로 칼슘 제품 수 ${(calciumProducts + droppedFromCalcium).toLocaleString()} -> ${calciumProducts.toLocaleString()}건`,
+)
 if (excipients.size === 0) console.log('  없음')
 for (const [form, count] of [...excipients.entries()].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${String(count).padStart(6)}  ${form}`)
