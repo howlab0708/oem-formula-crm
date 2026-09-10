@@ -11,6 +11,7 @@ import {
 } from '@/lib/export/download'
 import { customerBriefing, DEFAULT_EXPORT_VISIBILITY, EXPORT_FIELDS } from '@/lib/export/customerView'
 import { loadStoredLogo, subscribeLogo } from '@/lib/export/logo'
+import { loadStoredIssuer, subscribeIssuer } from '@/lib/export/issuer'
 import type { freshnessLabel } from '@/lib/datasetProvenance'
 import { renderBriefingCard } from '@/lib/export/renderCard'
 import { DocumentIdentity } from './DocumentIdentity'
@@ -46,10 +47,11 @@ export function ExportActions({ briefing: original, disabled, freshness }: Props
   const [hidden, setHidden] = useState(DEFAULT_EXPORT_VISIBILITY)
   // 로고는 등록 화면(`DocumentIdentity`)이 저장하고, 저장하면 여기로 곧바로 알려 온다.
   const logo = useSyncExternalStore(subscribeLogo, loadStoredLogo, () => null)
+  const issuer = useSyncExternalStore(subscribeIssuer, loadStoredIssuer, () => null)
   const [preview, setPreview] = useState<{ image: string; text: string } | null>(null)
   const briefing = customerBriefing(original, customer, hidden)
   const sourceLines = [freshness.date, freshness.source, freshness.schedule]
-  const render = () => renderBriefingCard(briefing, { logo, sourceLines, customer })
+  const render = () => renderBriefingCard(briefing, { logo, issuer, sourceLines, customer })
   const exportText = () => briefingToText(briefing, freshness.source) + '\n\n' + sourceLines.join('\n')
   const [busy, setBusy] = useState<Busy>(null)
   const [message, setMessage] = useState<string | null>(null)

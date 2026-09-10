@@ -11,6 +11,7 @@
 import { formatDecimal, formatInt, formatMarkerValue, formatMilligrams, formatPercent } from '../format'
 import type { Briefing } from './briefing'
 import { loadExportImage } from './loadImage'
+import { hasIssuer, type Issuer } from './issuer'
 
 const WIDTH = 1080
 const PADDING = 64
@@ -79,8 +80,82 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): st
   return lines
 }
 
+const ISSUER_BOX = 380
+const ISSUER_LABEL = 96
+const CARD_SEAL = 92
+
+/**
+ * 오른쪽 위 공급자 칸과 직인. 배합 제안서 PDF 와 같은 자리·같은 항목이다
+ * (`renderFormulaSheet.ts` 의 같은 이름 함수). 이 카드도 고객에게 그대로 나가므로
+ * 등록해 둔 표시가 여기에도 찍혀야 한다.
+ *
+ * 칸의 아래끝을 돌려준다. 제목은 로고와 이 칸 중 더 아래에서 시작한다.
+ */
+async function drawIssuer(
+  ctx: CanvasRenderingContext2D,
+  palette: Palette,
+  issuer: Issuer,
+  top: number,
+): Promise<number> {
+  const rows = [
+    { label: '등록번호', value: issuer.registration },
+    { label: '상호', value: issuer.company },
+    { label: '대표자', value: issuer.ceo },
+    { label: '주소', value: issuer.address },
+    { label: '연락처', value: issuer.contact },
+  ].filter((row) => row.value.trim())
+  if (!rows.length && !issuer.seal) return top
+
+  const left = WIDTH - PADDING - ISSUER_BOX
+  const seal = issuer.seal ? await loadExportImage(issuer.seal, '직인') : null
+  // 직인 자리를 비워 두고 접는다. 안 그러면 긴 주소가 인영 아래로 들어가 안 읽힌다.
+  const valueWidth = ISSUER_BOX - ISSUER_LABEL - 28 - (seal ? CARD_SEAL - 8 : 0)
+  ctx.font = font(15)
+  const wrapped = rows.map((row) => ({ ...row, lines: wrap(ctx, row.value, valueWidth) }))
+  const height = Math.max(
+    wrapped.reduce((sum, row) => sum + Math.max(1, row.lines.length) * 22, 0) + 34,
+    seal ? CARD_SEAL + 38 : 0,
+  )
+
+  ctx.fillStyle = palette.sunken
+  ctx.fillRect(left, top, ISSUER_BOX, height)
+  ctx.strokeStyle = palette.line
+  ctx.lineWidth = 1
+  ctx.strokeRect(left + 0.5, top + 0.5, ISSUER_BOX - 1, height - 1)
+
+  ctx.fillStyle = palette.ink3
+  ctx.font = font(13, 600)
+  ctx.fillText('공 급 자', left + 14, top + 22)
+
+  let y = top + 46
+  let companyRowY = y
+  for (const row of wrapped) {
+    ctx.fillStyle = palette.ink3
+    ctx.font = font(14)
+    ctx.fillText(row.label, left + 14, y)
+    ctx.fillStyle = palette.ink2
+    ctx.font = font(15, row.label === '상호' ? 600 : 400)
+    row.lines.forEach((line, index) => ctx.fillText(line, left + ISSUER_LABEL, y + index * 22))
+    if (row.label === '상호') companyRowY = y
+    y += Math.max(1, row.lines.length) * 22
+  }
+
+  if (seal) {
+    const scale = Math.min(CARD_SEAL / seal.width, CARD_SEAL / seal.height)
+    const w = seal.width * scale
+    const h = seal.height * scale
+    const x = left + ISSUER_BOX - w - 12
+    const sealY = Math.min(Math.max(top + 26, companyRowY - h / 2 + 2), top + height - h - 8)
+    ctx.drawImage(seal, x, sealY, w, h)
+  }
+  return top + height
+}
+
 /** 브리핑 카드를 그린 캔버스를 돌려준다. 폰트 로딩이 끝난 뒤 호출해야 한다. */
-export async function renderBriefingCard(briefing: Briefing, options: { logo?: string | null; sourceLines?: string[]; customer?: boolean } = {}): Promise<HTMLCanvasElement> {
+export async function renderBriefingCard(
+  briefing: Briefing,
+  options: { logo?: string | null; issuer?: Issuer | null; sourceLines?: string[]; customer?: boolean } = {},
+): Promise<HTMLCanvasElement> {
   if (typeof document !== 'undefined' && 'fonts' in document) {
     await document.fonts.ready
   }
@@ -100,12 +175,20 @@ export async function renderBriefingCard(briefing: Briefing, options: { logo?: s
   const contentWidth = WIDTH - PADDING * 2
   let y = PADDING
 
+  // ── 우리 회사 표시(로고 · 공급자 칸 · 직인) ──────────────
+  const headTop = y
+  let logoBottom = y
   if (options.logo) {
     const logo = await loadExportImage(options.logo, '로고')
     const scale = Math.min(200/logo.width, 64/logo.height)
     ctx.drawImage(logo, PADDING, y, logo.width*scale, logo.height*scale)
-    y += 82
+    logoBottom = y + 64
   }
+  const issuer = options.issuer && hasIssuer(options.issuer) ? options.issuer : null
+  const issuerBottom = issuer ? await drawIssuer(ctx, palette, issuer, headTop) : y
+  y = Math.max(logoBottom, issuerBottom)
+  if (y > headTop) y += 18
+
   // ── 헤더 ────────────────────────────────────────────────
   ctx.fillStyle = palette.ink
   ctx.font = font(34, 700)
