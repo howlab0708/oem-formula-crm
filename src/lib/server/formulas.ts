@@ -16,8 +16,9 @@ import { ensureTenantSchema, withTenant, type TenantSql } from '../db'
 import { companyKey } from '../formulaNotes'
 import { createNotesTable } from './formulaNotes'
 import { calculate } from '../formulaDesign/calc'
-import type { FormulaRecord, FormulaSheet, FormulaSummary, IngredientPrice, LineRow, MaterialRow, QuoteVersion } from '../formulaDesign/types'
+import type { FormulaRecord, FormulaSheet, FormulaSummary, IngredientPrice, LineRow, MaterialRow, QuoteSettings, QuoteVersion } from '../formulaDesign/types'
 import type { FormulaInput } from '../formulaDesign/validate'
+import { newMaterialRow, newTierRow } from '../formulaDesign/preset'
 import { nameKey } from '../formulaDesign/suggest'
 
 let ready: Promise<void> | null = null
@@ -138,6 +139,29 @@ export async function listFormulas(company: string, keyword: string, page: numbe
   })
 }
 
+/**
+ * 예전에 저장한 시트를 되살릴 때 새로 생긴 칸을 기본값으로 채운다.
+ * 칸이 undefined 로 들어가면 화면의 입력칸이 비제어 상태가 되어 경고가 나고,
+ * 계산은 0 으로 읽혀 조용히 달라진다. 줄은 `newMaterialRow` 가 같은 일을 한다.
+ */
+function withQuoteDefaults(quote: QuoteSettings): QuoteSettings {
+  return {
+    ...quote,
+    stockRate: quote.stockRate ?? '',
+    overheads: (quote.overheads ?? []).map((row) => ({
+      ...row,
+      base: row.base ?? 'total',
+      includePrior: row.includePrior ?? false,
+    })),
+    // 예전 시트의 수량 구간은 세트 수만 담은 문자열이었다. 할인 없는 구간으로 읽는다.
+    tiers: (quote.tiers ?? []).map((tier, index) =>
+      typeof tier === 'string' || typeof tier === 'number'
+        ? newTierRow({ id: `t${index + 1}`, setCount: String(tier) })
+        : newTierRow(tier),
+    ),
+  }
+}
+
 async function assemble(tx: TenantSql, head: FormulaHeadRow): Promise<FormulaRecord> {
   const rows = await tx<{ block: BlockName; payload: MaterialRow | LineRow }[]>`
     select block, payload from oem_formula_ingredients
@@ -148,11 +172,11 @@ async function assemble(tx: TenantSql, head: FormulaHeadRow): Promise<FormulaRec
     packagingItems: [],
     processItems: [],
     analysisItems: [],
-    quote: head.quote,
+    quote: withQuoteDefaults(head.quote),
     memo: head.memo,
   }
   for (const row of rows) {
-    if (row.block === 'material') sheet.materials.push(row.payload as MaterialRow)
+    if (row.block === 'material') sheet.materials.push(newMaterialRow(row.payload as Partial<MaterialRow>))
     else if (row.block === 'packaging') sheet.packagingItems.push(row.payload as LineRow)
     else if (row.block === 'process') sheet.processItems.push(row.payload as LineRow)
     else if (row.block === 'analysis') sheet.analysisItems.push(row.payload as LineRow)

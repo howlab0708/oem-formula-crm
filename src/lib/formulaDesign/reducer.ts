@@ -11,8 +11,8 @@
  */
 
 import { fillRemainder } from './calc'
-import { newLineRow, newMaterialRow, newOverheadRow } from './preset'
-import type { FormulaSheet, LineRow, MaterialRow, OverheadRow, PackagingSpec, QuoteSettings } from './types'
+import { newLineRow, newMaterialRow, newOverheadRow, newTierRow } from './preset'
+import type { FormulaSheet, LineRow, MaterialRow, OverheadRow, PackagingSpec, QuoteSettings, QuoteTier } from './types'
 
 /** 줄이 든 블록 이름. 원료비와 2·3·4 블록을 같은 방식으로 다룬다. */
 export type LineBlock = 'packagingItems' | 'processItems' | 'analysisItems'
@@ -21,14 +21,16 @@ export type SheetAction =
   | { type: 'load'; sheet: FormulaSheet }
   | { type: 'memo'; value: string }
   | { type: 'spec'; key: keyof PackagingSpec; value: string }
-  | { type: 'quote'; key: keyof QuoteSettings; value: string | string[] }
+  | { type: 'quote'; key: keyof QuoteSettings; value: string }
   | { type: 'material'; id: string; patch: Partial<MaterialRow> }
   | { type: 'line'; block: LineBlock; id: string; patch: Partial<LineRow> }
   | { type: 'overhead'; id: string; patch: Partial<OverheadRow> }
+  | { type: 'tier'; id: string; patch: Partial<QuoteTier> }
   | { type: 'add-material'; after?: string; count?: number }
   | { type: 'add-line'; block: LineBlock; after?: string }
   | { type: 'add-overhead' }
-  | { type: 'remove'; block: 'materials' | LineBlock | 'overheads'; id: string }
+  | { type: 'add-tier' }
+  | { type: 'remove'; block: 'materials' | LineBlock | 'overheads' | 'tiers'; id: string }
   | { type: 'move'; block: 'materials' | LineBlock; id: string; delta: number }
   | { type: 'fill-remainder'; id: string }
   | {
@@ -121,6 +123,8 @@ export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaS
       return { ...state, [action.block]: replaceById(state[action.block], action.id, action.patch) }
     case 'overhead':
       return { ...state, quote: { ...state.quote, overheads: replaceById(state.quote.overheads, action.id, action.patch) } }
+    case 'tier':
+      return { ...state, quote: { ...state.quote, tiers: replaceById(state.quote.tiers, action.id, action.patch) } }
     case 'add-material':
       return {
         ...state,
@@ -134,12 +138,17 @@ export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaS
       return { ...state, [action.block]: insertAfter(state[action.block], action.after, [newLineRow()]) }
     case 'add-overhead':
       return { ...state, quote: { ...state.quote, overheads: [...state.quote.overheads, newOverheadRow()] } }
+    case 'add-tier':
+      return { ...state, quote: { ...state.quote, tiers: [...state.quote.tiers, newTierRow()] } }
     case 'remove':
       if (action.block === 'overheads') {
         return {
           ...state,
           quote: { ...state.quote, overheads: removeById(state.quote.overheads, action.id, false) },
         }
+      }
+      if (action.block === 'tiers') {
+        return { ...state, quote: { ...state.quote, tiers: removeById(state.quote.tiers, action.id, false) } }
       }
       // 원료비와 2·3·4 블록은 줄 모양이 달라도 삭제·이동은 id 만 본다.
       return { ...state, [action.block]: removeById<{ id: string }>(state[action.block], action.id) }

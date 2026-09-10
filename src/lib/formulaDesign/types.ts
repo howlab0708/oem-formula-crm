@@ -8,7 +8,9 @@
  *
  *   · Loss율: 공장마다 3~10% → `PackagingSpec.lossPercent`
  *   · 간접비 항목: 일반관리비·기업이윤에 품질관리비·고정비가 붙기도 함 → `OverheadRow[]`
- *   · 단가 방식: 총액 입력 / 원가 대비 % / set당 단가 / 낱개당 단가 → `OverheadRow.mode`
+ *   · 산출 방식: 금액 그대로 / 무엇의 몇 % / 세트당 단가 / 낱개당 단가 → `OverheadRow.mode`
+ *   · %를 걸 기준: 원가 합계 / 가공비 / 원료비, 위 항목 포함 여부
+ *     → `OverheadRow.base` · `OverheadRow.includePrior` (화면에서는 둘을 이름 하나로 묶어 고른다)
  *   · 수량 구간별 단가: 한 견적서에 3개 구간을 함께 제시 → `QuoteSettings.tiers`
  *   · 최종 단가 절사: 원 단위 반올림 또는 10원 단위 절사 → `QuoteSettings.round*`
  *
@@ -46,6 +48,14 @@ export type MaterialRow = {
   potency: string
   /** 오버차지(%). 유통 중 감소를 감안한 과량 투입. 보통 10~30%. */
   overage: string
+  /**
+   * 원료 팩킹 단위(kg). 공장 견적서 비고의 ‘25키로팩킹’·‘5키로*2팩킹청구’ 가 이 값이다.
+   * 값만 적어 두면 참고용이고, `packBilled` 를 켤 때만 사용량이 팩 배수로 올라간다 -
+   * 견적서는 보통 쓴 만큼만 적고 “팩킹단위 비용 청구할 수 있음” 을 조건으로 달기 때문이다.
+   */
+  packKg: string
+  /** 팩 단위로 청구받는 줄인지. 켜면 사용량을 팩 배수로 올림한다(수량 구간에도 적용된다). */
+  packBilled: boolean
   /** 일일영양성분 기준치 대비 비율. 표시기준 값을 연구원이 직접 넣는다(예: `100%`). */
   labelPercent: string
   /** 고객용 ‘구성 및 포장지’ 표에 넣을 기능성 원료인지. 부형제는 false. */
@@ -112,12 +122,22 @@ export type PackagingSpec = {
 
 /**
  * 간접비 한 줄. 공장마다 항목 이름과 산출 방식이 달라 목록으로 둔다.
- *   amount  총액 직접 입력(견적서에 금액이 그대로 적혀 오는 경우)
- *   rate    1~4 블록 합계 대비 %(순서에 관계없이 같은 기준을 쓴다)
+ *   amount  금액 그대로(견적서에 금액이 적혀 오는 경우)
+ *   rate    무엇의 몇 %(기준은 `base`·`includePrior` 로 정한다)
  *   perSet  세트당 단가(일반관리비를 set당 정액으로 붙이는 공장)
  *   perUnit 낱개당 단가
  */
 export type OverheadMode = 'amount' | 'rate' | 'perSet' | 'perUnit'
+
+/**
+ * `rate` 모드에서 %를 걸 기준. 공장마다 무엇에 대비해 붙이는지가 다르다.
+ *   total    원가 합계 = 1~4 블록 + 재고비
+ *   process  가공비만 - 일반관리비를 가공비 대비 %로 붙이는 공장이 있다
+ *   material 원료비만
+ * 여기에 `includePrior` 를 켜면 앞선 간접비 금액까지 기준에 더한다. 기업이윤을
+ * (가공비 + 일반관리비) 대비 %로 붙이는 공장이 있어 필요한 장치다.
+ */
+export type OverheadBase = 'total' | 'process' | 'material'
 
 export type OverheadRow = {
   id: string
@@ -125,20 +145,57 @@ export type OverheadRow = {
   mode: OverheadMode
   value: string
   note: string
+  /** `rate` 모드의 기준. 없으면 `total`(예전 시트의 동작). */
+  base?: OverheadBase
+  /** 기준에 앞선 간접비 금액을 더할지. 없으면 false. */
+  includePrior?: boolean
 }
 
 export type RoundMode = 'round' | 'floor' | 'ceil'
+
+/**
+ * 수량 구간 한 줄.
+ *
+ * 수량만 늘려 다시 계산하면 원가가 전부 수량에 비례하는 구조에서는
+ * set당 단가가 그대로 나온다 - 실제 할인이 아니라 산수의 결과다. 대량 발주의 할인은
+ * 공장이 **단가 자체를 낮춰 주는 것**이므로(가공비 25원 → 20원, 원료단가 인하 등)
+ * 구간마다 블록별 할인율을 받는다.
+ *
+ * 할인율은 **양수가 인하**다(8 이면 8% 싸게). 드물게 인상이 필요하면 음수를 넣는다.
+ * 그 블록의 모든 줄 단가에 같은 비율로 걸리므로 블록 소계에 곱하는 것과 결과가 같다.
+ * 가공비를 낮추면 가공비에 연동된 간접비(일반관리비·기업이윤)도 함께 내려간다.
+ */
+export type QuoteTier = {
+  id: string
+  /** 세트 수 */
+  setCount: string
+  /** 원료비 할인율(%). 5 는 원료단가 5% 인하. */
+  materialDiscount: string
+  /** 부자재비 할인율(%) */
+  packagingDiscount: string
+  /** 가공비 할인율(%) */
+  processDiscount: string
+  /** 이 구간의 근거(예: 공장 구두 확인 2026-09-10). 고객용 PDF 비고에 나간다. */
+  note: string
+}
 
 /** 견적 마무리 설정. 간접비·부가세·최종 단가 절사·수량 구간. */
 export type QuoteSettings = {
   overheads: OverheadRow[]
   /** 부가세율(%). 공급가는 VAT 별도이고 제안가는 이 비율을 더한 값이다. */
   vatRate: string
+  /**
+   * 재고비(%). 공장 견적서 ‘포장단위당 견적금액’ 표에 있는 재고비 칸이다.
+   * 받은 견적서에는 모두 비어 있어서 기본값은 빈칸(적용 안 함)이고, 값을 넣으면
+   * 원재료비+부자재비에 걸어 공급가에 더한다 - 재고로 쥐고 있는 실물에 붙는 비용이라
+   * 가공비·간접비에는 걸지 않는다.
+   */
+  stockRate: string
   /** 최종 단가를 맞출 자리(1·10·100·1000원). 10원 단위로 절사하는 공장이 있다. */
   roundUnit: string
   roundMode: RoundMode
-  /** 수량 구간별 단가를 뽑을 세트 수 목록(예: 1000, 3000, 5000). 비우면 계산하지 않는다. */
-  tiers: string[]
+  /** 수량 구간별 단가. 비우면 계산하지 않는다. */
+  tiers: QuoteTier[]
   /** 고객용 PDF 에 넣을 견적 조건 문구. 줄바꿈으로 구분한다. */
   conditions: string
 }

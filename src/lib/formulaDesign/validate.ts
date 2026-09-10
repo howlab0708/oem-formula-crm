@@ -10,11 +10,13 @@ import type {
   FormulaSheet,
   LineRow,
   MaterialRow,
+  OverheadBase,
   OverheadMode,
   OverheadRow,
   PackagingSpec,
   QuantityBasis,
   QuoteSettings,
+  QuoteTier,
   RoundMode,
 } from './types'
 
@@ -96,6 +98,8 @@ function materialRow(value: unknown, index: number): MaterialRow {
     labelAmount: text(row.labelAmount, '표시량', 60),
     potency: numeric(row.potency, '역가'),
     overage: numeric(row.overage, '오버차지'),
+    packKg: numeric(row.packKg, '팩 단위'),
+    packBilled: row.packBilled === true,
     labelPercent: text(row.labelPercent, '기준치 대비', 40),
     functional: row.functional === true,
   }
@@ -143,6 +147,11 @@ function overheadMode(value: unknown): OverheadMode {
   return value === 'rate' || value === 'perSet' || value === 'perUnit' ? value : 'amount'
 }
 
+/** 예전 시트에는 없는 칸이라 기본값은 `total`(1~4 블록 합계) 이다. */
+function overheadBase(value: unknown): OverheadBase {
+  return value === 'process' || value === 'material' ? value : 'total'
+}
+
 function overheadRow(value: unknown, index: number): OverheadRow {
   const row = record(value, `${index + 1}번째 간접비`)
   return {
@@ -151,6 +160,8 @@ function overheadRow(value: unknown, index: number): OverheadRow {
     mode: overheadMode(row.mode),
     value: numeric(row.value, '간접비 값'),
     note: text(row.note, '비고'),
+    base: overheadBase(row.base),
+    includePrior: row.includePrior === true,
   }
 }
 
@@ -158,14 +169,42 @@ function roundMode(value: unknown): RoundMode {
   return value === 'floor' || value === 'ceil' ? value : 'round'
 }
 
+/**
+ * 수량 구간. 예전 시트는 세트 수만 담은 문자열 배열이었으므로 그 형태도 받아
+ * 할인 없는 구간으로 읽는다 - 이미 저장된 시트가 열리지 않으면 안 된다.
+ */
+function tierRow(value: unknown, index: number): QuoteTier {
+  const label = `${index + 1}번째 수량 구간`
+  if (typeof value === 'string' || typeof value === 'number') {
+    return {
+      id: `t${index + 1}`,
+      setCount: numeric(value, label),
+      materialDiscount: '',
+      packagingDiscount: '',
+      processDiscount: '',
+      note: '',
+    }
+  }
+  const row = record(value, label)
+  return {
+    id: rowIdOf(row.id, index, 't'),
+    setCount: numeric(row.setCount, label),
+    materialDiscount: numeric(row.materialDiscount, '원료비 할인율'),
+    packagingDiscount: numeric(row.packagingDiscount, '부자재비 할인율'),
+    processDiscount: numeric(row.processDiscount, '가공비 할인율'),
+    note: text(row.note, '수량 구간 비고'),
+  }
+}
+
 function quote(value: unknown): QuoteSettings {
   const row = record(value, '견적 설정')
   return {
     overheads: list(row.overheads, '간접비', MAX_LINE_ROWS).map(overheadRow),
     vatRate: numeric(row.vatRate, '부가세율'),
+    stockRate: numeric(row.stockRate, '재고비율'),
     roundUnit: numeric(row.roundUnit, '단가 절사 단위') || '1',
     roundMode: roundMode(row.roundMode),
-    tiers: list(row.tiers, '수량 구간', MAX_TIERS).map((tier, index) => numeric(tier, `${index + 1}번째 수량 구간`)),
+    tiers: list(row.tiers, '수량 구간', MAX_TIERS).map(tierRow),
     conditions: text(row.conditions, '견적 조건', MEMO_LIMIT),
   }
 }

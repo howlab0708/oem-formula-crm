@@ -369,8 +369,16 @@ export async function renderFormulaSheetPages(
       ],
       true,
     )
-    tableRow(page, columns, ['부가세 (10%)', '', '', formatWon(totals.vatTotal)])
-    tableRow(page, columns, ['결제 금액 (VAT 포함)', '', formatWon(totals.proposalPerSet), formatWon(totals.paymentTotal)], true)
+    // 제안가는 절사 전 공급가에 부가세를 걸어 구하므로(견적서와 같은 방식) 절사한 단가에
+    // 10% 를 곱한 값과 몇 원 어긋날 수 있다. 고객에게 보내는 표는 세 줄이 서로 맞아야
+    // 하니 부가세를 제안가에서 되짚어 적는다.
+    tableRow(page, columns, ['부가세', '', '', formatWon(totals.proposalTotal - totals.quoteTotal)])
+    tableRow(
+      page,
+      columns,
+      ['결제 금액 (VAT 포함)', '', formatWon(totals.proposalPerSet), formatWon(totals.proposalTotal)],
+      true,
+    )
 
     if (options.showTiers && tiers.length > 1) {
       page.y += 14
@@ -378,9 +386,10 @@ export async function renderFormulaSheetPages(
       page.text('수량 구간별 단가', MARGIN, 13, 600, INK_2)
       page.y += 6
       const tierColumns: Column[] = [
-        { label: '수량 (set)', width: 300, align: 'right' },
-        { label: '단가 (원)', width: 300, align: 'right' },
-        { label: '금액 (VAT 별도)', width: CONTENT - 600, align: 'right' },
+        { label: '수량 (set)', width: 220, align: 'right' },
+        { label: '단가 (원)', width: 220, align: 'right' },
+        { label: '금액 (VAT 별도)', width: 260, align: 'right' },
+        { label: '비고', width: CONTENT - 700 },
       ]
       tableHead(page, tierColumns)
       for (const tier of tiers) {
@@ -388,6 +397,7 @@ export async function renderFormulaSheetPages(
           tier.setCount.toLocaleString('ko-KR'),
           formatWon(tier.unitPrice),
           formatWon(tier.quoteTotal),
+          tier.row.note,
         ])
       }
     }

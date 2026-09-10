@@ -98,17 +98,48 @@ function verifyIdentities(group, sheet) {
   check(group, 'set당 공급가 = 공급가 ÷ 수량', fixed(t.supplyPerSet, 6), fixed(t.supplyTotal / num(spec.setCount), 6))
   check(group, '최종 단가가 절사 자리에 맞음', t.unitPrice % (num(sheet.quote.roundUnit) || 1), 0)
   check(group, '합계 = 최종 단가 × 수량', t.quoteTotal, t.unitPrice * num(spec.setCount))
-  check(group, '제안가 = 최종 단가 + 부가세', round(t.proposalPerSet), round(t.unitPrice * (1 + num(sheet.quote.vatRate) / 100)))
+  // 제안가는 절사한 단가가 아니라 절사 전 set당 공급가에 부가세를 걸어 절사한 값이다.
+  // 같은 제품 견적서의 개정판 세 장을 모두 맞추는 방식이 이것뿐이다(한 장에서 1원 갈린다).
+  const unit = num(sheet.quote.roundUnit) || 1
+  const mode = sheet.quote.roundMode
+  const step = (value) =>
+    (mode === 'floor' ? Math.floor(value / unit) : mode === 'ceil' ? Math.ceil(value / unit) : Math.round(value / unit)) * unit
+  check(group, '제안가 = 절사 전 set당 공급가 + 부가세', t.proposalPerSet, step(t.supplyPerSet * (1 + num(sheet.quote.vatRate) / 100)))
+  check(group, '제안가 합계 = 제안가 × 수량', t.proposalTotal, t.proposalPerSet * num(spec.setCount))
+  check(group, '공급가 = 1~4 블록 + 재고비 + 간접비', round(t.supplyTotal), round(t.blockCost + t.stockCost + t.overheadCost))
+  for (const item of t.overheads) {
+    if (item.row.mode !== 'rate' || item.row.base !== 'process') continue
+    // 가공비 연동 간접비는 가공비가 늘면 반드시 함께 늘어난다 - 수량 구간의 핵심.
+    check(group, `${item.row.label} = 가공비 기준 %`, round(item.amount) > 0 && t.processCost > 0, true)
+  }
   check(group, '규격 표기 생성', packageLabel(spec).startsWith(`${num(spec.unitWeightMg).toLocaleString('ko-KR')}mg x`), true)
 
-  // 고정비가 있으므로 수량이 늘면 단가는 반드시 같거나 내려간다.
+  // 수량이 늘면 단가는 같거나 내려간다. 원가가 전부 수량에 비례하는 시트(고정비가
+  // 모두 별도청구인 경우)는 구간이 평평한 것이 정상이라 등호를 허용한다.
   const tiers = calculateTiers(sheet)
   check(
     group,
-    '수량 구간별 단가 단조 감소',
+    '수량 구간별 단가가 오르지 않음',
     tiers.every((tier, index) => index === 0 || tier.unitPrice <= tiers[index - 1].unitPrice),
     true,
   )
+  check(group, '수량 구간이 세트 수 순서로 정렬됨', tiers.every((tier, i) => i === 0 || tier.setCount > tiers[i - 1].setCount), true)
+  // 할인율을 넣은 구간은 할인 전 단가보다 낮아야 하고, 넣지 않은 구간은 같아야 한다.
+  for (const tier of tiers) {
+    const label = `${tier.setCount.toLocaleString('ko-KR')}set`
+    const discounted = tier.discount.material > 0 || tier.discount.packaging > 0 || tier.discount.process > 0
+    check(group, `${label} 구간 ${discounted ? '할인 반영' : '할인 없음'}`, tier.unitPrice < tier.basePrice, discounted)
+  }
+  // 가공비 연동 간접비는 수량을 3배로 늘리면 3배가 되어야 한다. 총액으로 적어 두면
+  // 수량이 늘어도 그대로여서 구간 단가가 실제보다 낮게 나오던 것을 막는 잠금장치다.
+  const linked = sheet.quote.overheads.filter((row) => row.mode === 'rate' && row.base === 'process')
+  if (linked.length && num(spec.setCount) > 0) {
+    const tripled = calculate(sheet, num(spec.setCount) * 3)
+    const at = (totals, label) => totals.overheads.find((item) => item.row.label === label)?.amount ?? 0
+    for (const row of linked) {
+      check(group, `${row.label} 이 수량에 비례`, fixed(at(tripled, row.label), 4), fixed(at(t, row.label) * 3, 4))
+    }
+  }
   return { totals: t, tiers }
 }
 

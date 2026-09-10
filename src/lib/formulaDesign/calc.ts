@@ -5,8 +5,12 @@
  *   총 배합량 = 1회분 중량 × 1세트 개수 × 수량 ÷ 1e6 × (1 + Loss율)
  *   줄 배합량 = 총 배합량 × 배합비율 ÷ 100        (사용량을 직접 적으면 그 값을 쓴다)
  *   줄 금액   = 사용량 × 원료단가
- *   공급가    = 원료비 + 부자재비 + 가공비 + 분석비 + 간접비
+ *   공급가    = 원료비 + 부자재비 + 가공비 + 분석비 + 재고비 + 간접비
  *   최종 단가 = 공급가 ÷ 수량 을 절사 자리에 맞춘 값
+ *   제안가    = (공급가 ÷ 수량) × (1 + 부가세율) 을 절사 자리에 맞춘 값
+ *
+ * 제안가는 최종 단가가 아니라 절사 전 값에 부가세를 걸어 구한다. 같은 제품 견적서의
+ * 개정판 세 장을 모두 맞추는 방식이 이것뿐이다 - 자세한 이유는 아래 주석에 적었다.
  *
  * 반올림 규칙: 엑셀 셀과 같이 값은 전부 원래 정밀도로 들고 다니고, 표시할 때만
  * 반올림한다. 그래서 화면에 8.004kg 으로 보이는 줄의 금액은 8.00448kg 기준이고,
@@ -22,9 +26,11 @@ import type {
   FormulaSheet,
   LineRow,
   MaterialRow,
+  OverheadBase,
   OverheadRow,
   PackagingSpec,
   QuoteSettings,
+  QuoteTier,
   RoundMode,
 } from './types'
 
@@ -99,6 +105,8 @@ export type MaterialCalc = {
   usageKg: number
   /** 사용량을 직접 입력해 배합량과 달라진 줄인지 */
   overridden: boolean
+  /** 팩 단위 청구로 사용량이 팩 배수까지 올라간 줄인지 */
+  packedUp: boolean
   amount: number
   /** 1정(1캡슐)당 투입량(mg). 표시량 검토용 참고값. */
   mgPerUnit: number
@@ -125,7 +133,11 @@ export type Totals = Batch & {
   analysisCost: number
   /** 견적에서 빠진 별도청구·발주처제공 금액 합 */
   excludedCost: number
-  /** 1~4 블록 합계 */
+  /** 재고비. `QuoteSettings.stockRate` 가 비어 있으면 0. */
+  stockCost: number
+  /** 1~4 블록 합계(재고비 제외) */
+  blockCost: number
+  /** 간접비 `rate` 모드의 `total` 기준. 1~4 블록 합계 + 재고비. */
   baseCost: number
   overheadCost: number
   supplyTotal: number
@@ -139,16 +151,18 @@ export type Totals = Batch & {
   paymentTotal: number
   /** 부가세를 포함한 세트당 제안가 */
   proposalPerSet: number
+  /** 제안가 × 세트 수 */
+  proposalTotal: number
   setCount: number
   perSet: { label: string; total: number; perSet: number }[]
 }
 
-function lineTotals(rows: LineRow[], setCount: number, totalUnits: number) {
+function lineTotals(rows: LineRow[], setCount: number, totalUnits: number, factor = 1) {
   let included = 0
   let excluded = 0
   const calcs = rows.map((row) => {
     const quantity = lineQuantity(row, setCount, totalUnits)
-    const amount = quantity * num(row.unitPrice)
+    const amount = quantity * num(row.unitPrice) * factor
     if (row.included) included += amount
     else excluded += amount
     return { row, quantity, amount, counted: row.included }
@@ -156,17 +170,59 @@ function lineTotals(rows: LineRow[], setCount: number, totalUnits: number) {
   return { calcs, included, excluded }
 }
 
-const MODE_LABEL: Record<OverheadRow['mode'], string> = {
-  amount: '총액',
-  rate: '원가 대비',
-  perSet: 'set당',
-  perUnit: '낱개당',
+/**
+ * 구간별 단가 할인율(%). **양수가 인하**다. 블록의 모든 줄 단가에 같은 비율로 걸린다.
+ * 시트에 적힌 수량으로 계산할 때는 걸지 않는다 - 견적 요약은 할인 전 기준 단가다.
+ */
+export type TierDiscount = { material: number; packaging: number; process: number }
+
+export const NO_DISCOUNT: TierDiscount = { material: 0, packaging: 0, process: 0 }
+
+export function discountOf(tier: QuoteTier): TierDiscount {
+  return {
+    material: num(tier.materialDiscount),
+    packaging: num(tier.packagingDiscount),
+    process: num(tier.processDiscount),
+  }
 }
 
-function overheadAmount(row: OverheadRow, baseCost: number, setCount: number, totalUnits: number): number {
+export const hasDiscount = (discount: TierDiscount): boolean =>
+  discount.material !== 0 || discount.packaging !== 0 || discount.process !== 0
+
+const MODE_LABEL: Record<OverheadRow['mode'], string> = {
+  amount: '금액 그대로',
+  rate: '원가 대비',      // rate 는 아래에서 기준 이름으로 바꿔 적는다
+  perSet: '세트당 단가',
+  perUnit: '낱개당 단가',
+}
+
+export const OVERHEAD_BASE_LABEL: Record<OverheadBase, string> = {
+  total: '원가 합계',
+  process: '가공비',
+  material: '원료비',
+}
+
+/** `rate` 모드가 %를 걸 금액. 블록별 소계와 앞선 간접비 누계를 받아 고른다. */
+export type OverheadBases = Record<OverheadBase, number>
+
+export function overheadBaseOf(row: OverheadRow, bases: OverheadBases, prior: number): number {
+  return bases[row.base ?? 'total'] + (row.includePrior ? prior : 0)
+}
+
+/**
+ * 간접비 한 줄의 금액. `prior` 는 이 줄 위쪽 간접비의 합계다 -
+ * 기업이윤을 (가공비 + 일반관리비) 대비 %로 붙이는 공장이 있어 필요하다.
+ */
+function overheadAmount(
+  row: OverheadRow,
+  bases: OverheadBases,
+  prior: number,
+  setCount: number,
+  totalUnits: number,
+): number {
   const value = num(row.value)
   if (row.mode === 'amount') return value
-  if (row.mode === 'rate') return (baseCost * value) / 100
+  if (row.mode === 'rate') return (overheadBaseOf(row, bases, prior) * value) / 100
   if (row.mode === 'perSet') return value * setCount
   return value * totalUnits
 }
@@ -178,11 +234,16 @@ export function applyRounding(value: number, unit: number, mode: RoundMode): num
   return rounded * step
 }
 
-/** 세트 수를 바꿔 계산할 수 있다(수량 구간별 단가). 비우면 시트에 적힌 수량을 쓴다. */
-export function calculate(sheet: FormulaSheet, setCountOverride?: number): Totals {
+/**
+ * 세트 수를 바꿔 계산할 수 있다(수량 구간별 단가). 비우면 시트에 적힌 수량을 쓴다.
+ * `discount` 는 그 구간에서 공장이 낮춰 준 단가를 블록별 할인율로 받는다(양수가 인하).
+ */
+export function calculate(sheet: FormulaSheet, setCountOverride?: number, discount: TierDiscount = NO_DISCOUNT): Totals {
   const { spec, quote } = sheet
   const setCount = setCountOverride ?? num(spec.setCount)
   const batch = batchOf(spec, setCount)
+  // 할인율은 양수가 인하이므로 단가에 곱할 배수는 1 에서 뺀다.
+  const factor = (percent: number) => 1 - percent / 100
 
   let ratioSum = 0
   let batchSumKg = 0
@@ -194,8 +255,11 @@ export function calculate(sheet: FormulaSheet, setCountOverride?: number): Total
     const batchKg = (batch.totalBatchKg * ratio) / 100
     // 사용량 직접 입력은 시트에 적힌 수량 기준이라 구간 계산에서는 쓰지 않는다.
     const overridden = setCountOverride === undefined && !blank(row.usage)
-    const usageKg = overridden ? num(row.usage) : batchKg
-    const amount = usageKg * num(row.unitPrice)
+    // 팩 단위 청구는 배합량에서 계산하므로 구간 계산에도 그대로 적용된다.
+    const packKg = row.packBilled ? num(row.packKg) : 0
+    const packedUp = !overridden && packKg > 0 && batchKg > 0
+    const usageKg = overridden ? num(row.usage) : packedUp ? Math.ceil(batchKg / packKg) * packKg : batchKg
+    const amount = usageKg * num(row.unitPrice) * factor(discount.material)
     ratioSum += ratio
     batchSumKg += batchKg
     usageSumKg += usageKg
@@ -205,29 +269,48 @@ export function calculate(sheet: FormulaSheet, setCountOverride?: number): Total
       batchKg,
       usageKg,
       overridden,
+      packedUp,
       amount,
       mgPerUnit: (num(spec.unitWeightMg) * ratio) / 100,
     }
   })
 
-  const packaging = lineTotals(sheet.packagingItems, setCount, batch.totalUnits)
-  const process = lineTotals(sheet.processItems, setCount, batch.totalUnits)
+  const packaging = lineTotals(sheet.packagingItems, setCount, batch.totalUnits, factor(discount.packaging))
+  const process = lineTotals(sheet.processItems, setCount, batch.totalUnits, factor(discount.process))
+  // 분석비는 초도 1회성이라 수량 구간의 할인 대상이 아니다.
   const analysis = lineTotals(sheet.analysisItems, setCount, batch.totalUnits)
 
-  const baseCost = materialCost + packaging.included + process.included + analysis.included
+  const blockCost = materialCost + packaging.included + process.included + analysis.included
+  // 재고비는 재고로 쥐고 있는 실물(원료·부자재)에만 걸린다.
+  const stockCost = ((materialCost + packaging.included) * num(quote.stockRate)) / 100
+  const baseCost = blockCost + stockCost
 
+  const bases: OverheadBases = { total: baseCost, process: process.included, material: materialCost }
   let overheadCost = 0
   const overheads = quote.overheads.map((row) => {
-    const amount = overheadAmount(row, baseCost, setCount, batch.totalUnits)
+    const amount = overheadAmount(row, bases, overheadCost, setCount, batch.totalUnits)
+    const basis =
+      row.mode === 'rate'
+        ? `${OVERHEAD_BASE_LABEL[row.base ?? 'total']}${row.includePrior ? '+앞선 간접비' : ''} 대비`
+        : MODE_LABEL[row.mode]
     overheadCost += amount
-    return { row, amount, basis: MODE_LABEL[row.mode] }
+    return { row, amount, basis }
   })
 
   const supplyTotal = baseCost + overheadCost
   const supplyPerSet = setCount > 0 ? supplyTotal / setCount : 0
-  const unitPrice = applyRounding(supplyPerSet, num(quote.roundUnit) || 1, quote.roundMode)
+  const roundUnit = num(quote.roundUnit) || 1
+  const unitPrice = applyRounding(supplyPerSet, roundUnit, quote.roundMode)
   const quoteTotal = unitPrice * setCount
   const vatTotal = (quoteTotal * num(quote.vatRate)) / 100
+  // 제안가는 절사 전 set당 공급가에 부가세를 더해 절사한다. 같은 제품 견적서의 개정판
+  // 세 장을 모두 맞추는 방식이 이것뿐이다 - 절사한 최종 단가에 부가세를 곱하면 그중
+  // 한 장에서 1원 어긋난다. 대조는 `scripts/verify-formula-calc.mjs` 가 한다.
+  const proposalPerSet = applyRounding(
+    supplyPerSet * (1 + num(quote.vatRate) / 100),
+    roundUnit,
+    quote.roundMode,
+  )
 
   const share = (total: number) => (setCount > 0 ? total / setCount : 0)
   const perSet = [
@@ -235,6 +318,10 @@ export function calculate(sheet: FormulaSheet, setCountOverride?: number): Total
     { label: '부자재비', total: packaging.included, perSet: share(packaging.included) },
     { label: '가공비', total: process.included, perSet: share(process.included) },
     { label: '분석비', total: analysis.included, perSet: share(analysis.included) },
+    // 재고비는 값을 넣은 시트에만 줄이 생긴다. 견적서 양식에도 비어 있는 칸이다.
+    ...(stockCost > 0
+      ? [{ label: `재고비 (${num(quote.stockRate)}%)`, total: stockCost, perSet: share(stockCost) }]
+      : []),
     ...overheads.map((item) => ({
       label: item.row.label || '간접비',
       total: item.amount,
@@ -259,6 +346,8 @@ export function calculate(sheet: FormulaSheet, setCountOverride?: number): Total
     processCost: process.included,
     analysisCost: analysis.included,
     excludedCost: packaging.excluded + process.excluded + analysis.excluded,
+    stockCost,
+    blockCost,
     baseCost,
     overheadCost,
     supplyTotal,
@@ -267,38 +356,59 @@ export function calculate(sheet: FormulaSheet, setCountOverride?: number): Total
     quoteTotal,
     vatTotal,
     paymentTotal: quoteTotal + vatTotal,
-    proposalPerSet: unitPrice + (unitPrice * num(quote.vatRate)) / 100,
+    proposalPerSet,
+    proposalTotal: proposalPerSet * setCount,
     perSet,
   }
 }
 
 export type Tier = {
+  row: QuoteTier
   setCount: number
   unitPrice: number
   quoteTotal: number
   supplyPerSet: number
+  proposalPerSet: number
+  /** 할인을 걸지 않았을 때의 단가. 할인 폭을 보여 주는 기준값이다. */
+  basePrice: number
+  discount: TierDiscount
   /** 시트에 적힌 수량과 같은 구간인지 */
   current: boolean
 }
 
 /**
- * 수량 구간별 단가. 세트 수만 바꿔 전체를 다시 계산한다.
- * 수량이 세트 수에 따라 늘어나는 줄(basis set·unit)은 함께 늘고, 고정비(제판·목형·
- * 분석)는 그대로여서 구간이 커질수록 단가가 내려간다 - 공장 견적서와 같은 성질이다.
+ * 수량 구간별 단가. 세트 수를 바꿔 전체를 다시 계산하고, 구간에 적힌 할인율을 건다.
+ *
+ * 수량에 비례하는 줄(basis set·unit)은 함께 늘고 고정비(제판·목형·분석)는 그대로다.
+ * 고정비가 전부 별도청구로 빠진 구조에서는 그것만으로는 단가가 내려가지 않으므로,
+ * 실제 대량 할인은 구간의 할인율로 넣는다.
  */
 export function calculateTiers(sheet: FormulaSheet, settings: QuoteSettings = sheet.quote): Tier[] {
   const current = num(sheet.spec.setCount)
-  const counts = [...new Set(settings.tiers.map(num).filter((value) => value > 0))].sort((a, b) => a - b)
-  return counts.map((setCount) => {
-    const totals = calculate(sheet, setCount)
-    return {
-      setCount,
-      unitPrice: totals.unitPrice,
-      quoteTotal: totals.quoteTotal,
-      supplyPerSet: totals.supplyPerSet,
-      current: setCount === current,
-    }
-  })
+  const seen = new Set<number>()
+  return settings.tiers
+    .map((row) => ({ row, setCount: num(row.setCount) }))
+    .filter(({ setCount }) => {
+      if (setCount <= 0 || seen.has(setCount)) return false
+      seen.add(setCount)
+      return true
+    })
+    .sort((a, b) => a.setCount - b.setCount)
+    .map(({ row, setCount }) => {
+      const discount = discountOf(row)
+      const totals = calculate(sheet, setCount, discount)
+      return {
+        row,
+        setCount,
+        unitPrice: totals.unitPrice,
+        quoteTotal: totals.quoteTotal,
+        supplyPerSet: totals.supplyPerSet,
+        proposalPerSet: totals.proposalPerSet,
+        basePrice: hasDiscount(discount) ? calculate(sheet, setCount).unitPrice : totals.unitPrice,
+        discount,
+        current: setCount === current,
+      }
+    })
 }
 
 /** 배합비율 합이 100 이 되도록 지정한 줄에 남은 양을 넣는다. 부형제 조정용. */

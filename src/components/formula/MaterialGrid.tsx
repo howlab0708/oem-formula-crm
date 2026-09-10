@@ -23,6 +23,52 @@ import { cellClass, headClass, numberCellClass, rowNumberClass } from './cellSty
 /** 화면 열 순서. 붙여넣기 키 순서(`MATERIAL_PASTE_KEYS`)와 같아야 한다. */
 const COLUMNS = MATERIAL_PASTE_KEYS.length
 
+/**
+ * 원료단가는 천 원대에서 수십만 원대까지 자리수가 널뛰어서, 쉼표가 없으면 0 개수를
+ * 눈으로 세게 된다. 옆 칸인 금액에는 쉼표가 있어 나란히 놓으면 더 눈에 걸린다.
+ */
+function groupThousands(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return trimmed
+  const parsed = Number(trimmed.replace(/,/g, ''))
+  if (!Number.isFinite(parsed)) return value
+  return parsed.toLocaleString('ko-KR', { maximumFractionDigits: 4 })
+}
+
+/**
+ * 원료단가 칸. 포커스가 없을 때는 쉼표를 넣어 보여 주고, 타이핑하는 동안에는 적은
+ * 그대로 둔다. 커서가 있는 칸에 쉼표를 끼워 넣으면 자리가 밀려 지우기가 어렵다.
+ * 저장값은 손대지 않는다 - 계산도 검증도 `num()` 이 쉼표를 지우고 읽는다.
+ */
+function PriceCell({
+  value,
+  onChange,
+  cellProps,
+  ariaLabel,
+}: {
+  value: string
+  onChange: (next: string) => void
+  cellProps: Record<string, unknown>
+  ariaLabel: string
+}) {
+  const [editing, setEditing] = useState(false)
+  return (
+    <input
+      {...cellProps}
+      value={editing ? value : groupThousands(value)}
+      inputMode="numeric"
+      aria-label={ariaLabel}
+      onChange={(event) => onChange(event.target.value)}
+      onFocus={(event) => {
+        setEditing(true)
+        event.currentTarget.select()
+      }}
+      onBlur={() => setEditing(false)}
+      className={`${cellClass} text-right tnum`}
+    />
+  )
+}
+
 type Props = {
   materials: MaterialRow[]
   totals: Totals
@@ -130,9 +176,23 @@ export function MaterialGrid({ materials, totals, lossPercent, index, dispatch }
       <div className="overflow-x-auto">
         <table data-grid ref={gridRef} className="w-full min-w-[62rem] border-collapse text-[13px]">
           <caption className="sr-only">
-            원료명, 배합비율, 배합량, 사용량, 원료단가, 금액, 비고 순서의 배합비 입력 표
+            원료명, 배합비율, 배합량, 사용량, 원료단가, 금액, 팩 단위, 비고 순서의 배합비 입력 표
           </caption>
           <thead>
+            {/* 열이 열한 개라 한 줄로는 훑기 어렵다. 견적서와 같은 묶음으로 갈라 준다. */}
+            <tr className="text-[11px] text-ink-3">
+              <th scope="col" colSpan={2} className="px-2 pb-1" />
+              <th scope="colgroup" colSpan={3} className="border-b border-line px-2 pb-1 text-center font-medium">
+                배합 · 투입량
+              </th>
+              <th scope="colgroup" colSpan={2} className="border-b border-line px-2 pb-1 text-center font-medium">
+                단가 · 금액
+              </th>
+              <th scope="colgroup" colSpan={3} className="border-b border-line px-2 pb-1 text-center font-medium">
+                참고
+              </th>
+              <th scope="col" className="px-2 pb-1" />
+            </tr>
             <tr>
               <th scope="col" className={`${headClass} w-9`} aria-label="줄 번호" />
               <th scope="col" className={`${headClass} min-w-[13rem] text-left`}>원료명</th>
@@ -141,6 +201,9 @@ export function MaterialGrid({ materials, totals, lossPercent, index, dispatch }
               <th scope="col" className={`${headClass} w-24`}>사용량(kg)</th>
               <th scope="col" className={`${headClass} w-24`}>원료단가(원)</th>
               <th scope="col" className={`${headClass} w-28`}>금액(원)</th>
+              <th scope="col" className={`${headClass} w-28`} title="원료 팩킹 단위(kg). ‘청구’ 를 켜면 사용량을 팩 배수로 올립니다.">
+                팩 단위(kg)
+              </th>
               <th scope="col" className={`${headClass} min-w-[9rem] text-left`}>비고</th>
               <th scope="col" className={`${headClass} w-20`}>기능성</th>
               <th scope="col" className={`${headClass} w-16`} aria-label="줄 삭제" />
@@ -170,9 +233,16 @@ export function MaterialGrid({ materials, totals, lossPercent, index, dispatch }
               <th scope="row" className="px-2 py-2 text-left">소계</th>
               <td className={numberCellClass}>{formatRatio(totals.ratioSum)}</td>
               <td className={numberCellClass}>{formatKg(totals.batchSumKg, 2)}</td>
-              <td className={numberCellClass}>{formatKg(totals.usageSumKg, 2)}</td>
+              <td className={numberCellClass}>
+                {formatKg(totals.usageSumKg, 2)}
+                {/* 견적서 소계는 발주 단위인 정수 kg 로 올려 적는다(52.80 → 53). */}
+                <span className="block text-[11px] font-normal text-ink-3">
+                  발주 {Math.ceil(totals.usageSumKg).toLocaleString('ko-KR')}kg
+                </span>
+              </td>
               <td className={numberCellClass} />
               <td className={numberCellClass}>{formatWon(totals.materialCost)}</td>
+              <td className={numberCellClass} />
               <td className="px-2 py-2 text-[12px] text-ink-3" colSpan={3}>
                 Loss {num(lossPercent)}% UP · 부가세 별도
               </td>
@@ -262,24 +332,49 @@ function MaterialRowView({
           {...cell(2)}
           value={row.usage}
           inputMode="decimal"
-          placeholder={formatKg(calc.batchKg)}
+          placeholder={formatKg(calc.usageKg)}
           aria-label={`${rowIndex + 1}번째 원료 사용량(kg) 직접 입력`}
-          title="비우면 배합량을 그대로 씁니다. 팩 단위로 올릴 때만 입력하세요."
+          title="비우면 배합량(또는 팩 단위로 올린 양)을 그대로 씁니다."
           onChange={(event) => onPatch(row.id, { usage: event.target.value })}
-          className={`${cellClass} text-right tnum ${calc.overridden ? 'bg-accent-soft' : ''}`}
+          className={`${cellClass} text-right tnum ${
+            calc.overridden || calc.packedUp ? 'bg-accent-soft' : ''
+          }`}
         />
       </td>
       <td className="p-0">
-        <input
-          {...cell(3)}
+        <PriceCell
           value={row.unitPrice}
-          inputMode="numeric"
-          aria-label={`${rowIndex + 1}번째 원료 단가(원)`}
-          onChange={(event) => onPatch(row.id, { unitPrice: event.target.value })}
-          className={`${cellClass} text-right tnum`}
+          cellProps={cell(3)}
+          ariaLabel={`${rowIndex + 1}번째 원료 단가(원)`}
+          onChange={(next) => onPatch(row.id, { unitPrice: next })}
         />
       </td>
       <td className={numberCellClass}>{formatWon(calc.amount)}</td>
+      {/* 팩 단위는 견적서 비고에 ‘25키로팩킹’ 으로 적혀 오므로 비고 옆에 둔다. */}
+      <td className="px-1 py-1">
+        <span className="flex items-center justify-end gap-1">
+          <input
+            value={row.packKg}
+            inputMode="decimal"
+            placeholder="-"
+            aria-label={`${rowIndex + 1}번째 원료 팩 단위(kg)`}
+            title="원료 팩킹 단위(kg). 견적서 비고의 ‘25키로팩킹’ 같은 값입니다."
+            onChange={(event) => onPatch(row.id, { packKg: event.target.value })}
+            className={`${cellClass} w-12 text-right tnum`}
+          />
+          <label className="flex items-center gap-0.5 text-[11px] text-ink-3">
+            <input
+              type="checkbox"
+              checked={row.packBilled}
+              disabled={!row.packKg.trim()}
+              aria-label={`${rowIndex + 1}번째 원료를 팩 단위로 청구`}
+              title="켜면 사용량을 팩 배수로 올려 청구액을 봅니다. 수량 구간에도 적용됩니다."
+              onChange={(event) => onPatch(row.id, { packBilled: event.target.checked })}
+            />
+            청구
+          </label>
+        </span>
+      </td>
       <td className="p-0">
         <input
           {...cell(4)}

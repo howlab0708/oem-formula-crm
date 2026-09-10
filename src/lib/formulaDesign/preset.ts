@@ -4,7 +4,7 @@
  * 예시는 실제로 받은 공장 견적서 두 종의 *구조* 를 옮긴 것이다. 처음 쓰는 연구원이
  * 어느 칸에 무엇을 넣는지, 공장마다 무엇이 다른지 바로 보게 하는 용도다.
  *
- *   tablet  정제 · 800mg×60정 · 1,000set · Loss 10% · 원 단위 반올림 · 간접비 총액 입력
+ *   tablet  정제 · 800mg×60정 · 1,000set · Loss 10% · 원 단위 반올림 · 간접비 가공비 연동
  *   compact 정제 · 800mg×30정 · 3,000set · Loss 5%  · 10원 절사   · 품질관리비 별도 항목
  *
  * 원료단가·가공비·간접비는 대표값이다. 이 저장소가 공개라서 공장에서 받은 실제
@@ -13,7 +13,7 @@
  * 그래서 예시 시트의 금액은 실제 견적서 금액과 다르다.
  */
 
-import type { FormulaSheet, LineRow, MaterialRow, OverheadRow, QuantityBasis } from './types'
+import type { FormulaSheet, LineRow, MaterialRow, OverheadRow, QuantityBasis, QuoteTier } from './types'
 
 /**
  * 행 id. 화면 안에서만 구분하면 되므로 단순 증가값을 쓴다.
@@ -37,6 +37,8 @@ export function newMaterialRow(overrides: Partial<MaterialRow> = {}): MaterialRo
     labelPercent: '',
     potency: '',
     overage: '',
+    packKg: '',
+    packBilled: false,
     functional: false,
     ...overrides,
   }
@@ -57,8 +59,29 @@ export function newLineRow(overrides: Partial<LineRow> = {}): LineRow {
   }
 }
 
+export function newTierRow(overrides: Partial<QuoteTier> = {}): QuoteTier {
+  return {
+    id: rowId('t'),
+    setCount: '',
+    materialDiscount: '',
+    packagingDiscount: '',
+    processDiscount: '',
+    note: '',
+    ...overrides,
+  }
+}
+
 export function newOverheadRow(overrides: Partial<OverheadRow> = {}): OverheadRow {
-  return { id: rowId('o'), label: '', mode: 'amount', value: '', note: '', ...overrides }
+  return {
+    id: rowId('o'),
+    label: '',
+    mode: 'amount',
+    value: '',
+    note: '',
+    base: 'total',
+    includePrior: false,
+    ...overrides,
+  }
 }
 
 export function todayLabel(): string {
@@ -117,6 +140,7 @@ export function emptySheet(): FormulaSheet {
         newOverheadRow({ label: '기업이윤', mode: 'rate' }),
       ],
       vatRate: '10',
+      stockRate: '',
       roundUnit: '1',
       roundMode: 'round',
       tiers: [],
@@ -126,7 +150,7 @@ export function emptySheet(): FormulaSheet {
   }
 }
 
-/** 종합 비타민 정제 · 800mg×60정 · 1,000set · Loss 10% · 간접비 총액 입력형. */
+/** 종합 비타민 정제 · 800mg×60정 · 1,000set · Loss 10% · 간접비 가공비 연동형. */
 export function tabletSheet(): FormulaSheet {
   const material = (name: string, ratio: string, unitPrice: string, extra: Partial<MaterialRow> = {}) =>
     newMaterialRow({ name, ratio, unitPrice, ...extra })
@@ -156,7 +180,7 @@ export function tabletSheet(): FormulaSheet {
         functionality: '결합 조직 형성과 기능유지에 필요 / 철의 흡수에 필요 / 항산화작용을 하여 유해산소로부터 세포를 보호하는데 필요',
       }),
       material('아셀렌산나트륨 혼합제제', '0.81', '80000', {
-        note: '25kg 팩킹 단위', functional: true, basis: '셀렌', labelAmount: '55㎍',
+        note: '25kg 팩킹 단위', packKg: '25', functional: true, basis: '셀렌', labelAmount: '55㎍',
         dailyIntake: '16.5~135 ㎍',
         functionality: '항산화작용을 하여 유해산소로부터 세포를 보호하는데 필요',
       }),
@@ -226,15 +250,24 @@ export function tabletSheet(): FormulaSheet {
       newLineRow({ label: '광고심의비', unit: '회', basis: 'fixed', quantity: '1', unitPrice: '100000', included: false, note: '초도 1회, 별도청구' }),
     ],
     quote: {
-      // 총액 직접 입력형. 공장 견적서에 금액이 그대로 적혀 오는 경우다.
+      // 가공비 연동형. 일반관리비는 가공비에, 기업이윤은 가공비+일반관리비에 %를 건다.
+      // 이 형태라야 수량을 바꿔도 간접비가 함께 움직인다 - 총액으로 박아 두면 수량
+      // 구간별 단가가 실제보다 낮게 나온다. 비율은 대표값이고 실제 마진이 아니다.
       overheads: [
-        newOverheadRow({ label: '일반관리비', mode: 'amount', value: '500000' }),
-        newOverheadRow({ label: '기업이윤', mode: 'amount', value: '150000' }),
+        newOverheadRow({ label: '일반관리비', mode: 'rate', base: 'process', value: '30' }),
+        newOverheadRow({ label: '기업이윤', mode: 'rate', base: 'process', includePrior: true, value: '5' }),
       ],
       vatRate: '10',
+      stockRate: '',
       roundUnit: '1',
       roundMode: 'round',
-      tiers: ['1000', '3000', '5000'],
+      // 대량 발주 할인은 공장이 단가를 낮춰 주는 것이라 구간마다 직접 받는다.
+      // 아래 할인율은 칸을 어떻게 쓰는지 보여 주는 예시값이고 실제 협상값이 아니다.
+      tiers: [
+        newTierRow({ setCount: '1000', note: '기준 수량' }),
+        newTierRow({ setCount: '3000', materialDiscount: '3', processDiscount: '8', note: '예시 · 공장 확인 필요' }),
+        newTierRow({ setCount: '5000', materialDiscount: '5', processDiscount: '15', note: '예시 · 공장 확인 필요' }),
+      ],
       conditions: [
         '부가세 별도입니다.',
         '물류비는 별도 청구됩니다.',
@@ -319,9 +352,14 @@ export function compactSheet(): FormulaSheet {
         newOverheadRow({ label: '고정비(물류포함)', mode: 'amount', value: '200000' }),
       ],
       vatRate: '10',
+      stockRate: '',
       roundUnit: '10',
       roundMode: 'floor',
-      tiers: ['3000', '5000', '10000'],
+      tiers: [
+        newTierRow({ setCount: '3000', note: '기준 수량' }),
+        newTierRow({ setCount: '5000', processDiscount: '5', note: '예시 · 공장 확인 필요' }),
+        newTierRow({ setCount: '10000', materialDiscount: '4', processDiscount: '10', note: '예시 · 공장 확인 필요' }),
+      ],
       conditions: [
         '견적서 유효기간은 발행일로부터 7일이며 이후 단가가 변동될 수 있습니다.',
         '부가세 별도입니다.',
@@ -333,6 +371,6 @@ export function compactSheet(): FormulaSheet {
 }
 
 export const SAMPLE_SHEETS = [
-  { id: 'tablet', label: '종합비타민 정제 (800mg×60정 · Loss 10% · 총액 간접비)', short: '정제 60정', build: tabletSheet },
+  { id: 'tablet', label: '종합비타민 정제 (800mg×60정 · Loss 10% · 가공비 연동 간접비)', short: '정제 60정', build: tabletSheet },
   { id: 'compact', label: '비타민C 정제 (800mg×30정 · Loss 5% · 10원 절사)', short: '정제 30정', build: compactSheet },
 ] as const
