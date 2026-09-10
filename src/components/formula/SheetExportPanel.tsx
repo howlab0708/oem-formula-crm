@@ -10,7 +10,9 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { downloadPagesAsPdf } from '@/lib/export/download'
-import { loadStoredLogo } from '@/lib/export/logo'
+import { loadStoredLogo, subscribeLogo } from '@/lib/export/logo'
+import { hasIssuer, loadStoredIssuer, subscribeIssuer } from '@/lib/export/issuer'
+import { DocumentIdentity } from '@/components/DocumentIdentity'
 import { DEFAULT_SHEET_EXPORT, renderFormulaSheetPages, type SheetExportOptions } from '@/lib/export/renderFormulaSheet'
 import type { Tier, Totals } from '@/lib/formulaDesign/calc'
 import type { FormulaSheet } from '@/lib/formulaDesign/types'
@@ -20,12 +22,11 @@ const buttonClass =
 const primaryClass =
   'rounded-md bg-accent px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50'
 
-const subscribeNever = () => () => {}
-
-const TOGGLES: { key: 'showPrice' | 'showExtras' | 'showTiers'; label: string; hint: string }[] = [
+const TOGGLES: { key: 'showPrice' | 'showExtras' | 'showTiers' | 'showIssuer'; label: string; hint: string }[] = [
   { key: 'showPrice', label: '견적 금액', hint: '최종 단가·합계·결제 금액' },
   { key: 'showTiers', label: '수량 구간별 단가', hint: '1,000 / 3,000 / 5,000set 비교' },
   { key: 'showExtras', label: '별도 청구 항목', hint: '초도 1회성 비용' },
+  { key: 'showIssuer', label: '공급자 정보 · 직인', hint: '오른쪽 위 공급자 칸' },
 ]
 
 function fileStem(sheet: FormulaSheet): string {
@@ -41,8 +42,10 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
   const [busy, setBusy] = useState<'pdf' | 'preview' | null>(null)
   const [message, setMessage] = useState('')
   const [preview, setPreview] = useState<string[] | null>(null)
-  // 저장해 둔 회사 로고는 클라이언트에서만 읽는다(하이드레이션 불일치 방지).
-  const storedLogo = useSyncExternalStore(subscribeNever, loadStoredLogo, () => null)
+  const [identityOpen, setIdentityOpen] = useState(false)
+  // 저장해 둔 회사 로고·공급자 정보는 클라이언트에서만 읽는다(하이드레이션 불일치 방지).
+  const storedLogo = useSyncExternalStore(subscribeLogo, loadStoredLogo, () => null)
+  const storedIssuer = useSyncExternalStore(subscribeIssuer, loadStoredIssuer, () => null)
 
   useEffect(() => {
     if (!message) return
@@ -50,7 +53,8 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
     return () => window.clearTimeout(id)
   }, [message])
 
-  const render = () => renderFormulaSheetPages(sheet, totals, tiers, { ...options, logo: storedLogo })
+  const render = () =>
+    renderFormulaSheetPages(sheet, totals, tiers, { ...options, logo: storedLogo, issuer: storedIssuer })
 
   const run = async (kind: 'pdf' | 'preview') => {
     setBusy(kind)
@@ -83,6 +87,15 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className={buttonClass}
+            aria-expanded={identityOpen}
+            onClick={() => setIdentityOpen(true)}
+          >
+            직인 · 로고
+            {storedIssuer?.seal ? <span className="ml-1 text-accent-strong">●</span> : null}
+          </button>
           <button type="button" className={buttonClass} onClick={() => run('preview')} disabled={busy !== null}>
             {busy === 'preview' ? '만드는 중…' : '미리보기'}
           </button>
@@ -125,8 +138,13 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
       </div>
 
       <p className="mt-2 text-[12px] text-ink-3">
-        회사 로고는 ‘배합비 검색’ 탭의 내보내기 설정에서 등록한 로고를 함께 씁니다.
-        {storedLogo ? ' 등록된 로고가 문서 맨 위에 들어갑니다.' : ' 지금은 등록된 로고가 없습니다.'}
+        <strong>직인 · 로고</strong> 에서 한 번 등록하면 계속 쓰입니다. 지금은{' '}
+        {storedLogo ? '로고 등록됨' : '로고 미등록'}
+        {' · '}
+        {hasIssuer(storedIssuer)
+          ? `공급자 정보 등록됨${storedIssuer?.seal ? ' · 직인 등록됨' : ' · 직인 미등록'}`
+          : '공급자 정보 미등록'}
+        . 이 브라우저에만 저장되고 서버로 보내지 않습니다.
       </p>
 
       {message ? (
@@ -135,8 +153,37 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
         </p>
       ) : null}
 
+      {identityOpen ? <IdentityDialog onClose={() => setIdentityOpen(false)} /> : null}
       {preview ? <PreviewDialog pages={preview} onClose={() => setPreview(null)} /> : null}
     </section>
+  )
+}
+
+/** 내보내기 자리에서 바로 여는 직인·로고 등록. 같은 칸을 ‘내보내기 설정’ 과 함께 쓴다. */
+function IdentityDialog({ onClose }: { onClose: () => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    const dialog = dialogRef.current
+    dialog?.showModal()
+    return () => dialog?.close()
+  }, [])
+  return (
+    <dialog
+      ref={dialogRef}
+      onCancel={onClose}
+      aria-label="직인 · 로고 등록"
+      className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-lg bg-surface p-4 backdrop:bg-ink/40"
+    >
+      <div className="flex items-center justify-between">
+        <strong className="text-[14px]">직인 · 로고 등록</strong>
+        <button type="button" autoFocus onClick={onClose} className="rounded border border-line px-3 py-1 text-[13px]">
+          닫기
+        </button>
+      </div>
+      <div className="mt-3">
+        <DocumentIdentity />
+      </div>
+    </dialog>
   )
 }
 

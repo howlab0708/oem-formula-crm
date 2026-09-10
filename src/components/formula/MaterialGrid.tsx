@@ -201,7 +201,11 @@ export function MaterialGrid({ materials, totals, lossPercent, index, dispatch }
               <th scope="col" className={`${headClass} w-24`}>사용량(kg)</th>
               <th scope="col" className={`${headClass} w-24`}>원료단가(원)</th>
               <th scope="col" className={`${headClass} w-28`}>금액(원)</th>
-              <th scope="col" className={`${headClass} w-28`} title="원료 팩킹 단위(kg). ‘청구’ 를 켜면 사용량을 팩 배수로 올립니다.">
+              <th
+                scope="col"
+                className={`${headClass} w-24`}
+                title="원료 팩킹 단위(kg). 적어 두면 옆에 체크칸이 생기고, 켜면 사용량을 팩 배수로 올려 청구액을 봅니다."
+              >
                 팩 단위(kg)
               </th>
               <th scope="col" className={`${headClass} min-w-[9rem] text-left`}>비고</th>
@@ -362,17 +366,17 @@ function MaterialRowView({
             onChange={(event) => onPatch(row.id, { packKg: event.target.value })}
             className={`${cellClass} w-12 text-right tnum`}
           />
-          <label className="flex items-center gap-0.5 text-[11px] text-ink-3">
+          {/* 팩 단위를 적은 줄에만 보인다. 빈 칸에 비활성 체크박스를 세워 두면 무슨
+              뜻인지 알 수 없는 표시가 모든 줄에 붙는다. */}
+          {row.packKg.trim() ? (
             <input
               type="checkbox"
               checked={row.packBilled}
-              disabled={!row.packKg.trim()}
               aria-label={`${rowIndex + 1}번째 원료를 팩 단위로 청구`}
-              title="켜면 사용량을 팩 배수로 올려 청구액을 봅니다. 수량 구간에도 적용됩니다."
+              title="팩 단위로 청구받기: 사용량을 팩 배수로 올립니다. 수량 구간에도 적용됩니다."
               onChange={(event) => onPatch(row.id, { packBilled: event.target.checked })}
             />
-            청구
-          </label>
+          ) : null}
         </span>
       </td>
       <td className="p-0">

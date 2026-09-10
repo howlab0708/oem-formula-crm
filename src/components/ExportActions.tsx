@@ -10,9 +10,11 @@ import {
   downloadCanvasAsPng,
 } from '@/lib/export/download'
 import { customerBriefing, DEFAULT_EXPORT_VISIBILITY, EXPORT_FIELDS } from '@/lib/export/customerView'
-import { loadStoredLogo, readLogo, storeLogo } from '@/lib/export/logo'
+import { loadStoredLogo, subscribeLogo } from '@/lib/export/logo'
 import type { freshnessLabel } from '@/lib/datasetProvenance'
 import { renderBriefingCard } from '@/lib/export/renderCard'
+import { DocumentIdentity } from './DocumentIdentity'
+
 
 type Props = {
   briefing: Briefing
@@ -42,11 +44,8 @@ export function ExportActions({ briefing: original, disabled, freshness }: Props
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [customer, setCustomer] = useState(false)
   const [hidden, setHidden] = useState(DEFAULT_EXPORT_VISIBILITY)
-  // undefined 는 '이번 화면에서 아직 건드리지 않음'. 그때는 저장해 둔 로고를 쓴다.
-  const [chosenLogo, setChosenLogo] = useState<string | null | undefined>(undefined)
-  // 저장해 둔 로고는 클라이언트에서만 읽는다(서버 렌더에는 없는 값이므로 하이드레이션 불일치 방지).
-  const storedLogo = useSyncExternalStore(subscribeNever, loadStoredLogo, () => null)
-  const logo = chosenLogo === undefined ? storedLogo : chosenLogo
+  // 로고는 등록 화면(`DocumentIdentity`)이 저장하고, 저장하면 여기로 곧바로 알려 온다.
+  const logo = useSyncExternalStore(subscribeLogo, loadStoredLogo, () => null)
   const [preview, setPreview] = useState<{ image: string; text: string } | null>(null)
   const briefing = customerBriefing(original, customer, hidden)
   const sourceLines = [freshness.date, freshness.source, freshness.schedule]
@@ -120,24 +119,7 @@ export function ExportActions({ briefing: original, disabled, freshness }: Props
       <button type="button" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)} className="rounded-md border border-line px-3 py-1.5 text-[13px] text-ink-2">내보내기 설정{customer ? ' · 고객용' : ''}</button>
       {settingsOpen ? <div className="absolute right-0 top-full z-50 mt-2 max-h-[70dvh] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-line bg-surface p-4 text-[13px] text-ink-2 shadow-lg" aria-label="내보내기 설정">
         <div className="flex items-center justify-between"><strong>내보내기 설정</strong><button type="button" className="underline" onClick={() => setSettingsOpen(false)}>닫기</button></div>
-        <label className="mt-3 block">회사 로고 (PNG·JPG, 2MB 이하)
-          <input type="file" accept="image/png,image/jpeg" disabled={busy !== null} className="mt-2 w-full text-[12px]" onChange={event => {
-            const file = event.target.files?.[0]; event.target.value = ''
-            if (file) void run('logo', async () => {
-              const next = await readLogo(file)
-              const saved = storeLogo(next)
-              setChosenLogo(next); setPreview(null)
-              return saved ? '로고를 저장했습니다. 다음 접속에도 적용됩니다.' : '로고를 적용했습니다. 이 브라우저에 저장하지 못해 새로고침하면 사라집니다.'
-            })
-          }} />
-        </label>
-        {logo ? <div className="mt-2 flex items-center gap-3">
-          {/* Uploaded raster, processed locally; no remote image request. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logo} alt="내보내기 회사 로고" className="h-10 max-w-40 object-contain" />
-          <button type="button" className="underline" onClick={() => { storeLogo(null); setChosenLogo(null); setPreview(null) }}>로고 제거</button>
-        </div> : null}
-        <p className="mt-2 text-[12px] text-ink-3">로고는 이미지·PDF 내보내기 맨 위에 들어갑니다. 이 브라우저에만 저장하고 서버로 보내지 않으므로, 공용 PC 에서는 사용 후 로고를 제거해 주세요.</p>
+        <div className="mt-3"><DocumentIdentity /></div>
         <label className="mt-4 flex items-center gap-2 font-medium"><input type="checkbox" checked={customer} onChange={e => { setCustomer(e.target.checked); setPreview(null) }} />고객용 보기</label>
         <p className="mt-2 text-[12px] leading-4 text-ink-3">기본으로 숨기는 항목은 없습니다. 고객용 보기를 켜면 아래에서 선택한 항목만 모든 내보내기에서 숨깁니다. 검색 결과 수치는 유지됩니다.</p>
         <fieldset className="mt-3 space-y-2"><legend className="mb-2">고객용 보기에서 숨길 항목</legend>{EXPORT_FIELDS.map(field => <label key={field.key} className="flex items-center gap-2"><input type="checkbox" checked={hidden[field.key]} onChange={e => { setHidden({ ...hidden, [field.key]: e.target.checked }); setPreview(null) }} />{field.label}</label>)}</fieldset>

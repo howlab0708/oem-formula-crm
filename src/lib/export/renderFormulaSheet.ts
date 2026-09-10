@@ -18,6 +18,8 @@
 import { formatKg, formatWon, num, packageLabel, unitNoun } from '../formulaDesign/calc'
 import type { Tier, Totals } from '../formulaDesign/calc'
 import type { FormulaSheet } from '../formulaDesign/types'
+import { hasIssuer, type Issuer } from './issuer'
+import { loadExportImage } from './loadImage'
 
 /** A4 210×297mm 를 150dpi 로 그린다. */
 const WIDTH = 1240
@@ -38,21 +40,27 @@ const ACCENT = '#1c5cab'
 
 export type SheetExportOptions = {
   logo?: string | null
+  /** 공급자 칸에 넣을 발행자 정보와 직인. 비어 있으면 칸을 그리지 않는다. */
+  issuer?: Issuer | null
   /** 최종 단가·합계·제안가를 넣는다. 원가 내역은 어떤 경우에도 넣지 않는다. */
   showPrice: boolean
   /** 별도 청구(초도비용) 항목을 넣는다. */
   showExtras: boolean
   /** 수량 구간별 단가 표를 넣는다. */
   showTiers: boolean
+  /** 공급자 칸·직인을 넣는다. */
+  showIssuer: boolean
   /** 문서 제목 */
   title: string
 }
 
 export const DEFAULT_SHEET_EXPORT: SheetExportOptions = {
   logo: null,
+  issuer: null,
   showPrice: true,
   showExtras: true,
   showTiers: true,
+  showIssuer: true,
   title: '배합 제안서',
 }
 
@@ -220,17 +228,93 @@ function tableRow(sheet: Sheet, columns: Column[], cells: string[], strong = fal
   sheet.y = top + height + 1
 }
 
-async function drawHeader(sheet: Sheet, spec: FormulaSheet['spec'], options: SheetExportOptions): Promise<void> {
-  if (options.logo) {
-    const logo = new Image()
-    logo.src = options.logo
-    await logo.decode().catch(() => {
-      throw new Error('로고를 그리지 못했습니다. 이미지를 다시 선택해 주세요.')
-    })
-    const scale = Math.min(200 / logo.width, 56 / logo.height)
-    sheet.ctx.drawImage(logo, MARGIN, sheet.y, logo.width * scale, logo.height * scale)
-    sheet.y += 56 + 14
+const ISSUER_BOX = 240
+const ISSUER_LABEL = 62
+
+/**
+ * 오른쪽 위 공급자 칸. 공장 견적서와 같은 자리, 같은 항목 순서로 그린다.
+ * 직인은 상호 줄에 겹쳐 찍는다 - 종이 견적서가 상호·대표자 위에 찍는 관행 그대로다.
+ *
+ * 표의 아래끝을 돌려준다. 제목은 로고와 이 칸 중 더 아래를 기준으로 시작한다.
+ */
+async function drawIssuer(sheet: Sheet, issuer: Issuer, top: number): Promise<number> {
+  const { ctx } = sheet
+  const rows: { label: string; value: string }[] = [
+    { label: '등록번호', value: issuer.registration },
+    { label: '상호', value: issuer.company },
+    { label: '대표자', value: issuer.ceo },
+    { label: '주소', value: issuer.address },
+    { label: '연락처', value: issuer.contact },
+  ].filter((row) => row.value.trim())
+  if (!rows.length && !issuer.seal) return top
+
+  const left = WIDTH - MARGIN - ISSUER_BOX
+  const seal = issuer.seal ? await loadExportImage(issuer.seal, '직인') : null
+  const sealBox = 62
+  // 직인이 있으면 그 자리를 비워 두고 접는다. 안 그러면 긴 주소가 인영 아래로 들어가
+  // 읽히지 않는다 - 인영은 상호 줄에 겹치는 것까지가 관행이다.
+  const valueWidth = ISSUER_BOX - ISSUER_LABEL - 20 - (seal ? sealBox - 6 : 0)
+  // 주소는 길어서 접힌다. 줄 수를 먼저 세어 칸 높이를 잡는다.
+  // `wrap` 은 ctx 의 지금 글꼴로 폭을 재므로 재기 전에 글꼴을 맞춰 둔다.
+  ctx.font = font(10.5)
+  const wrapped = rows.map((row) => ({
+    ...row,
+    lines: wrap(ctx, row.value, valueWidth),
+  }))
+  // 항목이 적어도 직인이 칸을 넘지 않도록 최소 높이를 준다.
+  const height = Math.max(
+    wrapped.reduce((sum, row) => sum + Math.max(1, row.lines.length) * 15, 0) + 22,
+    seal ? sealBox + 26 : 0,
+  )
+
+  ctx.fillStyle = SUNKEN
+  ctx.fillRect(left, top, ISSUER_BOX, height)
+  ctx.strokeStyle = LINE
+  ctx.lineWidth = 1
+  ctx.strokeRect(left + 0.5, top + 0.5, ISSUER_BOX - 1, height - 1)
+
+  ctx.fillStyle = INK_3
+  ctx.font = font(9.5, 600)
+  ctx.fillText('공 급 자', left + 10, top + 15)
+
+  let y = top + 30
+  let companyRowY = y
+  for (const row of wrapped) {
+    ctx.fillStyle = INK_3
+    ctx.font = font(10)
+    ctx.fillText(row.label, left + 10, y)
+    ctx.fillStyle = INK_2
+    ctx.font = font(10.5, row.label === '상호' ? 600 : 400)
+    row.lines.forEach((line, index) => ctx.fillText(line, left + ISSUER_LABEL, y + index * 15))
+    if (row.label === '상호') companyRowY = y
+    y += Math.max(1, row.lines.length) * 15
   }
+
+  if (seal) {
+    const scale = Math.min(sealBox / seal.width, sealBox / seal.height)
+    const w = seal.width * scale
+    const h = seal.height * scale
+    // 상호 줄 오른쪽에 걸치게 둔다. 칸을 넘어가지 않도록 위아래를 가둔다.
+    const x = left + ISSUER_BOX - w - 8
+    const y = Math.min(Math.max(top + 18, companyRowY - h / 2 + 2), top + height - h - 6)
+    ctx.drawImage(seal, x, y, w, h)
+  }
+  return top + height
+}
+
+async function drawHeader(sheet: Sheet, spec: FormulaSheet['spec'], options: SheetExportOptions): Promise<void> {
+  const top = sheet.y
+  let logoBottom = top
+  if (options.logo) {
+    const logo = await loadExportImage(options.logo, '로고')
+    const scale = Math.min(200 / logo.width, 56 / logo.height)
+    sheet.ctx.drawImage(logo, MARGIN, top, logo.width * scale, logo.height * scale)
+    logoBottom = top + 56
+  }
+  const issuer = options.showIssuer && options.issuer && hasIssuer(options.issuer) ? options.issuer : null
+  const issuerBottom = issuer ? await drawIssuer(sheet, issuer, top) : top
+  const headTop = Math.max(logoBottom, issuerBottom)
+  sheet.y = headTop > top ? headTop + 14 : top
   sheet.text(options.title, MARGIN, 26, 700)
   sheet.y += 10
   const subtitle = [spec.customer ? `${spec.customer} 귀중` : '', spec.productName].filter(Boolean).join(' · ')

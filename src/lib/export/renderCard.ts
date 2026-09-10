@@ -10,6 +10,7 @@
 
 import { formatDecimal, formatInt, formatMarkerValue, formatMilligrams, formatPercent } from '../format'
 import type { Briefing } from './briefing'
+import { loadExportImage } from './loadImage'
 
 const WIDTH = 1080
 const PADDING = 64
@@ -100,9 +101,7 @@ export async function renderBriefingCard(briefing: Briefing, options: { logo?: s
   let y = PADDING
 
   if (options.logo) {
-    const logo = new Image()
-    logo.src = options.logo
-    await logo.decode().catch(() => { throw new Error('로고를 그리지 못했습니다. 이미지를 다시 선택해 주세요.') })
+    const logo = await loadExportImage(options.logo, '로고')
     const scale = Math.min(200/logo.width, 64/logo.height)
     ctx.drawImage(logo, PADDING, y, logo.width*scale, logo.height*scale)
     y += 82

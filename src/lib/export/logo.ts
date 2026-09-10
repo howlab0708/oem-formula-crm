@@ -37,6 +37,17 @@ export function loadStoredLogo(): string | null {
   return cached
 }
 
+/*
+ * 로고를 등록하는 곳과 문서를 그리는 곳이 서로 다른 화면일 수 있어 바뀜을 알린다.
+ * (공급자 정보도 같은 방식이다 - `issuer.ts` 참고)
+ */
+const listeners = new Set<() => void>()
+
+export function subscribeLogo(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
 /** 저장에 성공했는지 돌려준다. 실패해도 이번 화면의 내보내기에는 그대로 쓴다. */
 export function storeLogo(dataUrl: string | null): boolean {
   cached = dataUrl
@@ -45,4 +56,5 @@ export function storeLogo(dataUrl: string | null): boolean {
     else localStorage.setItem(STORAGE_KEY, dataUrl)
     return true
   } catch { return false }
+  finally { listeners.forEach(listener => listener()) }
 }
