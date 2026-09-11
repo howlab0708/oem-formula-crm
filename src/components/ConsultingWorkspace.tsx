@@ -330,7 +330,6 @@ function LoadedConsultingWorkspace({
     setSavedNotice(`“${item.name}” 조건을 불러왔습니다.${!item.generation || item.generation !== datasetMeta?.generation ? ' 저장 당시와 데이터가 달라 현재 데이터로 다시 계산합니다.' : ''}`)
   }, [datasetMeta?.generation, setFilters])
 
-  const panelOpen = selectedProduct !== null
 
   return (
     <div className="h-workspace flex flex-col overflow-hidden">
@@ -377,7 +376,7 @@ function LoadedConsultingWorkspace({
             type="button"
             aria-label="조건 패널 닫기"
             onClick={() => setRailOpen(false)}
-            className="fixed inset-0 z-30 bg-ink/10 lg:hidden"
+            className="fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px] lg:hidden"
           />
         ) : null}
 
@@ -388,8 +387,8 @@ function LoadedConsultingWorkspace({
         >
           <FilterRail
             filters={filters}
-            onChange={(next, group) => { setFilters(next, group); if (!group) setRailOpen(false) }}
-            onReset={() => { setFilters(EMPTY_FILTERS); setRailOpen(false) }}
+            onChange={setFilters}
+            onReset={() => setFilters(EMPTY_FILTERS)}
             history={filterHistory.previous}
             onRestore={(index) => {
               dispatchFilters({ type: 'restore', index })
@@ -397,6 +396,7 @@ function LoadedConsultingWorkspace({
               setRailOpen(false)
             }}
             onEndEdit={() => dispatchFilters({ type: 'end-edit' })}
+            onViewResults={() => setRailOpen(false)}
             activeCount={activeCount}
             options={railOptions}
             markers={markers}
@@ -420,9 +420,7 @@ function LoadedConsultingWorkspace({
           className="min-h-0 min-w-0 flex-1 overflow-y-auto scroll-contain"
         >
           <div
-            className={`mx-auto flex max-w-[104rem] flex-col gap-5 px-4 py-5 transition-[padding] duration-200 lg:px-6 ${
-              panelOpen ? '2xl:pr-[36rem]' : ''
-            }`}
+            className="mx-auto flex max-w-[104rem] flex-col gap-5 px-4 py-5 lg:px-6"
           >
             {savedNotice ? <p role="status" className="rounded border border-line bg-surface p-3 text-[13px] text-ink-2">{savedNotice}<button type="button" className="ml-3 underline" onClick={() => setSavedNotice('')}>닫기</button></p> : null}
             <ActiveFilters

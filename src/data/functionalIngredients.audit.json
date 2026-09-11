@@ -1,5 +1,5 @@
 {
-  "reviewedOn": "2026-09-05",
+  "reviewedOn": "2026-09-11",
   "files": [
     {
       "name": "C003.csv",
@@ -23,10 +23,9 @@
   "codexCount": 96,
   "counts": {
     "notified": 96,
-    "recognized": 518,
-    "unresolved": 7
+    "recognized": 466
   },
-  "registryOnlyCount": 68,
+  "registryOnlyCount": 0,
   "repairs": [
     {
       "file": "I-0040.csv",
@@ -46,5 +45,20 @@
     "2007-7",
     "2013-5"
   ],
-  "uniqueProductReports": 45996
+  "uniqueProductReports": 45996,
+  "latestReview": {
+    "reviewedOn": "2026-09-11",
+    "catalogRows": 621,
+    "officialBoardPosts": 655,
+    "integratedListRows": 699,
+    "recognizedDetailsFetched": 465,
+    "supplementalDetailsFetched": 61,
+    "codexArchiveSha256": "3d25c54f8248204c75e02f889c1ee4adc3bc3fa2188ed91da06da33402afebfb",
+    "changedBoardIds": [
+      "1089154"
+    ],
+    "restoredStandards": 18,
+    "activeCatalogRows": 562,
+    "excludedFromCatalog": 59
+  }
 }

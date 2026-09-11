@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { Modal } from '@/components/Modal'
 import { fetchFormulaList, fetchVersions, type FormulaCompany } from '@/lib/api/formulas'
 import { formatWon } from '@/lib/formulaDesign/calc'
 import type { FormulaSummary, QuoteVersion } from '@/lib/formulaDesign/types'
@@ -23,9 +24,11 @@ type Props = {
   onOpen: (id: string) => void
   onOpenVersion: (version: number) => void
   onClose: () => void
+  busy: boolean
+  actionError: string
 }
 
-export function FormulaLibrary({ refreshKey, currentId, onOpen, onOpenVersion, onClose }: Props) {
+export function FormulaLibrary({ refreshKey, currentId, onOpen, onOpenVersion, onClose, busy, actionError }: Props) {
   const [companies, setCompanies] = useState<FormulaCompany[]>([])
   const [formulas, setFormulas] = useState<FormulaSummary[]>([])
   const [company, setCompany] = useState('')
@@ -81,16 +84,7 @@ export function FormulaLibrary({ refreshKey, currentId, onOpen, onOpenVersion, o
   const shownVersions = currentId ? versions : []
 
   return (
-    <section aria-labelledby="library-title" className="rounded-lg border border-line bg-surface p-3">
-      <div className="flex items-center justify-between">
-        <h3 id="library-title" className="text-[14px] font-semibold text-ink">
-          저장된 배합비
-        </h3>
-        <button type="button" onClick={onClose} className="text-[13px] text-ink-2 underline underline-offset-2">
-          닫기
-        </button>
-      </div>
-
+    <Modal title="저장된 배합비" onClose={onClose} wide>
       <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
         <div>
           <div className="flex flex-wrap gap-2">
@@ -122,9 +116,9 @@ export function FormulaLibrary({ refreshKey, currentId, onOpen, onOpenVersion, o
             />
           </div>
 
-          {error ? (
+          {error || actionError ? (
             <p role="alert" className="mt-3 rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-[13px] text-danger">
-              {error}
+              {error || actionError}
             </p>
           ) : null}
 
@@ -143,6 +137,7 @@ export function FormulaLibrary({ refreshKey, currentId, onOpen, onOpenVersion, o
                   <button
                     type="button"
                     onClick={() => onOpen(item.id)}
+                    disabled={busy}
                     className={`flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1 py-2 text-left transition-colors hover:bg-surface-sunken ${
                       item.id === currentId ? 'bg-accent-soft' : ''
                     }`}
@@ -189,6 +184,7 @@ export function FormulaLibrary({ refreshKey, currentId, onOpen, onOpenVersion, o
                     <button
                       type="button"
                       onClick={() => onOpenVersion(version.version)}
+                      disabled={busy}
                       className="text-[13px] text-accent-strong underline underline-offset-2"
                     >
                       버전 {version.version}
@@ -208,6 +204,6 @@ export function FormulaLibrary({ refreshKey, currentId, onOpen, onOpenVersion, o
           </p>
         </div>
       </div>
-    </section>
+    </Modal>
   )
 }

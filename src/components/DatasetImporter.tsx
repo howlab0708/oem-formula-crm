@@ -33,9 +33,9 @@ export function DatasetImporter({
   const busy = status.phase === 'reading' || status.phase === 'parsing'
 
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[13px] font-semibold text-ink">식약처 품목제조보고 연동</span>
+    <section aria-labelledby="dataset-import-title" className="rounded-lg border border-line bg-surface p-3">
+      <h2 id="dataset-import-title" className="text-[14px] font-semibold text-ink">CSV 데이터 연동</h2>
+      <div className="mt-1">
         <span className="text-[12px] text-ink-3">
           {source === 'seed' ? '예시 데이터' : source === 'db' ? '저장된 데이터' : '업로드 데이터'} ·{' '}
           {formatInt(productCount)}건
@@ -43,8 +43,7 @@ export function DatasetImporter({
       </div>
 
       <p className="mt-1 text-[12px] leading-4 text-ink-3 keep-all">
-        원본 CSV 를 그대로 올리세요. 파싱은 백그라운드 워커에서 처리해 화면이 멈추지 않고, 완료되면
-        서버에 자동 저장되어 다음에 접속할 때도 그대로 남아 있습니다.{' '}
+        CSV를 선택하면 서버에 저장됩니다.{' '}
         <a
           href="/sample-reference.csv"
           download
@@ -57,6 +56,8 @@ export function DatasetImporter({
       <input
         ref={inputRef}
         type="file"
+        aria-label="CSV 파일"
+        tabIndex={-1}
         accept=".csv,text/csv"
         className="sr-only"
         onChange={(event) => {
@@ -73,7 +74,7 @@ export function DatasetImporter({
           onClick={() => inputRef.current?.click()}
           className="flex-1 rounded-md border border-line bg-surface px-3 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-surface-sunken disabled:text-ink-3"
         >
-          {busy ? '불러오는 중…' : 'CSV 선택'}
+          {busy ? '불러오는 중…' : 'CSV 파일 선택'}
         </button>
         {source !== 'seed' ? (
           <button
@@ -193,6 +194,6 @@ export function DatasetImporter({
           서버 저장 실패: {saveStatus.message} (화면에는 남아 있지만, 새로고침하면 사라집니다)
         </p>
       ) : null}
-    </div>
+    </section>
   )
 }

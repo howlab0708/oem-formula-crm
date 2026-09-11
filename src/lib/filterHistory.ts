@@ -22,7 +22,8 @@ export function filterHistoryReducer(state: FilterHistory, action: FilterHistory
   if (action.type === 'restore') {
     const current = state.previous[action.index]
     if (!current) return state
-    return { current, previous: state.previous.slice(0, action.index), editing: null }
+    if (JSON.stringify(current) === JSON.stringify(state.current)) return state
+    return { current, previous: [...state.previous, state.current].slice(-FILTER_HISTORY_LIMIT), editing: null }
   }
   const current = typeof action.update === 'function' ? action.update(state.current) : action.update
   if (JSON.stringify(current) === JSON.stringify(state.current)) return state

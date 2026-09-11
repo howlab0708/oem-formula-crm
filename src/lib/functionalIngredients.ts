@@ -2,7 +2,7 @@ import catalog from '../data/functionalIngredients.json'
 import sourceRows from '../data/functionalIngredients.source.json'
 import audit from '../data/functionalIngredients.audit.json'
 
-export type IngredientCategory = 'notified' | 'recognized' | 'unresolved'
+export type IngredientCategory = 'notified' | 'recognized'
 export type IngredientIntake = { purpose: string; amount: string; basis: string }
 export type IngredientStandard = {
   name: string
@@ -26,7 +26,13 @@ export type FunctionalIngredient = {
   upcoming: { effectiveOn: string; text: string }[]
   reviewedOn: string
   codexSection?: string
-  evidenceStatus?: 'official' | 'registry'
+  evidenceStatus?: 'official'
+  review?: {
+    label: string
+    reason: string
+    relatedRecognition?: string
+    sources: { label: string; url: string }[]
+  }
   historicalRecognition?: boolean
   productEvidence: { count: number; examples: string[] }
 }
@@ -37,17 +43,17 @@ export type IngredientSourceRow = {
   raw: Record<string, string>
 }
 
-export const INGREDIENT_REVIEW_DATE = '2026-09-05'
+export const INGREDIENT_REVIEW_DATE = '2026-09-11'
 export const INGREDIENT_PAGE_SIZE = 25
 export const INGREDIENT_SOURCES = {
   codex: 'https://www.mfds.go.kr/brd/m_211/view.do?seq=14973',
   search: 'https://www.foodsafetykorea.go.kr/portal/board/board.do?menu_grp=MENU_NEW01&menu_no=2660',
   amendment: 'https://impfood.mfds.go.kr/CFBDD02F02?active=00049&cntntsMngId1=00049&cntntsMngId2=00049&cntntsSn=659791',
+  integrated: 'https://data.mfds.go.kr/hid/opcaa01/ingdSrchLst.do',
 }
 export const ingredientCategoryLabels: Record<IngredientCategory, string> = {
   notified: '고시형',
   recognized: '개별인정형',
-  unresolved: '확인 필요',
 }
 export const functionalIngredients = catalog as FunctionalIngredient[]
 export const ingredientSourceRows = sourceRows as IngredientSourceRow[]
@@ -68,8 +74,7 @@ function searchKey(value: string) {
 const searchIndex = new Map(functionalIngredients.map((ingredient) => [ingredient.id, searchKey([
   ingredient.name,
   ingredientCategoryLabels[ingredient.category],
-  ...ingredientOriginals(ingredient).flatMap((row) => ingredient.category === 'unresolved'
-    ? [row.name, row.recognition, row.holder, row.functionality] : [row.name, row.recognition, row.holder]),
+  ...ingredientOriginals(ingredient).flatMap((row) => [row.name, row.recognition, row.holder]),
   ...ingredient.standards.flatMap((standard) => [standard.name, standard.recognition, standard.holder,
     standard.functionality, ...standard.intakes.flatMap((intake) => [intake.purpose, intake.basis])]),
 ].join(' '))]))

@@ -195,6 +195,7 @@ export default function FormulaDesigner({ referenceNames }: Props) {
       const data = await fetchVersionSheet(saved.id, version)
       dispatch({ type: 'load', sheet: data.sheet })
       dirty.current = true
+      setLibraryOpen(false)
       setMessage(`버전 ${version} 을 불러왔습니다. 저장하면 새 버전으로 기록됩니다.`)
     })
 
@@ -277,7 +278,7 @@ export default function FormulaDesigner({ referenceNames }: Props) {
               type="button"
               className={buttonClass}
               onClick={() => setLibraryOpen((open) => !open)}
-              aria-expanded={libraryOpen}
+              aria-haspopup="dialog"
             >
               저장된 배합비
             </button>
@@ -285,7 +286,7 @@ export default function FormulaDesigner({ referenceNames }: Props) {
               type="button"
               className={buttonClass}
               onClick={() => setPriceBookOpen((open) => !open)}
-              aria-expanded={priceBookOpen}
+              aria-haspopup="dialog"
             >
               원료단가 {prices.length > 0 ? `(${prices.length.toLocaleString('ko-KR')})` : ''}
             </button>
@@ -296,6 +297,18 @@ export default function FormulaDesigner({ referenceNames }: Props) {
             ) : null}
           </div>
         </div>
+
+      <label className="mt-3 block border-t border-line pt-3">
+        <span className="block text-[12px] font-medium text-ink-2">메모</span>
+        <textarea
+          value={sheet.memo}
+          rows={2}
+          maxLength={5000}
+          placeholder="원료 수급, 시험생산 조건, 고객 요청 등"
+          onChange={(event) => act({ type: 'memo', value: event.target.value })}
+          className="mt-1 w-full rounded-md border border-line bg-surface px-2.5 py-2 text-[13px] text-ink placeholder:text-ink-3"
+        />
+      </label>
 
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-ink-3">
           <span>
@@ -352,6 +365,8 @@ export default function FormulaDesigner({ referenceNames }: Props) {
 
       {libraryOpen ? (
         <FormulaLibrary
+          busy={busy}
+          actionError={error}
           refreshKey={refresh}
           currentId={saved?.id ?? null}
           onOpen={openFormula}
@@ -359,6 +374,8 @@ export default function FormulaDesigner({ referenceNames }: Props) {
           onClose={() => setLibraryOpen(false)}
         />
       ) : null}
+
+      <SheetExportPanel sheet={sheet} totals={totals} tiers={tiers} />
 
       <SpecPanel spec={sheet.spec} totals={totals} dispatch={act} />
 
@@ -413,19 +430,8 @@ export default function FormulaDesigner({ referenceNames }: Props) {
         dispatch={act}
       />
 
-      <SheetExportPanel sheet={sheet} totals={totals} tiers={tiers} />
 
-      <label className="block rounded-lg border border-line bg-surface p-3">
-        <span className="block text-[12px] font-medium text-ink-2">내부 메모 (고객용 PDF 에 들어가지 않습니다)</span>
-        <textarea
-          value={sheet.memo}
-          rows={3}
-          maxLength={5000}
-          placeholder="원료 수급, 시험생산 조건, 고객 요청 등"
-          onChange={(event) => act({ type: 'memo', value: event.target.value })}
-          className="mt-1 w-full rounded-md border border-line bg-surface px-2.5 py-2 text-[13px] text-ink placeholder:text-ink-3"
-        />
-      </label>
+
     </div>
   )
 }

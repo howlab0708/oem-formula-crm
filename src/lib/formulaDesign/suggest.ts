@@ -49,7 +49,7 @@ function ingredientIntake(ingredient: FunctionalIngredient): { amount: string; b
   return { amount: '', basis: ingredient.name }
 }
 
-/** 기능성 원료 DB 후보. 모듈 로드 때 한 번만 만든다(621건). */
+/** 현행 기능성 원료 DB 후보. 모듈 로드 때 한 번만 만든다. */
 const catalogSuggestions: Suggestion[] = functionalIngredients.map((ingredient) => {
   const intake = ingredientIntake(ingredient)
   const category = ingredientCategoryLabels[ingredient.category]

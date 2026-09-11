@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { Modal } from '@/components/Modal'
 import { clearIngredientPrices, deleteIngredientPrice } from '@/lib/api/formulas'
 import { nameKey } from '@/lib/formulaDesign/suggest'
 import type { IngredientPrice } from '@/lib/formulaDesign/types'
@@ -66,12 +67,9 @@ export function PriceBookPanel({ prices, onChanged, onClose }: Props) {
     })
 
   return (
-    <section aria-labelledby="price-book-title" className="rounded-lg border border-line bg-surface p-3">
+    <Modal title="원료단가 기억장" onClose={onClose} wide>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 id="price-book-title" className="text-[14px] font-semibold text-ink">
-            원료단가 기억장
-          </h3>
           <p className="mt-0.5 text-[12px] text-ink-3">
             배합비를 저장할 때 쌓인 원료별 최근 단가 {prices.length.toLocaleString('ko-KR')}건입니다. 자동완성이 이 값을
             채웁니다. 잘못된 단가는 지우거나, 올바른 단가로 배합비를 다시 저장하면 덮어써집니다.
@@ -81,9 +79,6 @@ export function PriceBookPanel({ prices, onChanged, onClose }: Props) {
           {/* 목록은 화면을 열 때 받아 둔 값이라, 다른 사람이 저장한 단가는 새로고침해야 보인다. */}
           <button type="button" onClick={onChanged} className="text-[13px] text-ink-2 underline underline-offset-2">
             새로고침
-          </button>
-          <button type="button" onClick={onClose} className="text-[13px] text-ink-2 underline underline-offset-2">
-            닫기
           </button>
         </div>
       </div>
@@ -176,6 +171,6 @@ export function PriceBookPanel({ prices, onChanged, onClose }: Props) {
           {shown.length.toLocaleString('ko-KR')}건 표시 · 전체 {prices.length.toLocaleString('ko-KR')}건
         </p>
       ) : null}
-    </section>
+    </Modal>
   )
 }

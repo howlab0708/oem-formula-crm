@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { Modal } from '@/components/Modal'
 import { formatInt, formatMilligrams } from '@/lib/format'
 import { ORIGIN_LABELS, originOfForm, productSources } from '@/lib/ingredientSource'
 import type { Product } from '@/lib/types'
@@ -16,13 +17,7 @@ type Props = {
   onMatchFormula: (product: Product) => void
 }
 
-/**
- * 우측 슬라이드오버.
- *
- * 화면 중앙을 덮는 모달 대신 오른쪽에서 밀려 들어온다. 뒤의 리스트를 가리지 않고
- * (넓은 화면에서는 본문이 그만큼 좁아진다), 위/아래 키로 다음 제품을 계속
- * 넘겨볼 수 있어 검색 결과의 맥락이 끊기지 않는다.
- */
+/** 선택한 레퍼런스를 배경과 구분되는 팝업에서 확인한다. */
 export function DetailPanel({
   product,
   position,
@@ -35,18 +30,7 @@ export function DetailPanel({
   const panelRef = useRef<HTMLDivElement>(null)
   const open = product !== null
 
-  // 닫는 동안에도 내용을 잠시 붙들어 둔다. 그러지 않으면 패널이 미끄러져 나가기 전에
-  // 안이 텅 비어 '사라지는' 것처럼 보인다.
-  const [rendered, setRendered] = useState<Product | null>(product)
-  if (product !== null && product !== rendered) {
-    // 렌더 중 상태 조정(React 가 권장하는 파생 상태 패턴). 즉시 다시 렌더된다.
-    setRendered(product)
-  }
-  useEffect(() => {
-    if (product) return
-    const id = window.setTimeout(() => setRendered(null), 220)
-    return () => window.clearTimeout(id)
-  }, [product])
+  const rendered = product
 
   // 판정 결과는 제품별로 캐시되므로(productSources) 여기서 매 렌더 계산해도 값싸다.
   const sources = rendered ? productSources(rendered) : null
@@ -69,10 +53,6 @@ export function DetailPanel({
           target.tagName === 'SELECT' ||
           target.isContentEditable)
 
-      if (event.key === 'Escape') {
-        onClose()
-        return
-      }
       if (typing) return
       if (event.key === 'ArrowDown' || event.key === 'j') {
         event.preventDefault()
@@ -90,40 +70,15 @@ export function DetailPanel({
 
   // 목록 위치가 바뀌면 패널 본문은 처음부터 읽는다.
   useEffect(() => {
-    panelRef.current?.scrollTo({ top: 0 })
+    panelRef.current?.parentElement?.scrollTo({ top: 0 })
   }, [rendered?.id])
 
-  return (
-    <div
-      role="dialog"
-      aria-modal={false}
-      aria-label="레퍼런스 상세"
-      aria-hidden={!open}
-      className={`fixed inset-y-0 right-0 z-40 flex w-[min(34rem,100vw)] flex-col border-l border-line bg-surface shadow-[-8px_0_24px_rgba(24,24,27,0.06)] transition-transform duration-200 ease-out ${
-        open ? 'translate-x-0' : 'pointer-events-none translate-x-full'
-      }`}
-    >
-      {rendered ? (
-        <>
-          <header className="border-b border-line px-6 py-5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h2 className="text-[16px] leading-6 font-semibold text-ink keep-all">
-                  {rendered.name}
-                </h2>
-                <p className="mt-1 text-[13px] text-ink-3">{rendered.manufacturer}</p>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="상세 닫기"
-                className="shrink-0 rounded-md border border-line px-2 py-1 text-[13px] text-ink-2 transition-colors hover:bg-surface-sunken"
-              >
-                닫기 (Esc)
-              </button>
-            </div>
+  if (!rendered) return null
 
-            <div className="mt-4 flex items-center justify-between gap-3">
+  return (
+    <Modal title={`레퍼런스 상세 · ${rendered.name}`} onClose={onClose}>
+          <header className="border-b border-line pb-4">
+            <div className="flex items-center justify-between gap-3">
               <p className="text-[12px] text-ink-3 tnum">
                 {position >= 0 ? `${formatInt(position + 1)} / ${formatInt(total)}` : '-'}
               </p>
@@ -138,7 +93,7 @@ export function DetailPanel({
             </div>
           </header>
 
-          <div ref={panelRef} className="flex-1 overflow-y-auto scroll-contain px-6 py-5">
+          <div ref={panelRef} className="py-4">
             <Row label="제조원" value={rendered.manufacturer} />
             {rendered.brand ? <Row label="브랜드명" value={rendered.brand} /> : null}
             <Row
@@ -272,7 +227,7 @@ export function DetailPanel({
             ) : null}
           </div>
 
-          <footer className="border-t border-line px-6 py-4">
+          <footer className="border-t border-line pt-4">
             <button
               type="button"
               onClick={() => onMatchFormula(rendered)}
@@ -284,9 +239,7 @@ export function DetailPanel({
               주원료와 제형을 이 제품과 동일하게 맞춰 유사 레퍼런스를 다시 검색합니다.
             </p>
           </footer>
-        </>
-      ) : null}
-    </div>
+    </Modal>
   )
 }
 

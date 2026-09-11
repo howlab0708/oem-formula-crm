@@ -66,16 +66,17 @@ test('range entry coalesces without overwriting the prior bounds, and discrete s
   assert.deepEqual(state.previous.map(previous => [previous.weightMin, previous.weightMax]), [[null, null], [300, null], [300, 800]])
 })
 
-test('returning to an earlier selection restores the entire condition set and continues from that point', () => {
+test('restoring earlier conditions retains the previous search so the restore itself can be undone', () => {
   const first = change(initial, { ...EMPTY_FILTERS, mains: ['비타민C'] })
   const second = change(first, previous => ({ ...previous, forms: ['정제'] }))
   const third = change(second, previous => ({ ...previous, subExclude: ['원료 A'] }))
   const restored = reduce(third, { type: 'restore', index: 1 })
   assert.deepEqual(restored.current, first.current)
-  assert.deepEqual(restored.previous, [EMPTY_FILTERS])
+  assert.deepEqual(restored.previous, [EMPTY_FILTERS, first.current, second.current, third.current])
+  assert.deepEqual(reduce(restored, { type: 'restore', index: restored.previous.length - 1 }).current, third.current)
   const continued = change(restored, previous => ({ ...previous, forms: ['분말'] }))
   assert.deepEqual(continued.current, { ...first.current, forms: ['분말'] })
-  assert.deepEqual(continued.previous, [EMPTY_FILTERS, first.current])
+  assert.deepEqual(continued.previous, [...restored.previous, first.current])
 })
 
 test('no-op actions do not add history and retained history stays bounded', () => {

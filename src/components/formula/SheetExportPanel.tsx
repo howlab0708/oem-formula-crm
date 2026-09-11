@@ -8,10 +8,11 @@
  * 청구 항목. 무엇이 들어가는지 미리보기로 눌러 확인한 뒤 내보내도록 했다.
  */
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { downloadPagesAsPdf } from '@/lib/export/download'
 import { loadStoredLogo, subscribeLogo } from '@/lib/export/logo'
 import { hasIssuer, loadStoredIssuer, subscribeIssuer } from '@/lib/export/issuer'
+import { Modal } from '@/components/Modal'
 import { DocumentIdentity } from '@/components/DocumentIdentity'
 import { DEFAULT_SHEET_EXPORT, renderFormulaSheetPages, type SheetExportOptions } from '@/lib/export/renderFormulaSheet'
 import type { Tier, Totals } from '@/lib/formulaDesign/calc'
@@ -90,7 +91,7 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
           <button
             type="button"
             className={buttonClass}
-            aria-expanded={identityOpen}
+            aria-haspopup="dialog"
             onClick={() => setIdentityOpen(true)}
           >
             직인 · 로고
@@ -161,59 +162,19 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
 
 /** 내보내기 자리에서 바로 여는 직인·로고 등록. 같은 칸을 ‘내보내기 설정’ 과 함께 쓴다. */
 function IdentityDialog({ onClose }: { onClose: () => void }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-  useEffect(() => {
-    const dialog = dialogRef.current
-    dialog?.showModal()
-    return () => dialog?.close()
-  }, [])
-  return (
-    <dialog
-      ref={dialogRef}
-      onCancel={onClose}
-      aria-label="직인 · 로고 등록"
-      className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-lg bg-surface p-4 backdrop:bg-ink/40"
-    >
-      <div className="flex items-center justify-between">
-        <strong className="text-[14px]">직인 · 로고 등록</strong>
-        <button type="button" autoFocus onClick={onClose} className="rounded border border-line px-3 py-1 text-[13px]">
-          닫기
-        </button>
-      </div>
-      <div className="mt-3">
-        <DocumentIdentity />
-      </div>
-    </dialog>
-  )
+  return <Modal title="직인 · 로고 등록" onClose={onClose}><DocumentIdentity /></Modal>
 }
 
 function PreviewDialog({ pages, onClose }: { pages: string[]; onClose: () => void }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-  useEffect(() => {
-    const dialog = dialogRef.current
-    dialog?.showModal()
-    return () => dialog?.close()
-  }, [])
   return (
-    <dialog
-      ref={dialogRef}
-      onCancel={onClose}
-      aria-label="배합 제안서 미리보기"
-      className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-4xl overflow-hidden rounded-lg bg-surface p-4 backdrop:bg-ink/40"
-    >
-      <div className="flex items-center justify-between">
-        <strong className="text-[14px]">배합 제안서 미리보기 · {pages.length}쪽</strong>
-        <button type="button" autoFocus onClick={onClose} className="rounded border border-line px-3 py-1 text-[13px]">
-          닫기
-        </button>
-      </div>
-      <div className="mt-3 max-h-[calc(100dvh-8rem)] space-y-4 overflow-auto bg-canvas p-3">
+    <Modal title={`배합 제안서 미리보기 · ${pages.length}쪽`} onClose={onClose} wide>
+      <div className="space-y-4 bg-canvas p-3">
         {pages.map((page, index) => (
           // 로컬에서 만든 캔버스 이미지다. 외부 요청이 없다.
           // eslint-disable-next-line @next/next/no-img-element
           <img key={index} src={page} alt={`배합 제안서 ${index + 1}쪽`} className="w-full shadow" />
         ))}
       </div>
-    </dialog>
+    </Modal>
   )
 }

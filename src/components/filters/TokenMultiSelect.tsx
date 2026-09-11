@@ -35,7 +35,7 @@ export function TokenMultiSelect({
   hint,
 }: Props) {
   const [query, setQuery] = useState('')
-  const [expanded, setExpanded] = useState(false)
+  const [extraCount, setExtraCount] = useState(0)
   // 조건 레일이 길다. 지금 쓰지 않는 묶음은 제목 옆 버튼으로 통째로 접어 둘 수 있다.
   const [collapsed, setCollapsed] = useState(false)
   const bodyId = useId()
@@ -55,7 +55,7 @@ export function TokenMultiSelect({
     return [...pinned, ...rest]
   }, [options, query, selectedSet])
 
-  const limit = expanded || query.trim() ? filtered.length : visibleCount
+  const limit = (query.trim() ? 20 : visibleCount) + extraCount
   const shown = filtered.slice(0, limit)
   const hiddenCount = filtered.length - shown.length
 
@@ -112,14 +112,15 @@ export function TokenMultiSelect({
         {options.length > visibleCount ? (
           <input
             type="search"
+            aria-label={searchPlaceholder === '검색' ? `${label} 검색` : searchPlaceholder}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => { setQuery(event.target.value); setExtraCount(0) }}
             placeholder={searchPlaceholder}
             className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] text-ink placeholder:text-ink-3"
           />
         ) : null}
 
-        <ul className="mt-2 flex flex-col gap-0.5">
+        <ul className="mt-2 flex max-h-64 flex-col gap-0.5 overflow-y-auto overscroll-contain">
           {shown.map((option) => {
             const isSelected = selectedSet.has(option.value)
             return (
@@ -166,17 +167,17 @@ export function TokenMultiSelect({
         {hiddenCount > 0 ? (
           <button
             type="button"
-            onClick={() => setExpanded(true)}
+            onClick={() => setExtraCount((count) => count + 40)}
             className="mt-1.5 text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
           >
-            {formatInt(hiddenCount)}개 더 보기
+            더 보기 · 남은 {formatInt(hiddenCount)}개
           </button>
         ) : null}
 
-        {expanded && !query.trim() && filtered.length > visibleCount ? (
+        {extraCount > 0 ? (
           <button
             type="button"
-            onClick={() => setExpanded(false)}
+            onClick={() => setExtraCount(0)}
             className="mt-1.5 ml-2 text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
           >
             접기

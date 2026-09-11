@@ -269,7 +269,7 @@ export function QuotePanel({ quote, totals, tiers, dispatch }: Props) {
             <div>
               <h4 className="text-[13px] font-semibold text-ink">수량 구간별 단가</h4>
               <p id="tier-hint" className="text-[11px] text-ink-3">
-                대량 고객에게 깎아 주는 만큼을 구간마다 적습니다. 공장이 낮춰 준 항목에{' '}
+                고객사에게 제공하는 할인 비율을 구간마다 적습니다. 공장이 낮춰 준 항목에{' '}
                 <span className="font-medium">할인율을 그대로</span> 넣으세요 — 가공비 8% 인하면 <b>8</b>. 비워 두면
                 수량만 바꿔 다시 계산합니다.
               </p>
