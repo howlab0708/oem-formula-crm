@@ -124,11 +124,30 @@ export default function FormulaDesigner({ referenceNames, initialProduct, editor
     },
   }))
 
+  /**
+   * 단계 안내에서 해당 구역으로 이동한다.
+   *
+   * `scrollIntoView` 를 쓰지 않는다 - 그건 스크롤 가능한 조상을 전부 움직여서,
+   * 작업 화면을 감싼 문서까지 같이 밀어 올린다. html·body 가 `overflow: hidden`
+   * 이라 한 번 밀리면 사용자가 되돌릴 방법도 없다. 그래서 이 구역이 실제로 든
+   * 스크롤 상자 하나만 찾아서 그것만 움직인다.
+   */
   const jumpTo = (id: string) => {
     const section = document.getElementById(id)
-    section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    const input = section?.querySelector<HTMLElement>('input, select, button')
-    input?.focus({ preventScroll: true })
+    if (!section) return
+    let scroller: HTMLElement | null = null
+    for (let node = section.parentElement; node; node = node.parentElement) {
+      const overflowY = getComputedStyle(node).overflowY
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        scroller = node
+        break
+      }
+    }
+    if (scroller) {
+      const top = section.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop
+      scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+    }
+    section.querySelector<HTMLElement>('input, select, button')?.focus({ preventScroll: true })
   }
 
   /**

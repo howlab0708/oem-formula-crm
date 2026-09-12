@@ -76,8 +76,19 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* 스크롤 컨테이너에서 바깥으로 스크롤이 새지 않게 */
+/*
+ * 스크롤 컨테이너에서 바깥으로 스크롤이 새지 않게.
+ *
+ * `position: relative` 는 접근성용 숨김 요소(`sr-only` 로 감춘 표 캡션 등)를
+ * 이 안에 가둬 두려고 붙인다. 이 요소들은 `position: absolute` 라서 위치 기준이
+ * 될 조상이 없으면 문서 전체를 기준으로 잡히고, 그러면 화면 밖 좌표에 놓여
+ * 문서 높이를 스크롤 컨테이너 안의 내용만큼 늘려 버린다. html·body 가
+ * `overflow: hidden` 이라 사용자는 그 늘어난 높이를 스크롤할 수 없지만,
+ * `scrollIntoView` 같은 코드 스크롤은 그대로 먹혀서 작업 화면 전체가
+ * 위로 밀려 올라가고 되돌릴 수도 없게 된다.
+ */
 .scroll-contain {
+  position: relative;
   overscroll-behavior: contain;
 }
 
