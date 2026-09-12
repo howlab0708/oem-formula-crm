@@ -21,6 +21,8 @@
 
 /** 1. 원료비 한 줄. 기능성 원료 DB(`functionalIngredients`)와 연결될 수 있다. */
 export type MaterialRow = {
+  /** Reference-product sourcing evidence copied with this ingredient, not a procurement commitment. */
+  provenance?: import('../ingredientProvenance').IngredientProvenance
   id: string
   /** 원료명. 자동완성으로 채우면 `ingredientId` 도 함께 붙는다. */
   name: string

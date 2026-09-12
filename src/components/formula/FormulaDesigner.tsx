@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState, type Ref } from 'react'
 import type { Product } from '@/lib/types'
-import { draftFromProduct } from '@/lib/formulaDesign/fromProduct'
+import { draftFromProduct, refreshProductProvenance } from '@/lib/formulaDesign/fromProduct'
 import { Modal } from '@/components/Modal'
 import { calculate, calculateTiers, formatWon } from '@/lib/formulaDesign/calc'
 import { emptySheet, SAMPLE_SHEETS } from '@/lib/formulaDesign/preset'
@@ -104,7 +104,16 @@ export default function FormulaDesigner({ referenceNames, initialProduct, editor
   useImperativeHandle(editorRef, () => ({
     async importProduct(product) {
       if (busy) return false
-      if (reference?.id === product.id) return true
+      if (reference?.id === product.id) {
+        const refreshed = refreshProductProvenance(sheet, product)
+        if (refreshed !== sheet) {
+          dispatch({ type: 'load', sheet: refreshed })
+          setReference(product)
+          dirty.current = true
+          setMessage('입력한 견적은 유지하고 참고 제품의 원료 출처를 갱신했습니다.')
+        }
+        return true
+      }
       if (resolveImport.current) return false
       if (dirty.current) return new Promise<boolean>((resolve) => {
         resolveImport.current = resolve
@@ -275,7 +284,7 @@ export default function FormulaDesigner({ referenceNames, initialProduct, editor
               {reference ? `${reference.name} 기준으로 견적 만들기` : '원료와 규격을 입력해 견적을 만드세요'}
             </h2>
             <p className="mt-1 text-[13px] leading-5 text-ink-2">
-              {reference ? '원료명·제형·확인된 중량·섭취방법을 가져왔습니다. 배합비율과 단가는 직접 입력해 주세요.' : '제품 검색에서 선택한 원료를 가져오거나, 아래에서 직접 작성할 수 있습니다.'}
+              {reference ? '원료·규격과 확인된 원료사·원산지를 함께 가져왔습니다. 원료사·원산지는 참고 제품 기준이며, 배합비율과 단가는 직접 입력해 주세요.' : '제품 검색에서 선택한 원료를 가져오거나, 아래에서 직접 작성할 수 있습니다.'}
             </p>
           </div>
           {onBackToReference ? <button type="button" className={buttonClass} onClick={() => onBackToReference(reference)}>
@@ -476,6 +485,7 @@ export default function FormulaDesigner({ referenceNames, initialProduct, editor
 
       <div id="quote-materials" className="scroll-mt-4"><MaterialGrid
         materials={sheet.materials}
+        productName={sheet.spec.productName}
         totals={totals}
         lossPercent={sheet.spec.lossPercent}
         index={index}

@@ -12,6 +12,8 @@
  */
 
 import { useRef, useState } from 'react'
+import { IngredientCopyButton, ReferenceIngredientInfo } from '@/components/IngredientProvenance'
+import { provenanceToText } from '@/lib/ingredientProvenance'
 import { formatKg, formatRatio, formatWon, num } from '@/lib/formulaDesign/calc'
 import type { MaterialCalc, Totals } from '@/lib/formulaDesign/calc'
 import { MATERIAL_PASTE_KEYS, parseClipboardMatrix, type SheetAction } from '@/lib/formulaDesign/reducer'
@@ -71,6 +73,7 @@ function PriceCell({
 
 type Props = {
   materials: MaterialRow[]
+  productName: string
   totals: Totals
   /** 포장 단위 블록에 적힌 Loss율(%). 소계 줄의 각주에 그대로 보여준다. */
   lossPercent: string
@@ -78,7 +81,7 @@ type Props = {
   dispatch: (action: SheetAction) => void
 }
 
-export function MaterialGrid({ materials, totals, lossPercent, index, dispatch }: Props) {
+export function MaterialGrid({ materials, productName, totals, lossPercent, index, dispatch }: Props) {
   const gridRef = useRef<HTMLTableElement>(null)
 
   const patch = (id: string, next: Partial<MaterialRow>) => dispatch({ type: 'material', id, patch: next })
@@ -158,8 +161,9 @@ export function MaterialGrid({ materials, totals, lossPercent, index, dispatch }
             {' · '}Enter 아래 칸 · Alt+↑↓ 줄 이동 · 엑셀 표 붙여넣기 지원
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <RatioBadge gap={totals.ratioGap} sum={totals.ratioSum} />
+          <IngredientCopyButton label="배합표 복사" getText={() => provenanceToText(materials, productName)} />
           <button
             type="button"
             onClick={() => {
@@ -172,6 +176,8 @@ export function MaterialGrid({ materials, totals, lossPercent, index, dispatch }
           </button>
         </div>
       </header>
+
+      <p className="border-b border-line px-3 py-2 text-[12px] leading-5 text-ink-3">원료사·원산지는 참고 제품의 공개 자료입니다. 실제 사용할 원료는 별도 확인이 필요하며, 원료명을 바꾸면 기존 출처 정보가 해제됩니다.</p>
 
       <div className="overflow-x-auto">
         <table data-grid ref={gridRef} className="w-full min-w-[62rem] border-collapse text-[13px]">
@@ -317,6 +323,7 @@ function MaterialRowView({
           onApply={(suggestion) => onApply(row, suggestion)}
           onAttach={(name) => onAttachStandards(row, name)}
         />
+        <ReferenceIngredientInfo name={row.name} source={row.provenance} />
       </td>
       <td className="p-0">
         <input

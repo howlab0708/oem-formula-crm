@@ -23,11 +23,12 @@ const buttonClass =
 const primaryClass =
   'rounded-md bg-accent px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50'
 
-const TOGGLES: { key: 'showPrice' | 'showExtras' | 'showTiers' | 'showIssuer'; label: string; hint: string }[] = [
+const TOGGLES: { key: 'showPrice' | 'showExtras' | 'showTiers' | 'showIssuer' | 'showProvenance'; label: string; hint: string }[] = [
   { key: 'showPrice', label: '견적 금액', hint: '최종 단가·합계·결제 금액' },
   { key: 'showTiers', label: '수량 구간별 단가', hint: '1,000 / 3,000 / 5,000set 비교' },
   { key: 'showExtras', label: '별도 청구 항목', hint: '초도 1회성 비용' },
   { key: 'showIssuer', label: '공급자 정보 · 직인', hint: '오른쪽 위 공급자 칸' },
+  { key: 'showProvenance', label: '참고 원료 출처', hint: '원료사·원산지·확인 근거' },
 ]
 
 function fileStem(sheet: FormulaSheet): string {
@@ -83,8 +84,7 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
             고객 배포용 PDF
           </h3>
           <p className="mt-0.5 text-[12px] text-ink-3">
-            제품 규격 · 구성 및 포장지 · 최종 배합표만 담습니다. 원료단가·금액·간접비·공급가는 어떤 설정에서도 들어가지
-            않습니다.
+            제품 규격 · 구성 및 포장지 · 최종 배합표와 선택한 참고 원료 출처를 담습니다. 원료단가·금액·간접비·공급가는 들어가지 않습니다.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

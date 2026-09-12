@@ -2,9 +2,11 @@
 
 import { useEffect, useRef } from 'react'
 import { Modal } from '@/components/Modal'
+import { ProductProvenanceSection } from '@/components/IngredientProvenance'
 import { formatInt, formatMilligrams } from '@/lib/format'
 import { ORIGIN_LABELS, originOfForm, productSources } from '@/lib/ingredientSource'
 import type { Product } from '@/lib/types'
+import { useProductTraceability } from '@/lib/useProductTraceability'
 
 type Props = {
   product: Product | null
@@ -32,7 +34,8 @@ export function DetailPanel({
   const panelRef = useRef<HTMLDivElement>(null)
   const open = product !== null
 
-  const rendered = product
+  const trace = useProductTraceability(product)
+  const rendered = trace.product
 
   // 판정 결과는 제품별로 캐시되므로(productSources) 여기서 매 렌더 계산해도 값싸다.
   const sources = rendered ? productSources(rendered) : null
@@ -83,12 +86,13 @@ export function DetailPanel({
             <button
               type="button"
               onClick={() => onCreateQuote(rendered)}
-              className="w-full rounded-md bg-accent px-3 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-accent-strong"
+              disabled={trace.loading}
+              className="w-full rounded-md bg-accent px-3 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50"
             >
-              이 제품으로 견적 만들기 <span aria-hidden>→</span>
+              {trace.loading ? '원료 정보 확인 중…' : <>이 제품으로 견적 만들기 <span aria-hidden>→</span></>}
             </button>
             <p className="mt-2 text-[12px] leading-4 text-ink-3 keep-all">
-              원료와 규격을 배합 설계로 가져옵니다. 배합비율·단가를 입력해 견적을 완성하세요.
+              원료·규격과 확인된 원료사·원산지를 함께 가져옵니다. 배합비율·단가를 입력해 견적을 완성하세요.
             </p>
             <button type="button" onClick={() => onMatchFormula(rendered)}
               className="mt-3 w-full rounded-md border border-line px-3 py-2 text-[13px] text-ink-2 hover:bg-surface-sunken">
@@ -142,6 +146,8 @@ export function DetailPanel({
                 <p className="text-[13px] text-ink-3">표기 없음</p>
               )}
             </Block>
+
+            <ProductProvenanceSection key={rendered.id} product={rendered} loading={trace.loading} error={trace.error} onRetry={trace.retry} />
 
             <Block label="지표성분 상세 함량">
               {rendered.markers.length ? (

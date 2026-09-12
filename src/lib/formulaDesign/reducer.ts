@@ -11,6 +11,7 @@
  */
 
 import { fillRemainder } from './calc'
+import { currentProvenance } from '../ingredientProvenance'
 import { newLineRow, newMaterialRow, newOverheadRow, newTierRow } from './preset'
 import type { FormulaSheet, LineRow, MaterialRow, OverheadRow, PackagingSpec, QuoteSettings, QuoteTier } from './types'
 
@@ -117,8 +118,11 @@ export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaS
       return { ...state, spec: { ...state.spec, [action.key]: action.value } }
     case 'quote':
       return { ...state, quote: { ...state.quote, [action.key]: action.value } }
-    case 'material':
-      return { ...state, materials: replaceById(state.materials, action.id, action.patch) }
+    case 'material': {
+      const rows = replaceById(state.materials, action.id, action.patch)
+      return { ...state, materials: rows.map((row) => row.id === action.id
+        ? { ...row, provenance: currentProvenance(row.name, row.provenance) } : row) }
+    }
     case 'line':
       return { ...state, [action.block]: replaceById(state[action.block], action.id, action.patch) }
     case 'overhead':
@@ -164,7 +168,7 @@ export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaS
         action.matrix,
         MATERIAL_PASTE_KEYS,
         newMaterialRow,
-      )
+      ).map((item) => ({ ...item, provenance: currentProvenance(item.name, item.provenance) }))
       const enrich = action.enrich
       if (!enrich) return { ...state, materials: pasted }
       // 이번에 붙여넣은 줄만 손댄다. 손으로 고쳐 둔 다른 줄을 되돌리지 않는다.

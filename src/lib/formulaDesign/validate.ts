@@ -19,6 +19,7 @@ import type {
   QuoteTier,
   RoundMode,
 } from './types'
+import { currentProvenance, type IngredientProvenance } from '../ingredientProvenance'
 
 export const MAX_MATERIAL_ROWS = 200
 export const MAX_LINE_ROWS = 60
@@ -82,11 +83,58 @@ function rowIdOf(value: unknown, index: number, prefix: string): string {
   return raw && raw.length <= 40 ? raw : `${prefix}${index + 1}`
 }
 
+function provenance(value: unknown, name: string): IngredientProvenance | undefined {
+  if (value === undefined || value === null) return undefined
+  const row = record(value, '원료 출처')
+  const source: IngredientProvenance = {
+    ingredientName: text(row.ingredientName, '출처 원료명'),
+    productName: text(row.productName, '참고 제품명'),
+    reportNo: text(row.reportNo, '참고 신고번호', 60),
+    supplier: text(row.supplier, '원료사', 120),
+    country: text(row.country, '원산지', 80),
+    region: text(row.region, '원산 지역', 80),
+    evidenceId: text(row.evidenceId, '출처 식별자', 120),
+    sourceTitle: text(row.sourceTitle, '출처 제목'),
+    sourceUrl: text(row.sourceUrl, '출처 링크', 2048),
+    statement: text(row.statement, '출처 설명', 1000),
+    checkedAt: text(row.checkedAt, '출처 확인일', 10),
+    scope: text(row.scope, '원료 출처 확인 범위'),
+  }
+  if (source.sourceUrl) {
+    try {
+      const url = new URL(source.sourceUrl)
+      if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) fail('출처 링크를 확인해 주세요.')
+    } catch { fail('출처 링크를 확인해 주세요.') }
+  }
+  if (source.checkedAt && !/^\d{4}-\d{2}-\d{2}$/.test(source.checkedAt)) fail('출처 확인일을 확인해 주세요.')
+  if (row.productionDate !== undefined) {
+    source.productionDate = text(row.productionDate, '생산일', 10, true)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(source.productionDate) || !Number.isFinite(Date.parse(source.productionDate)) || new Date(source.productionDate).toISOString().slice(0, 10) !== source.productionDate) fail('생산일을 확인해 주세요.')
+    source.traceabilityNo = text(row.traceabilityNo, '식품이력번호', 60, true)
+    if (!/^\d+$/.test(source.traceabilityNo)) fail('식품이력번호를 확인해 주세요.')
+    source.referenceVariant = text(row.referenceVariant, '이력 제품명', 500, true)
+  }
+  if (row.additionalSources !== undefined) source.additionalSources = list(row.additionalSources, '추가 근거', 3).map(value => {
+    const extra = record(value, '추가 근거')
+    const sourceUrl = text(extra.sourceUrl, '추가 출처 링크', 2048, true)
+    try { const url = new URL(sourceUrl); if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) fail('추가 출처 링크를 확인해 주세요.') }
+    catch { fail('추가 출처 링크를 확인해 주세요.') }
+    const checkedAt = text(extra.checkedAt, '추가 출처 확인일', 10, true)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(checkedAt)) fail('추가 출처 확인일을 확인해 주세요.')
+    return { sourceUrl, checkedAt, sourceTitle: text(extra.sourceTitle, '추가 출처 제목', 300, true), statement: text(extra.statement, '추가 출처 설명', 1000, true) }
+  })
+  if ((source.supplier || source.country || source.region) && (!source.sourceUrl || !source.checkedAt)) {
+    fail('확인된 원료 정보에는 출처 링크와 확인일이 필요합니다.')
+  }
+  return currentProvenance(name, source)
+}
+
 function materialRow(value: unknown, index: number): MaterialRow {
   const row = record(value, `${index + 1}번째 원료`)
   return {
     id: rowIdOf(row.id, index, 'm'),
     name: text(row.name, '원료명'),
+    provenance: provenance(row.provenance, text(row.name, '원료명')),
     ratio: numeric(row.ratio, '배합비율'),
     usage: numeric(row.usage, '사용량'),
     unitPrice: numeric(row.unitPrice, '원료단가'),

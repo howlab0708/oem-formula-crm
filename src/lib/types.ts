@@ -36,6 +36,8 @@ export type Marker = {
 }
 
 export type Product = {
+  /** Loaded on demand from a matched public production record, not part of the CSV dataset. */
+  traceability?: import('./server/foodTraceability').TraceLookup
   id: string
   name: string
   manufacturer: string

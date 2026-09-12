@@ -18,6 +18,7 @@
 import { formatKg, formatWon, num, packageLabel, unitNoun } from '../formulaDesign/calc'
 import type { Tier, Totals } from '../formulaDesign/calc'
 import type { FormulaSheet } from '../formulaDesign/types'
+import { currentProvenance, hasProvenance, originLabel, type IngredientProvenance } from '../ingredientProvenance'
 import { hasIssuer, type Issuer } from './issuer'
 import { loadExportImage } from './loadImage'
 
@@ -50,6 +51,8 @@ export type SheetExportOptions = {
   showTiers: boolean
   /** 공급자 칸·직인을 넣는다. */
   showIssuer: boolean
+  /** 참고 제품의 원료 출처. 실제 발주 원료로 확정된 정보가 아니다. */
+  showProvenance?: boolean
   /** 문서 제목 */
   title: string
 }
@@ -61,6 +64,7 @@ export const DEFAULT_SHEET_EXPORT: SheetExportOptions = {
   showExtras: true,
   showTiers: true,
   showIssuer: true,
+  showProvenance: true,
   title: '배합 제안서',
 }
 
@@ -552,6 +556,50 @@ export async function renderFormulaSheetPages(
       400,
       INK_3,
     )
+  }
+
+  if (options.showProvenance !== false && named.some((item) => item.row.provenance)) {
+    sectionTitle(page, '참고 제품의 원료사 · 원산지')
+    const paragraph = (text: string) => {
+      page.ctx.font = font(12)
+      for (const line of wrap(page.ctx, text, CONTENT)) {
+        page.space(22)
+        page.text(line, MARGIN, 12, 400, INK_2)
+        page.y += 5
+      }
+    }
+    paragraph('참고 제품의 공개 자료 기준입니다. 본 견적의 실제 사용 원료는 별도 확인이 필요합니다.')
+    paragraph('미확인은 현재 연결된 자료에서 확인하지 못한 정보입니다. 제품·생산 시기에 따라 달라질 수 있습니다.')
+    page.y += 6
+    const sources = new Map<string, { number: number; source: IngredientProvenance }>()
+    const columns: Column[] = [
+      { label: '원료명', width: 330 },
+      { label: '원료사 (참고)', width: 150 },
+      { label: '원산지 (참고)', width: 235 },
+      { label: '참고 제품 · 근거', width: CONTENT - 715 },
+    ]
+    tableHead(page, columns)
+    for (const item of named) {
+      const source = currentProvenance(item.row.name, item.row.provenance)
+      let citation = '미확인'
+      if (source && hasProvenance(source)) {
+        if (!sources.has(source.evidenceId)) sources.set(source.evidenceId, { number: sources.size + 1, source })
+        citation = `근거 [${sources.get(source.evidenceId)!.number}] · ${source.checkedAt}`
+      }
+      tableRow(page, columns, [[item.row.name, source?.scope].filter(Boolean).join('\n'), source?.supplier || '미확인', originLabel(source),
+        [source?.productName, source?.productionDate ? `${source.productionDate} 생산분` : '', citation].filter(Boolean).join('\n')])
+    }
+    for (const { number, source } of sources.values()) {
+      page.y += 10
+      paragraph(`[${number}] ${source.sourceTitle} · 확인일 ${source.checkedAt}`)
+      paragraph(source.statement)
+      paragraph(source.sourceUrl)
+      for (const extra of source.additionalSources || []) {
+        paragraph(`추가 근거: ${extra.sourceTitle} · 확인일 ${extra.checkedAt}`)
+        paragraph(extra.statement)
+        paragraph(extra.sourceUrl)
+      }
+    }
   }
 
   drawFooters(page.pages)
