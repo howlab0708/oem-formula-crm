@@ -114,8 +114,8 @@ export function ExportActions({ briefing: original, disabled, freshness }: Props
   return (
     <div className="flex shrink-0 items-center gap-2">
       <button type="button" aria-haspopup="dialog" onClick={() => setExportOpen(true)}
-        className="rounded-md border border-line bg-surface px-3 py-2 text-[13px] font-medium text-ink-2 hover:bg-surface-sunken">
-        검색 결과 내보내기 <span aria-hidden>↗</span>
+        className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg border-2 border-zinc-400 bg-surface px-4 py-2.5 text-[14px] font-semibold text-ink-2 shadow-sm transition-colors hover:border-zinc-500 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-500">
+        검색 결과 내보내기 <span aria-hidden className="text-[16px]">↗</span>
       </button>
       {exportOpen ? <Modal title="검색 결과 내보내기" onClose={() => setExportOpen(false)}>
         <p className="mb-4 text-[13px] leading-5 text-ink-2">현재 검색 조건과 시장 요약을 문서로 만듭니다. 용도에 맞는 형식을 선택하세요.</p>
