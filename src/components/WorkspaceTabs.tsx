@@ -6,14 +6,14 @@ export type WorkspaceTab = 'consulting' | 'design' | 'ingredients' | 'notes'
 const tabs = [
   { id: 'consulting', label: '배합비 검색' },
   { id: 'design', label: '배합 설계' },
-  { id: 'ingredients', label: '기능성 원료' },
+  { id: 'ingredients', label: '(식약처)기능성 원료' },
   { id: 'notes', label: '노트' },
 ] as const
 
 export function WorkspaceTabs({ value, onChange }: { value: WorkspaceTab; onChange: (tab: WorkspaceTab) => void }) {
   const buttons = useRef<(HTMLButtonElement | null)[]>([])
   return (
-    <div role="tablist" aria-label="업무 화면" className="flex shrink-0 gap-1 border-b border-line bg-surface px-4 lg:px-6">
+    <div role="tablist" aria-label="업무 화면" className="flex shrink-0 gap-1 overflow-x-auto border-b border-line bg-surface px-4 lg:px-6">
       {tabs.map((tab, index) => (
         <button key={tab.id} type="button" role="tab" id={`workspace-tab-${tab.id}`}
           aria-controls={`workspace-panel-${tab.id}`} aria-selected={value === tab.id}
@@ -26,7 +26,7 @@ export function WorkspaceTabs({ value, onChange }: { value: WorkspaceTab; onChan
             onChange(tabs[next].id)
             buttons.current[next]?.focus()
           }}
-          className={`border-b-2 px-4 py-2.5 text-[14px] font-medium transition-colors ${value === tab.id
+          className={`shrink-0 whitespace-nowrap border-b-2 px-4 py-2.5 text-[14px] font-medium transition-colors ${value === tab.id
             ? 'border-accent text-accent-strong' : 'border-transparent text-ink-2 hover:bg-surface-sunken'}`}>
           {tab.label}
         </button>

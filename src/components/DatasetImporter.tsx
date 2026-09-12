@@ -14,7 +14,6 @@ type Props = {
   source: 'seed' | 'csv' | 'db'
   productCount: number
   onFile: (file: File, encoding: Encoding) => void
-  onRestoreSample: () => void
 }
 
 export function DatasetImporter({
@@ -24,7 +23,6 @@ export function DatasetImporter({
   source,
   productCount,
   onFile,
-  onRestoreSample,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [encoding, setEncoding] = useState<Encoding>('auto')
@@ -76,16 +74,6 @@ export function DatasetImporter({
         >
           {busy ? '불러오는 중…' : 'CSV 파일 선택'}
         </button>
-        {source !== 'seed' ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onRestoreSample}
-            className="rounded-md border border-line bg-surface px-3 py-2 text-[13px] text-ink-2 transition-colors hover:bg-surface-sunken"
-          >
-            예시로
-          </button>
-        ) : null}
       </div>
 
       <div className="mt-2 flex items-center gap-2">

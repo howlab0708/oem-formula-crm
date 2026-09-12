@@ -62,7 +62,7 @@ test('RDA 100% is inclusive, uses 100mg vitamin C and counts each product once',
   assert.equal(result.content.highShare, .5)
 })
 
-test('mixed mass units compare correctly; AI-only and non-RDA ingredients excluded', () => {
+test('mixed mass units compare with fixed label values; non-nutrients are excluded', () => {
   const p = product('1일 1회 2정(1000mg)', '비타민C: 표시량(30mg/1000mg)의 80~150%\n비타민D: 표시량(0.003mg/1000mg)의 80~150%')
   const q = product('1일 1회 2정(1000mg)', '비타민C: 표시량(0.1g/1g)의 80~150%\n칼슘: 표시량(800mg/1000mg)의 80~150%')
   const r = product('1일 1회 2정(1000mg)', '실리마린: 표시량(130mg/1000mg)의 80~150%')
@@ -72,15 +72,15 @@ test('mixed mass units compare correctly; AI-only and non-RDA ingredients exclud
   assert.equal(result.content.highCount, 1)
   assert.equal(result.content.highShare, .5)
   assert.equal(buildDashboardSummary([r], EMPTY_FILTERS).content.highShare, null)
-  // 표는 비타민·무기질만 담는다. 권장섭취량이 없는 영양소는 충분섭취량을 그렇다고 밝히고 쓴다.
+  // 성별·연령 대신 고정 표시 기준을 쓰고 비타민D도 동일한 기준으로 비교한다.
   assert.equal(result.content.rows.some(row => row.name === '실리마린'), false)
   const vitaminD = result.content.rows.find(row => row.name === '비타민D')
-  assert.deepEqual({ basis: vitaminD.basis, amount: vitaminD.amount, unit: vitaminD.unit }, { basis: 'AI', amount: 10, unit: 'μg' })
+  assert.deepEqual({ basis: vitaminD.basis, amount: vitaminD.amount, unit: vitaminD.unit }, { basis: 'DV', amount: 10, unit: 'μg' })
   assert.deepEqual({ common: vitaminD.common, commonCount: vitaminD.commonCount }, { common: 3, commonCount: 1 })
   const vitaminC = result.content.rows.find(row => row.name === '비타민C')
   // 30mg 과 100mg 이 한 건씩이라 동수다. 이때는 작은 값을 쓴다.
   assert.deepEqual({ basis: vitaminC.basis, amount: vitaminC.amount, count: vitaminC.count, common: vitaminC.common },
-    { basis: 'RNI', amount: 100, count: 2, common: 30 })
+    { basis: 'DV', amount: 100, count: 2, common: 30 })
 })
 
 test('marker name decorations and vitamer spellings collapse into one nutrient row', () => {
@@ -109,6 +109,29 @@ test('sex/age profile changes the RNI and equivalent-unit evidence is required',
   assert.equal(compareRda('비타민A', .8, '800μg RE', 'male-0').ratio, null)
   assert.equal(compareRda('비타민A', .8, '800μg RAE', 'male-0').ratio, 1)
   for (const name of ['비타민D','비타민E','비타민K','비오틴','판토텐산','망간','크롬']) assert.equal(compareRda(name, 999, '', 'male-0').ratio, null)
+})
+
+test('dashboard default uses label 100% for zinc, vitamin B2, calcium and vitamin D', () => {
+  const { compareRda, DEFAULT_RDA_PROFILE, nutrientReference, isRdaProfile } = load('src/lib/rda.ts')
+  assert.equal(DEFAULT_RDA_PROFILE, 'label-daily-value')
+  assert.equal(isRdaProfile(DEFAULT_RDA_PROFILE), true)
+  for (const [name, value] of [['아연', 8.5], ['비타민B2', 1.4], ['칼슘', 700], ['비타민D', .01], ['구리', .8]]) {
+    assert.equal(compareRda(name, value, '', DEFAULT_RDA_PROFILE).ratio, 1)
+    assert.ok(compareRda(name, value * .99, '', DEFAULT_RDA_PROFILE).ratio < 1)
+  }
+  assert.equal(compareRda('아연', 8.5, '', 'invalid').ratio, 1)
+  assert.equal(nutrientReference('철', DEFAULT_RDA_PROFILE).amount, 12)
+  assert.equal(compareRda('엽산', .4, '400μg', DEFAULT_RDA_PROFILE).ratio, 1)
+  assert.equal(compareRda('엽산', .4, '400μg DFE', DEFAULT_RDA_PROFILE).ratio, null)
+  assert.equal(compareRda('비타민A', .7, '700μg RE', DEFAULT_RDA_PROFILE).ratio, 1)
+  assert.equal(compareRda('비타민A', .7, '700μg RAE', DEFAULT_RDA_PROFILE).ratio, null)
+  assert.equal(compareRda('비타민E', 11, '11mg α-TE', DEFAULT_RDA_PROFILE).ratio, 1)
+  assert.equal(compareRda('비타민E', 11, '11mg', DEFAULT_RDA_PROFILE).ratio, null)
+  const ps = [8.49, 8.5].map(v => product('1일 1회 1정(1000mg)', `아연: 표시량(${v}mg/1000mg)의 80~150%`))
+  const result = buildDashboardSummary(ps, EMPTY_FILTERS)
+  assert.equal(result.content.highShare, .5)
+  const d = product('1일 1회 1정(1000mg)', '비타민D: 표시량(10μg/1000mg)의 80~150%')
+  assert.equal(buildDashboardSummary([d], EMPTY_FILTERS).content.highShare, 1)
 })
 
 test('minimum physical unit is independent of daily frequency and duration', () => {

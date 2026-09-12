@@ -108,13 +108,13 @@ export default function FunctionalIngredientLibrary() {
     <main className="mx-auto max-w-[104rem] space-y-5 px-4 py-5 lg:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-[20px] font-semibold tracking-tight text-ink">기능성 원료 조회</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight text-ink">(식약처)기능성 원료 조회</h2>
           <p className="mt-1.5 text-[14px] leading-6 text-ink-2">원료 종류와 기능성, 기준 성분별 일일 섭취량을 확인하세요.</p>
           <p className="mt-1 text-[12px] leading-5 text-ink-3">인정 CSV {ingredientAudit.approvalCsvRows.toLocaleString('ko-KR')}행 · C003 {ingredientAudit.uniqueProductReports.toLocaleString('ko-KR')}개 제품 대조 · {functionalIngredients.length}개 조회 항목 · 검토일 {INGREDIENT_REVIEW_DATE}</p>
         </div>
-        <div className="flex flex-wrap gap-3 py-1 text-[13px]">
-          <a className={linkClass} href={INGREDIENT_SOURCES.codex} target="_blank" rel="noopener noreferrer">건강기능식품공전 ↗<span className="sr-only"> (새 창)</span></a>
-          <a className={linkClass} href={INGREDIENT_SOURCES.search} target="_blank" rel="noopener noreferrer">식품안전나라 원료 검색 ↗<span className="sr-only"> (새 창)</span></a>
+        <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-2">
+          <a className="flex min-h-14 items-center justify-center gap-3 rounded-lg border border-accent-line bg-accent-soft px-5 py-3 text-[15px] font-semibold text-accent-strong transition-colors hover:border-accent" href={INGREDIENT_SOURCES.codex} target="_blank" rel="noopener noreferrer">건강기능식품공전 <span aria-hidden>↗</span><span className="sr-only"> (새 창)</span></a>
+          <a className="flex min-h-14 items-center justify-center gap-3 rounded-lg border border-accent bg-accent px-5 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-accent-strong" href={INGREDIENT_SOURCES.search} target="_blank" rel="noopener noreferrer">식품안전나라 원료 검색 <span aria-hidden>↗</span><span className="sr-only"> (새 창)</span></a>
         </div>
       </div>
 

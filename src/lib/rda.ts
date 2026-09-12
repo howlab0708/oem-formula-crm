@@ -6,10 +6,31 @@ const ages = ['19–29세', '30–49세', '50–64세', '65–74세', '75세 이
 export const RDA_PROFILES = ['male', 'female'].flatMap(sex => ages.map((age, i) => ({
   id: `${sex}-${i}`, label: `${sex === 'male' ? '남성' : '여성'} ${age}`,
 })))
-export const DEFAULT_RDA_PROFILE = 'male-0'
-export const isRdaProfile = (id: unknown): id is string => RDA_PROFILES.some(p => p.id === id)
-/** 권장섭취량(RNI)이 있으면 그 값, 없는 영양소는 충분섭취량(AI). 어느 쪽인지 함께 남긴다. */
-export type RdaBasis = 'RNI' | 'AI'
+/** 화면은 성별·연령과 무관한 식약처 표시 기준으로 고정한다. 기존 저장 검색 id는 읽을 수 있다. */
+export const DEFAULT_RDA_PROFILE = 'label-daily-value'
+export const isRdaProfile = (id: unknown): id is string => id === DEFAULT_RDA_PROFILE || RDA_PROFILES.some(p => p.id === id)
+export const DAILY_VALUE_SOURCE = 'https://law.go.kr/LSW/flDownload.do?bylClsCd=110201&flSeq=42533906&gubun='
+export const DAILY_VALUE_LABEL = '식약처 1일 영양성분 기준치'
+/** 일반 표시 기준(DV)과 이전 성별·연령 기준(RNI/AI)을 구분한다. */
+export type RdaBasis = 'RNI' | 'AI' | 'DV'
+
+// 식품 등의 표시·광고에 관한 법률 시행규칙 별표 5. 2026-09-12 확인.
+// 일반 표시용 비타민·무기질 기준. 영유아용/개인 맞춤 섭취량은 의미하지 않는다.
+const dailyValues: Record<string, { amount: number; unit: string }> = {
+  비타민a: { amount: 700, unit: 'μg RE' }, 비타민c: { amount: 100, unit: 'mg' },
+  비타민d: { amount: 10, unit: 'μg' }, 비타민e: { amount: 11, unit: 'mg α-TE' },
+  비타민k: { amount: 70, unit: 'μg' }, 비타민b1: { amount: 1.2, unit: 'mg' },
+  비타민b2: { amount: 1.4, unit: 'mg' }, 비타민b6: { amount: 1.5, unit: 'mg' },
+  비타민b12: { amount: 2.4, unit: 'μg' }, 나이아신: { amount: 15, unit: 'mg NE' },
+  엽산: { amount: 400, unit: 'μg' }, 비오틴: { amount: 30, unit: 'μg' },
+  판토텐산: { amount: 5, unit: 'mg' }, 칼슘: { amount: 700, unit: 'mg' },
+  철: { amount: 12, unit: 'mg' }, 인: { amount: 700, unit: 'mg' },
+  요오드: { amount: 150, unit: 'μg' }, 마그네슘: { amount: 315, unit: 'mg' },
+  아연: { amount: 8.5, unit: 'mg' }, 셀레늄: { amount: 55, unit: 'μg' },
+  구리: { amount: 0.8, unit: 'mg' }, 망간: { amount: 3, unit: 'mg' },
+  크롬: { amount: 30, unit: 'μg' }, 몰리브덴: { amount: 25, unit: 'μg' },
+  나트륨: { amount: 2000, unit: 'mg' }, 칼륨: { amount: 3500, unit: 'mg' },
+}
 type Entry = { label: string; unit: string; male: number[]; female: number[]; qualifier?: string; basis: RdaBasis }
 const repeat = (n: number) => Array<number>(5).fill(n)
 const make = (basis: RdaBasis) =>
@@ -106,16 +127,34 @@ export function nutrientKey(name: string): string | null {
   return null
 }
 
-/** 표시용 기준값. profile 은 RDA_PROFILES 의 id. */
+/** 표시용 기준값. 일반 표시 기준 또는 이전 RDA_PROFILES id를 받는다. */
 export function nutrientReference(key: string, profile: string) {
+  if (profile === DEFAULT_RDA_PROFILE || !isRdaProfile(profile)) {
+    const ref = dailyValues[key]
+    return ref ? { label: nutrients[key].label, ...ref, basis: 'DV' as const } : null
+  }
   const ref = nutrients[key]
   if (!ref) return null
   const validProfile = isRdaProfile(profile) ? profile : DEFAULT_RDA_PROFILE
   const [sex, index] = validProfile.split('-')
   return { label: ref.label, unit: ref.unit, basis: ref.basis, amount: ref[sex as 'male' | 'female'][Number(index)] }
 }
-/** 고함량 비율은 권장섭취량(RNI)만으로 센다. 충분섭취량은 이 비교에 쓰지 않는다. */
+/** 화면의 고함량 비율은 일반 표시 기준으로 비교한다. 이전 프로필은 기존 RNI 비교를 유지한다. */
 export function compareRda(name: string, valueMg: number | null, evidence: string, profile: string) {
+  if (profile === DEFAULT_RDA_PROFILE || !isRdaProfile(profile)) {
+    const key = nutrientKey(name) ?? rdaKey(name)
+    const ref = dailyValues[key]
+    if (!ref) return { amount: null, unit: '', ratio: null, reason: '1일 영양성분 기준치 없음' }
+    const source = evidence.normalize('NFKC')
+    const uncertainEquivalent = (key === '비타민a' && !/(?:mcg|μg|ug|mg|g)\s*RE\b/i.test(source))
+      || (key === '엽산' && /\bDFE\b/i.test(source))
+      || (key === '비타민e' && !/(?:mg|g)\s*(?:α|alpha)[-\s]*TE\b/i.test(source))
+    if (valueMg === null || !Number.isFinite(valueMg) || valueMg < 0 || uncertainEquivalent) {
+      return { ...ref, ratio: null, reason: '비교 단위 확인 필요' }
+    }
+    const value = valueMg * (ref.unit.startsWith('μg') ? 1000 : 1)
+    return { ...ref, ratio: value / ref.amount, reason: '' }
+  }
   const ref = nutrients[rdaKey(name)]
   if (!ref || ref.basis !== 'RNI') return { amount: null, unit: '', ratio: null, reason: '권장섭취량 없음 또는 기준 미등록' }
   const validProfile = isRdaProfile(profile) ? profile : DEFAULT_RDA_PROFILE

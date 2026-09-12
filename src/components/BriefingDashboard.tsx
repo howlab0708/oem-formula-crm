@@ -13,8 +13,6 @@ import type { FormType } from '@/lib/types'
 
 type Props = {
   briefing: Briefing
-  rdaProfile: string
-  onRdaProfileChange: (value: string) => void
   summary: DashboardSummary
   selectedMarker: MarkerFilter | null
   onToggleForm: (form: FormType) => void
@@ -26,8 +24,6 @@ type Props = {
 export function BriefingDashboard({
   briefing,
   summary,
-  rdaProfile,
-  onRdaProfileChange,
   selectedMarker,
   onToggleForm,
   onToggleSub,
@@ -53,7 +49,7 @@ export function BriefingDashboard({
 
   return (
     <section aria-label="상담 브리핑 대시보드" className="flex flex-col gap-4">
-      <DashboardSummaryCards briefing={briefing} summary={summary} rdaProfile={rdaProfile} onRdaProfileChange={onRdaProfileChange} />
+      <DashboardSummaryCards briefing={briefing} summary={summary} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <ChartCard

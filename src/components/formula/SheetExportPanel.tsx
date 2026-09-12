@@ -14,7 +14,7 @@ import { loadStoredLogo, subscribeLogo } from '@/lib/export/logo'
 import { hasIssuer, loadStoredIssuer, subscribeIssuer } from '@/lib/export/issuer'
 import { Modal } from '@/components/Modal'
 import { DocumentIdentity } from '@/components/DocumentIdentity'
-import { DEFAULT_SHEET_EXPORT, renderFormulaSheetPages, type SheetExportOptions } from '@/lib/export/renderFormulaSheet'
+import { renderFormulaSheetPages, type SheetExportOptions } from '@/lib/export/renderFormulaSheet'
 import type { Tier, Totals } from '@/lib/formulaDesign/calc'
 import type { FormulaSheet } from '@/lib/formulaDesign/types'
 
@@ -37,10 +37,15 @@ function fileStem(sheet: FormulaSheet): string {
   return `${name.replace(/[\\/:*?"<>|\s]+/g, '_')}_${date}`
 }
 
-type Props = { sheet: FormulaSheet; totals: Totals; tiers: Tier[] }
+type Props = {
+  sheet: FormulaSheet
+  totals: Totals
+  tiers: Tier[]
+  options: SheetExportOptions
+  onOptionsChange: (options: SheetExportOptions) => void
+}
 
-export function SheetExportPanel({ sheet, totals, tiers }: Props) {
-  const [options, setOptions] = useState<SheetExportOptions>(DEFAULT_SHEET_EXPORT)
+export function SheetExportPanel({ sheet, totals, tiers, options, onOptionsChange }: Props) {
   const [busy, setBusy] = useState<'pdf' | 'preview' | null>(null)
   const [message, setMessage] = useState('')
   const [preview, setPreview] = useState<string[] | null>(null)
@@ -113,7 +118,7 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
             value={options.title}
             maxLength={40}
             onChange={(event) => {
-              setOptions({ ...options, title: event.target.value })
+              onOptionsChange({ ...options, title: event.target.value })
               setPreview(null)
             }}
             className="w-56 rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] text-ink"
@@ -127,7 +132,7 @@ export function SheetExportPanel({ sheet, totals, tiers }: Props) {
                 type="checkbox"
                 checked={options[toggle.key]}
                 onChange={(event) => {
-                  setOptions({ ...options, [toggle.key]: event.target.checked })
+                  onOptionsChange({ ...options, [toggle.key]: event.target.checked })
                   setPreview(null)
                 }}
               />

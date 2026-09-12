@@ -6,6 +6,7 @@ import { uniqueMainIngredients } from '@/lib/ingredientNames'
 import { referencePage, referencePageButtons } from '@/lib/pagination'
 import type { Product } from '@/lib/types'
 import { traceabilityClient, traceabilityPayload } from '@/lib/traceabilityClient'
+import { REFERENCE_REVIEWED_AT } from '@/lib/referencePriority'
 
 const GRID_TEMPLATE = 'md:grid-cols-[minmax(0,2fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_minmax(0,2fr)_auto]'
 
@@ -54,6 +55,9 @@ export function ReferenceGrid({
             <p className="mt-1 text-[13px] text-ink-3 tnum">
               {formatInt(products.length)}건{products.length !== totalCount ? ` / 전체 ${formatInt(totalCount)}건` : ''}
               <span className="ml-2">페이지당 50개 · 제품을 누르면 상세 확인</span>
+            </p>
+            <p className="mt-1 text-[12px] text-ink-3" title={`${REFERENCE_REVIEWED_AT} 공식몰 확인. 대표 판매명·제품군 우선의 편집 순서이며 실시간 판매량 순위가 아닙니다. 그다음 제조사를 고려하고 수출 표기 품목은 뒤에 배치합니다.`}>
+              대표 제품군 우선 · 제품군과 제조소를 골고루
             </p>
           </div>
           {actions}

@@ -137,7 +137,7 @@ function LoadedConsultingWorkspace({
   const freshness = freshnessLabel(provenance, datasetMeta?.finished_at, source === 'seed')
   const scrollRef = useRef<HTMLDivElement>(null)
   const [filterHistory, dispatchFilters] = useReducer(filterHistoryReducer, INITIAL_FILTER_HISTORY)
-  const [rdaProfile, setRdaProfile] = useState(DEFAULT_RDA_PROFILE)
+  const rdaProfile = DEFAULT_RDA_PROFILE
   const filters = filterHistory.current
   const setFilters = useCallback((update: FilterUpdate, group?: string) => {
     dispatchFilters({ type: 'change', update, group })
@@ -194,7 +194,7 @@ function LoadedConsultingWorkspace({
     scrollRef.current?.scrollTo({ top: 0 })
   }, [setVerifyNote])
 
-  const { status, saveStatus, importFile, reset: resetImport } = useCsvImport({ onLoaded: handleLoaded })
+  const { status, saveStatus, importFile } = useCsvImport({ onLoaded: handleLoaded })
 
   /**
    * 저장(`saveStatus.phase === 'saved'`)이 끝난 직후, 방금 저장한 게 실제로
@@ -295,17 +295,6 @@ function LoadedConsultingWorkspace({
 
   const activeCount = activeFilterCount(filters)
 
-  const restoreSample = useCallback(() => {
-    setProducts(SEED_PRODUCTS)
-    setSource('seed')
-    setDatasetMeta(null)
-    setProvenance(null)
-    dispatchFilters({ type: 'clear' })
-    setSelectedId(null)
-    setVerifyNote(null)
-    resetImport()
-  }, [resetImport, setVerifyNote])
-
   const toggleForm = useCallback((form: FormType) => {
     setFilters((prev) => ({
       ...prev,
@@ -357,7 +346,7 @@ function LoadedConsultingWorkspace({
 
   const restoreSaved = useCallback((item: SavedSearch) => {
     setFilters(item.filters)
-    setRdaProfile(item.rdaProfile)
+    // 과거 즐겨찾기의 성별·연령 선택값을 복원하지 않는다. 표시 기준은 항상 고정이다.
     setSelectedId(null)
     setRailOpen(false)
     setActiveTab('consulting')
@@ -444,7 +433,6 @@ function LoadedConsultingWorkspace({
                 source={source}
                 productCount={products.length}
                 onFile={importFile}
-                onRestoreSample={restoreSample}
               />
             }
           />
@@ -467,7 +455,6 @@ function LoadedConsultingWorkspace({
             <BriefingDashboard
               briefing={briefing}
               summary={dashboardSummary}
-              rdaProfile={rdaProfile} onRdaProfileChange={setRdaProfile}
               selectedMarker={filters.marker}
               onToggleForm={toggleForm}
               onToggleSub={toggleSub}
