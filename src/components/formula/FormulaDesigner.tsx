@@ -12,7 +12,10 @@
  * 어떤 칸만 갱신되지 않는 사고가 안 생기는 이유다.
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState, type Ref } from 'react'
+import type { Product } from '@/lib/types'
+import { draftFromProduct } from '@/lib/formulaDesign/fromProduct'
+import { Modal } from '@/components/Modal'
 import { calculate, calculateTiers, formatWon } from '@/lib/formulaDesign/calc'
 import { emptySheet, SAMPLE_SHEETS } from '@/lib/formulaDesign/preset'
 import { sheetReducer, type SheetAction } from '@/lib/formulaDesign/reducer'
@@ -46,15 +49,22 @@ const fieldClass =
 /** 저장 상태. 저장된 배합비를 열면 서버 id·버전을 함께 들고 있어야 갱신할 수 있다. */
 type Saved = { id: string; version: number; updatedAt: string } | null
 
+export type FormulaDesignerHandle = { importProduct: (product: Product) => Promise<boolean> }
+
 type Props = {
   /** 레퍼런스 데이터의 부원료 이름. 기능성 원료 DB 에 없는 부형제 자동완성에 쓴다. */
   referenceNames: string[]
+  initialProduct?: Product | null
+  editorRef?: Ref<FormulaDesignerHandle>
+  onBackToReference?: (product: Product | null) => void
 }
 
-export default function FormulaDesigner({ referenceNames }: Props) {
-  const [sheet, dispatch] = useReducer(sheetReducer, undefined, emptySheet)
+export default function FormulaDesigner({ referenceNames, initialProduct, editorRef, onBackToReference }: Props) {
+  const [initialDraft] = useState(() => initialProduct ? draftFromProduct(initialProduct) : null)
+  const [sheet, dispatch] = useReducer(sheetReducer, undefined, () => initialDraft?.sheet ?? emptySheet())
+  const [reference, setReference] = useState<Product | null>(initialProduct ?? null)
   const [company, setCompany] = useState('')
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(initialDraft?.title ?? '')
   const [noteId, setNoteId] = useState<string | null>(null)
   const [saved, setSaved] = useState<Saved>(null)
   const [busy, setBusy] = useState(false)
@@ -65,7 +75,52 @@ export default function FormulaDesigner({ referenceNames }: Props) {
   const [priceBookOpen, setPriceBookOpen] = useState(false)
   const [refresh, setRefresh] = useState(0)
   const [notes, setNotes] = useState<NoteSummary[]>([])
-  const dirty = useRef(false)
+  const dirty = useRef(Boolean(initialDraft))
+  const [pendingProduct, setPendingProduct] = useState<Product | null>(null)
+  const resolveImport = useRef<((accepted: boolean) => void) | null>(null)
+
+  const replaceWithProduct = (product: Product) => {
+    const draft = draftFromProduct(product)
+    dispatch({ type: 'load', sheet: draft.sheet })
+    setReference(product)
+    setTitle(draft.title)
+    setCompany('')
+    setNoteId(null)
+    setSaved(null)
+    setError('')
+    setMessage('제품의 원료와 규격을 가져왔습니다.')
+    setLibraryOpen(false)
+    setPriceBookOpen(false)
+    dirty.current = true
+  }
+
+  const finishImport = (accepted: boolean) => {
+    if (accepted && pendingProduct) replaceWithProduct(pendingProduct)
+    setPendingProduct(null)
+    resolveImport.current?.(accepted)
+    resolveImport.current = null
+  }
+
+  useImperativeHandle(editorRef, () => ({
+    async importProduct(product) {
+      if (busy) return false
+      if (reference?.id === product.id) return true
+      if (resolveImport.current) return false
+      if (dirty.current) return new Promise<boolean>((resolve) => {
+        resolveImport.current = resolve
+        setPendingProduct(product)
+      })
+      replaceWithProduct(product)
+      return true
+    },
+  }))
+
+  const jumpTo = (id: string) => {
+    const section = document.getElementById(id)
+    section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const input = section?.querySelector<HTMLElement>('input, select, button')
+    input?.focus({ preventScroll: true })
+  }
 
   /**
    * 이 회사의 상담 노트 목록. 배합비를 특정 노트 하위에 매달아 둘 때 쓴다.
@@ -124,6 +179,7 @@ export default function FormulaDesigner({ referenceNames }: Props) {
     !busy && (!dirty.current || window.confirm('저장하지 않은 배합비가 있습니다. 변경사항을 버리고 이동할까요?'))
 
   const load = (record: FormulaRecord) => {
+    setReference(null)
     dispatch({ type: 'load', sheet: record.sheet })
     setCompany(record.company)
     setTitle(record.title)
@@ -136,6 +192,7 @@ export default function FormulaDesigner({ referenceNames }: Props) {
   }
 
   const reset = (next: FormulaSheet, notice: string) => {
+    setReference(null)
     dispatch({ type: 'load', sheet: next })
     setSaved(null)
     dirty.current = false
@@ -201,11 +258,47 @@ export default function FormulaDesigner({ referenceNames }: Props) {
 
   return (
     <div className="mx-auto flex max-w-[104rem] flex-col gap-4 px-4 py-5 lg:px-6">
+      {pendingProduct ? <Modal title="작성 중인 견적이 있습니다" onClose={() => finishImport(false)} footer={
+        <div className="flex flex-wrap justify-end gap-2">
+          <button type="button" className={buttonClass} onClick={() => finishImport(false)}>기존 견적 유지</button>
+          <button type="button" className={primaryClass} onClick={() => finishImport(true)}>새 제품으로 시작</button>
+        </div>
+      }>
+        <p className="text-[14px] leading-6 text-ink"><strong>{title || '제목 없는 견적'}</strong>에 저장하지 않은 내용이 있습니다.</p>
+        <p className="mt-3 text-[13px] leading-6 text-ink-2">‘{pendingProduct.name}’으로 새 견적을 시작하면 현재 입력 내용이 바뀝니다. 현재 견적을 보관하려면 먼저 저장해 주세요.</p>
+      </Modal> : null}
+      <section className="rounded-lg border border-accent-line bg-surface p-4" aria-label="견적 작성 안내">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-[12px] font-medium text-accent-strong">배합 설계 · 견적 작성</p>
+            <h2 className="mt-1 text-[18px] font-semibold text-ink">
+              {reference ? `${reference.name} 기준으로 견적 만들기` : '원료와 규격을 입력해 견적을 만드세요'}
+            </h2>
+            <p className="mt-1 text-[13px] leading-5 text-ink-2">
+              {reference ? '원료명·제형·확인된 중량·섭취방법을 가져왔습니다. 배합비율과 단가는 직접 입력해 주세요.' : '제품 검색에서 선택한 원료를 가져오거나, 아래에서 직접 작성할 수 있습니다.'}
+            </p>
+          </div>
+          {onBackToReference ? <button type="button" className={buttonClass} onClick={() => onBackToReference(reference)}>
+            <span aria-hidden>← </span>{reference ? '참고 제품 다시 보기' : '제품 검색으로'}
+          </button> : null}
+        </div>
+        <nav aria-label="견적 작성 순서" className="mt-4 grid gap-2 sm:grid-cols-3">
+          {[
+            ['quote-spec', '1. 규격·수량 확인', '1개 중량 · 포장 개수 · 발주 수량'],
+            ['quote-materials', '2. 배합비율·단가 입력', '가져온 원료를 확인하고 원가 계산'],
+            ['quote-export', '3. 견적서 내보내기', '고객용 PDF 미리보기 · 저장'],
+          ].map(([id, label, hint]) => <button key={id} type="button" onClick={() => jumpTo(id)}
+            className="rounded-md border border-line bg-surface-sunken px-3 py-2.5 text-left hover:border-accent-line hover:bg-accent-soft">
+            <span className="block text-[13px] font-medium text-ink">{label} <span aria-hidden>↓</span></span>
+            <span className="mt-1 block text-[12px] text-ink-3">{hint}</span>
+          </button>)}
+        </nav>
+      </section>
       <header className="rounded-lg border border-line bg-surface p-3">
         <div className="flex flex-wrap items-end gap-3">
           <label className="min-w-[10rem] flex-1">
             <span className="block text-[12px] font-medium text-ink-2">
-              회사명 <span className="text-danger">*</span>
+              고객사 <span className="text-danger">*</span>
             </span>
             <input
               className={fieldClass}
@@ -215,6 +308,7 @@ export default function FormulaDesigner({ referenceNames }: Props) {
               onChange={(event) => {
                 dirty.current = true
                 setCompany(event.target.value)
+                dispatch({ type: 'spec', key: 'customer', value: event.target.value })
                 // 회사가 바뀌면 이전 회사 노트에 매달린 상태를 그대로 두지 않는다.
                 setNoteId(null)
               }}
@@ -375,17 +469,18 @@ export default function FormulaDesigner({ referenceNames }: Props) {
         />
       ) : null}
 
-      <SheetExportPanel sheet={sheet} totals={totals} tiers={tiers} />
+      <div id="quote-spec" className="scroll-mt-4"><SpecPanel spec={sheet.spec} totals={totals} dispatch={(action) => {
+        if (action.type === 'spec' && action.key === 'customer') { setCompany(action.value); setNoteId(null) }
+        act(action)
+      }} /></div>
 
-      <SpecPanel spec={sheet.spec} totals={totals} dispatch={act} />
-
-      <MaterialGrid
+      <div id="quote-materials" className="scroll-mt-4"><MaterialGrid
         materials={sheet.materials}
         totals={totals}
         lossPercent={sheet.spec.lossPercent}
         index={index}
         dispatch={act}
-      />
+      /></div>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <LineGrid
@@ -430,6 +525,7 @@ export default function FormulaDesigner({ referenceNames }: Props) {
         dispatch={act}
       />
 
+      <div id="quote-export" className="scroll-mt-4"><SheetExportPanel sheet={sheet} totals={totals} tiers={tiers} /></div>
 
 
     </div>

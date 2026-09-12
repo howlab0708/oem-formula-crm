@@ -39,6 +39,7 @@ import { sourceFormOptions, sourceNutrientOptions } from '@/lib/ingredientSource
 import { REFERENCE_PAGE_SIZE } from '@/lib/pagination'
 import { SEED_PRODUCTS } from '@/lib/seed'
 import type { FormType, Product } from '@/lib/types'
+import type { FormulaDesignerHandle } from '@/components/formula/FormulaDesigner'
 
 const FunctionalIngredientLibrary = dynamic(() => import('@/components/FunctionalIngredientLibrary'), {
   loading: () => <p role="status" className="p-6 text-[14px] text-ink-2">기능성 원료 자료를 불러오는 중…</p>,
@@ -143,6 +144,32 @@ function LoadedConsultingWorkspace({
   const [ingredientsVisited, setIngredientsVisited] = useState(false)
   const [notesVisited, setNotesVisited] = useState(false)
   const [designVisited, setDesignVisited] = useState(false)
+  const [designProduct, setDesignProduct] = useState<Product | null>(null)
+  const designerRef = useRef<FormulaDesignerHandle>(null)
+  const designScrollRef = useRef<HTMLDivElement>(null)
+
+  const createQuote = async (product: Product) => {
+    if (designerRef.current) {
+      setActiveTab('design')
+      if (!(await designerRef.current.importProduct(product))) {
+        setActiveTab('consulting')
+        return
+      }
+    }
+    setDesignProduct(product)
+    setDesignVisited(true)
+    setActiveTab('design')
+    setRailOpen(false)
+    requestAnimationFrame(() => {
+      designScrollRef.current?.scrollTo({ top: 0 })
+      document.getElementById('workspace-tab-design')?.focus()
+    })
+  }
+
+  const backToReference = (product: Product | null) => {
+    setActiveTab('consulting')
+    setSelectedId(product?.id ?? null)
+  }
 
   // 조건 반영이 끝난 화면의 상단으로 즉시 이동한다. 왼쪽 조건 목록의 스크롤은 유지한다.
   useLayoutEffect(() => {
@@ -387,14 +414,15 @@ function LoadedConsultingWorkspace({
         >
           <FilterRail
             filters={filters}
-            onChange={setFilters}
-            onReset={() => setFilters(EMPTY_FILTERS)}
+            onChange={(next, group) => { setFilters(next, group); setSelectedId(null) }}
+            onReset={() => { setFilters(EMPTY_FILTERS); setSelectedId(null) }}
             history={filterHistory.previous}
             onRestore={(index) => {
               dispatchFilters({ type: 'restore', index })
               scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
               setRailOpen(false)
             }}
+            onUndo={() => { dispatchFilters({ type: 'undo' }); setSelectedId(null); setRailOpen(false) }}
             onEndEdit={() => dispatchFilters({ type: 'end-edit' })}
             onViewResults={() => setRailOpen(false)}
             activeCount={activeCount}
@@ -425,8 +453,8 @@ function LoadedConsultingWorkspace({
             {savedNotice ? <p role="status" className="rounded border border-line bg-surface p-3 text-[13px] text-ink-2">{savedNotice}<button type="button" className="ml-3 underline" onClick={() => setSavedNotice('')}>닫기</button></p> : null}
             <ActiveFilters
               filters={filters}
-              onChange={setFilters}
-              onReset={() => setFilters(EMPTY_FILTERS)}
+              onChange={(next) => { setFilters(next); setSelectedId(null) }}
+              onReset={() => { setFilters(EMPTY_FILTERS); setSelectedId(null) }}
             />
 
             <BriefingDashboard
@@ -472,9 +500,10 @@ function LoadedConsultingWorkspace({
         </main>
       </div>
 
-      <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design"
+      <div ref={designScrollRef} id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design"
         hidden={activeTab !== 'design'} className={activeTab === 'design' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
-        {designVisited ? <FormulaDesigner referenceNames={referenceNames} /> : null}
+        {designVisited ? <FormulaDesigner referenceNames={referenceNames} initialProduct={designProduct}
+          editorRef={designerRef} onBackToReference={backToReference} /> : null}
       </div>
 
       <div id="workspace-panel-ingredients" role="tabpanel" aria-labelledby="workspace-tab-ingredients"
@@ -495,6 +524,7 @@ function LoadedConsultingWorkspace({
         onStep={step}
         onFilterBySub={(name) => { toggleSub(name); setSelectedId(null) }}
         onMatchFormula={matchFormula}
+        onCreateQuote={createQuote}
       /> : null}
     </div>
   )

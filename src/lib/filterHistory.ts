@@ -10,6 +10,7 @@ export type FilterHistory = {
 export type FilterHistoryAction =
   | { type: 'change'; update: FilterUpdate; group?: string }
   | { type: 'restore'; index: number }
+  | { type: 'undo' }
   | { type: 'end-edit' }
   | { type: 'clear' }
 
@@ -18,6 +19,10 @@ export const INITIAL_FILTER_HISTORY: FilterHistory = { current: EMPTY_FILTERS, p
 // 검색 조건만 보관한다. 제품 데이터나 영구 저장소는 사용하지 않는다.
 export function filterHistoryReducer(state: FilterHistory, action: FilterHistoryAction): FilterHistory {
   if (action.type === 'clear') return INITIAL_FILTER_HISTORY
+  if (action.type === 'undo') {
+    const current = state.previous.at(-1)
+    return current ? { current, previous: state.previous.slice(0, -1), editing: null } : state
+  }
   if (action.type === 'end-edit') return state.editing === null ? state : { ...state, editing: null }
   if (action.type === 'restore') {
     const current = state.previous[action.index]

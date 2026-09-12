@@ -15,6 +15,7 @@ type Props = {
   onStep: (delta: number) => void
   onFilterBySub: (name: string) => void
   onMatchFormula: (product: Product) => void
+  onCreateQuote: (product: Product) => void
 }
 
 /** 선택한 레퍼런스를 배경과 구분되는 팝업에서 확인한다. */
@@ -26,6 +27,7 @@ export function DetailPanel({
   onStep,
   onFilterBySub,
   onMatchFormula,
+  onCreateQuote,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
   const open = product !== null
@@ -76,7 +78,24 @@ export function DetailPanel({
   if (!rendered) return null
 
   return (
-    <Modal title={`레퍼런스 상세 · ${rendered.name}`} onClose={onClose}>
+    <Modal title={`레퍼런스 상세 · ${rendered.name}`} onClose={onClose} footer={
+          <div>
+            <button
+              type="button"
+              onClick={() => onCreateQuote(rendered)}
+              className="w-full rounded-md bg-accent px-3 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-accent-strong"
+            >
+              이 제품으로 견적 만들기 <span aria-hidden>→</span>
+            </button>
+            <p className="mt-2 text-[12px] leading-4 text-ink-3 keep-all">
+              원료와 규격을 배합 설계로 가져옵니다. 배합비율·단가를 입력해 견적을 완성하세요.
+            </p>
+            <button type="button" onClick={() => onMatchFormula(rendered)}
+              className="mt-3 w-full rounded-md border border-line px-3 py-2 text-[13px] text-ink-2 hover:bg-surface-sunken">
+              같은 원료·제형으로 제품 더 찾기
+            </button>
+          </div>
+    }>
           <header className="border-b border-line pb-4">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[12px] text-ink-3 tnum">
@@ -227,18 +246,7 @@ export function DetailPanel({
             ) : null}
           </div>
 
-          <footer className="border-t border-line pt-4">
-            <button
-              type="button"
-              onClick={() => onMatchFormula(rendered)}
-              className="w-full rounded-md bg-accent px-3 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-accent-strong"
-            >
-              해당 배합비로 조건 맞추기
-            </button>
-            <p className="mt-2 text-[12px] leading-4 text-ink-3 keep-all">
-              주원료와 제형을 이 제품과 동일하게 맞춰 유사 레퍼런스를 다시 검색합니다.
-            </p>
-          </footer>
+
     </Modal>
   )
 }

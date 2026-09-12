@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Modal } from '@/components/Modal'
 import { filterChips, type FilterState } from '@/lib/filters'
 
@@ -11,44 +11,60 @@ type Props = {
   onChange: (next: FilterState) => void
   onReset: () => void
   onRestore: (index: number) => void
+  onUndo: () => void
 }
 
 function describe(filters: FilterState) {
   return filterChips(filters).map((chip) => `${chip.group}: ${chip.label}`).join(' · ') || '전체 제품'
 }
 
-export function FilterControls({ filters, history, activeCount, onChange, onReset, onRestore }: Props) {
+export function FilterControls({ filters, history, activeCount, onChange, onReset, onRestore, onUndo }: Props) {
   const [open, setOpen] = useState(false)
+  const listRef = useRef<HTMLUListElement>(null)
+  const undoRef = useRef<HTMLButtonElement>(null)
   const chips = filterChips(filters)
   const entries = history.map((snapshot, index) => ({ snapshot, index })).reverse()
 
   return (
-    <section aria-label="검색 히스토리" className="border-t border-line px-4 py-3">
+    <section aria-label="선택한 검색 조건" className="border-t border-line bg-surface-muted px-4 py-3">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-[12px] font-semibold text-ink-2">적용 중 {activeCount > 0 ? `${activeCount}개` : '전체 제품'}</h3>
+        <h3 className="text-[13px] font-semibold text-ink">선택한 조건 {activeCount > 0 ? `${activeCount}개` : ''}</h3>
         <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)}
-          className="rounded-md px-2 py-1 text-[12px] font-medium text-accent-strong hover:bg-accent-soft">검색 히스토리 ↗</button>
+          className="rounded-md px-2 py-1 text-[12px] font-medium text-accent-strong hover:bg-accent-soft">기록 ↗</button>
       </div>
-      {chips.length > 0 ? <div className="mt-2 flex flex-wrap gap-1">
-        {chips.slice(0, 3).map((chip) => <button key={chip.key} type="button" onClick={() => onChange(chip.remove(filters))}
-          aria-label={`${chip.group} ${chip.label} 해제`} title={`${chip.group}: ${chip.label}`}
-          className="max-w-full truncate rounded-md bg-accent-soft px-2 py-1 text-[12px] text-accent-strong">{chip.label} ×</button>)}
-        {chips.length > 3 ? <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className="text-[12px] text-ink-3">+{chips.length - 3}개</button> : null}
-      </div> : null}
-      {entries.length > 0 ? <ol className="mt-3 space-y-2 border-l border-line-strong pl-3">
-        {entries.slice(0, 2).map(({ snapshot, index }) => <li key={index}>
-          <button type="button" onClick={() => onRestore(index)} title={describe(snapshot)}
-            className="block w-full truncate text-left text-[12px] text-ink-3 hover:text-accent-strong">
-            <span className="mr-1.5 text-ink-2">{index === history.length - 1 ? '직전' : '이전'}</span>{describe(snapshot)}
-          </button>
-        </li>)}
-      </ol> : null}
+      {chips.length > 0 ? <>
+        <p className="mt-1 text-[12px] text-ink-3">체크를 해제하면 해당 조건만 풀립니다.</p>
+        <ul ref={listRef} className="mt-2 max-h-44 space-y-1 overflow-y-auto">
+          {chips.map((chip, index) => <li key={chip.key}>
+            <label className="flex cursor-pointer items-start gap-2 rounded-md border border-accent-line bg-surface px-2.5 py-2 hover:bg-accent-soft">
+              <input type="checkbox" checked aria-label={`${chip.group} ${chip.label}`} className="mt-0.5 size-4 shrink-0 accent-accent"
+                onChange={() => {
+                  onChange(chip.remove(filters))
+                  requestAnimationFrame(() => {
+                    const remaining = listRef.current?.querySelectorAll<HTMLInputElement>('input')
+                    if (remaining?.length) remaining[Math.min(index, remaining.length - 1)].focus()
+                    else undoRef.current?.focus()
+                  })
+                }} />
+              <span className="min-w-0 break-words text-[13px] leading-5 text-ink"><span className="mr-1 text-[12px] text-ink-3">{chip.group}</span>{chip.label}</span>
+            </label>
+          </li>)}
+        </ul>
+      </> : <p className="mt-2 text-[12px] text-ink-3">선택한 조건 없이 전체 제품을 보고 있습니다.</p>}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button ref={undoRef} type="button" disabled={!history.length} onClick={onUndo}
+          className="rounded-md border border-line-strong bg-surface px-2 py-2 text-[13px] font-medium text-ink-2 hover:bg-accent-soft disabled:opacity-40">
+          <span aria-hidden>← </span>이전 조건
+        </button>
+        <button type="button" disabled={!chips.length} onClick={onReset}
+          className="rounded-md border border-line-strong bg-surface px-2 py-2 text-[13px] font-medium text-ink-2 hover:bg-surface-sunken disabled:opacity-40">전체 초기화</button>
+      </div>
       {open ? <Modal title="검색 히스토리" onClose={() => setOpen(false)}>
         <section className="rounded-lg border border-accent-line bg-accent-soft p-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-[14px] font-semibold text-accent-strong">현재 검색</h3>
             <button type="button" disabled={!chips.length} onClick={onReset}
-              className="rounded-md border border-accent-line bg-surface px-2 py-1 text-[12px] text-ink-2 disabled:opacity-40">조건 비우기</button>
+              className="rounded-md border border-accent-line bg-surface px-2 py-1 text-[12px] text-ink-2 disabled:opacity-40">전체 초기화</button>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {chips.length ? chips.map((chip) => <button type="button" key={chip.key} onClick={() => onChange(chip.remove(filters))}

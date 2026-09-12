@@ -19,6 +19,7 @@ type Props = {
   onReset: () => void
   history: FilterState[]
   onRestore: (index: number) => void
+  onUndo: () => void
   onEndEdit: () => void
   onViewResults: () => void
   activeCount: number
@@ -51,13 +52,13 @@ function FilterGroup({ title, summary, active, children, onViewResults }: {
     {open ? <Modal title={title} onClose={() => setOpen(false)} footer={
       <div className="flex items-center justify-between gap-3">
         <span className="text-[12px] text-ink-3">선택한 조건이 바로 반영됩니다.</span>
-        <button type="button" onClick={() => { setOpen(false); onViewResults() }} className="rounded-md bg-accent px-4 py-2 text-[13px] font-medium text-white hover:bg-accent-strong">결과 보기</button>
+        <button type="button" onClick={() => { setOpen(false); onViewResults() }} className="rounded-md bg-accent px-4 py-2 text-[13px] font-medium text-white hover:bg-accent-strong">적용</button>
       </div>
     }><div className="space-y-5 divide-y divide-line [&>div+div]:pt-5">{children}</div></Modal> : null}
   </>
 }
 
-export function FilterRail({ filters, onChange, onReset, history, onRestore, onEndEdit, onViewResults, activeCount, options, markers, savedSearches, importer }: Props) {
+export function FilterRail({ filters, onChange, onReset, history, onRestore, onUndo, onEndEdit, onViewResults, activeCount, options, markers, savedSearches, importer }: Props) {
   const patch = (next: Partial<FilterState>, group?: string) => onChange({ ...filters, ...next }, group)
   const markerKey = filters.marker ? `${filters.marker.name}|${filters.marker.unit}` : ''
   const mainSummary = [...filters.mains, ...filters.forms]
@@ -76,6 +77,7 @@ export function FilterRail({ filters, onChange, onReset, history, onRestore, onE
           placeholder="성분명, 제품명, 회사명 검색"
           className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2.5 text-[13px] text-ink placeholder:text-ink-3" />
       </div>
+      <FilterControls filters={filters} history={history} activeCount={activeCount} onChange={onChange} onReset={onReset} onRestore={onRestore} onUndo={onUndo} />
       {savedSearches}
       <section aria-label="상세 검색필터" className="space-y-2 border-t border-line px-4 py-4">
         <h3 className="mb-2 text-[13px] font-semibold text-ink">상세 필터</h3>
@@ -118,7 +120,6 @@ export function FilterRail({ filters, onChange, onReset, history, onRestore, onE
           <div><TokenMultiSelect label="제조원" options={options.manufacturers} selected={filters.manufacturers} onChange={(manufacturers) => patch({ manufacturers })} searchPlaceholder="제조원 검색" visibleCount={5} /></div>
         </FilterGroup>
       </section>
-      <FilterControls filters={filters} history={history} activeCount={activeCount} onChange={onChange} onReset={onReset} onRestore={onRestore} />
     </aside>
   )
 }

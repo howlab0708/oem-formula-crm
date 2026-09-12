@@ -25,26 +25,21 @@ export function ActiveFilters({ filters, onChange, onReset }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {chips.map((chip) => (
-        <button
+        <label
           key={chip.key}
-          type="button"
-          onClick={() => onChange(chip.remove(filters))}
-          className="group flex items-center gap-1.5 rounded-md border border-line bg-surface py-1 pr-1.5 pl-2 text-[13px] text-ink-2 transition-colors hover:border-line-strong"
+          className="flex cursor-pointer items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-1.5 text-[13px] text-ink-2 hover:border-accent-line"
         >
+          <input type="checkbox" checked aria-label={`${chip.group} ${chip.label} 조건`} onChange={() => onChange(chip.remove(filters))} className="size-3.5 accent-accent" />
           <span className="text-ink-3">{chip.group}</span>
           <span className="font-medium text-ink">{chip.label}</span>
-          <span aria-hidden className="text-ink-3 group-hover:text-ink">
-            ×
-          </span>
-          <span className="sr-only">조건 제거</span>
-        </button>
+        </label>
       ))}
       <button
         type="button"
         onClick={onReset}
         className="ml-1 text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
       >
-        전체 해제
+        전체 초기화
       </button>
     </div>
   )

@@ -43,7 +43,7 @@ function fileStem(briefing: Briefing): string {
  * 텍스트 / 이미지 / PDF 모두 같은 Briefing 객체를 렌더하므로 숫자가 어긋나지 않는다.
  */
 export function ExportActions({ briefing: original, disabled, freshness }: Props) {
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
   const [customer, setCustomer] = useState(false)
   const [hidden, setHidden] = useState(DEFAULT_EXPORT_VISIBILITY)
   // 로고는 등록 화면(`DocumentIdentity`)이 저장하고, 저장하면 여기로 곧바로 알려 온다.
@@ -112,80 +112,42 @@ export function ExportActions({ briefing: original, disabled, freshness }: Props
     })
 
   return (
-    <div className="relative flex w-full shrink-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
-      {message ? (
-        <p aria-live="polite" className="w-full text-right text-[12px] text-ink-3">
-          {message}
-        </p>
-      ) : null}
-
-      <button type="button" aria-haspopup="dialog" onClick={() => setSettingsOpen(!settingsOpen)} className="rounded-md border border-line px-3 py-1.5 text-[13px] text-ink-2">내보내기 설정{customer ? ' · 고객용' : ''}</button>
-      {settingsOpen ? <Modal title="내보내기 설정" onClose={() => setSettingsOpen(false)}>
-        <div className="mt-3"><DocumentIdentity /></div>
-        <label className="mt-4 flex items-center gap-2 font-medium"><input type="checkbox" checked={customer} onChange={e => { setCustomer(e.target.checked); setPreview(null) }} />고객용 보기</label>
-        <p className="mt-2 text-[12px] leading-4 text-ink-3">기본으로 숨기는 항목은 없습니다. 고객용 보기를 켜면 아래에서 선택한 항목만 모든 내보내기에서 숨깁니다. 검색 결과 수치는 유지됩니다.</p>
-        <fieldset className="mt-3 space-y-2"><legend className="mb-2">고객용 보기에서 숨길 항목</legend>{EXPORT_FIELDS.map(field => <label key={field.key} className="flex items-center gap-2"><input type="checkbox" checked={hidden[field.key]} onChange={e => { setHidden({ ...hidden, [field.key]: e.target.checked }); setPreview(null) }} />{field.label}</label>)}</fieldset>
-        <p className="mt-2 text-[12px] text-ink-3">자유 검색어에 입력한 회사명 등 다른 텍스트는 자동으로 가리지 않습니다. 미리보기에서 확인해 주세요.</p>
-        <button type="button" disabled={disabled || busy !== null} className="mt-4 rounded border border-line px-3 py-2 disabled:opacity-50" onClick={() => void run('preview', async () => { setPreview({ image: (await render()).toDataURL('image/png'), text: exportText() }); return '현재 설정의 내보내기 미리보기입니다.' })}>내보내기 미리보기</button>
+    <div className="flex shrink-0 items-center gap-2">
+      <button type="button" aria-haspopup="dialog" onClick={() => setExportOpen(true)}
+        className="rounded-md border border-line bg-surface px-3 py-2 text-[13px] font-medium text-ink-2 hover:bg-surface-sunken">
+        검색 결과 내보내기 <span aria-hidden>↗</span>
+      </button>
+      {exportOpen ? <Modal title="검색 결과 내보내기" onClose={() => setExportOpen(false)}>
+        <p className="mb-4 text-[13px] leading-5 text-ink-2">현재 검색 조건과 시장 요약을 문서로 만듭니다. 용도에 맞는 형식을 선택하세요.</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {[
+            { kind: 'pdf', label: 'PDF 저장', hint: '고객에게 전달할 문서', action: onSavePdf, primary: true },
+            { kind: 'image', label: '이미지 저장', hint: '보고서에 첨부할 PNG 파일', action: onSaveImage },
+            ...(canCopyImage ? [{ kind: 'clipboard', label: '이미지 복사', hint: '메일·메신저에 바로 붙여넣기', action: onCopyImage }] : []),
+            { kind: 'text', label: '텍스트 복사', hint: '내용을 복사해서 편집하기', action: onCopyText },
+          ].map((action) => <button key={action.kind} type="button" onClick={action.action} disabled={disabled || busy !== null}
+            className={`rounded-lg border px-4 py-3 text-left transition-colors disabled:opacity-50 ${'primary' in action && action.primary ? 'border-accent bg-accent text-white hover:bg-accent-strong' : 'border-line bg-surface text-ink hover:bg-surface-sunken'}`}>
+            <span className="block text-[14px] font-semibold">{busy === action.kind ? '처리 중…' : action.label}</span>
+            <span className="mt-1 block text-[12px] opacity-80">{action.hint}</span>
+          </button>)}
+        </div>
+        <button type="button" disabled={disabled || busy !== null} className="mt-3 w-full rounded-md border border-line px-3 py-2 text-[13px] text-ink-2 hover:bg-surface-sunken disabled:opacity-50"
+          onClick={() => void run('preview', async () => { setPreview({ image: (await render()).toDataURL('image/png'), text: exportText() }); return '현재 설정의 내보내기 미리보기입니다.' })}>
+          {busy === 'preview' ? '미리보기 만드는 중…' : '내보내기 미리보기'}
+        </button>
+        <details className="mt-5 border-t border-line pt-4 text-[13px] text-ink-2">
+          <summary className="cursor-pointer font-medium">로고 · 고객용 표시 설정{customer ? ' · 고객용 사용 중' : ''}</summary>
+          <div className="mt-4"><DocumentIdentity /></div>
+          <label className="mt-4 flex items-center gap-2 font-medium"><input type="checkbox" checked={customer} onChange={e => { setCustomer(e.target.checked); setPreview(null) }} />고객용 보기</label>
+          <p className="mt-2 text-[12px] leading-5 text-ink-3">고객용 보기를 켜면 아래에서 선택한 항목을 모든 내보내기에서 숨깁니다.</p>
+          <fieldset className="mt-3 space-y-2" disabled={!customer}><legend className="mb-2">고객용 보기에서 숨길 항목</legend>{EXPORT_FIELDS.map(field => <label key={field.key} className="flex items-center gap-2"><input type="checkbox" checked={hidden[field.key]} onChange={e => { setHidden({ ...hidden, [field.key]: e.target.checked }); setPreview(null) }} />{field.label}</label>)}</fieldset>
+          <p className="mt-3 text-[12px] leading-5 text-ink-3">자유 검색어에 입력한 회사명은 자동으로 가리지 않습니다. 미리보기에서 확인해 주세요.</p>
+        </details>
+        {disabled ? <p className="mt-3 text-[13px] text-ink-3">내보낼 검색 결과가 없습니다. 검색 조건을 변경해 주세요.</p> : null}
+        {message ? <p role="status" className="mt-3 rounded-md bg-surface-sunken p-3 text-[13px] text-ink-2">{message}</p> : null}
       </Modal> : null}
       {preview ? <ExportPreview preview={preview} onClose={() => setPreview(null)} /> : null}
-      <ActionButton onClick={onCopyText} disabled={disabled || busy !== null} busy={busy === 'text'}>
-        텍스트 복사
-      </ActionButton>
-      <ActionButton
-        onClick={onSaveImage}
-        disabled={disabled || busy !== null}
-        busy={busy === 'image'}
-      >
-        이미지 저장
-      </ActionButton>
-      {canCopyImage ? (
-        <ActionButton
-          onClick={onCopyImage}
-          disabled={disabled || busy !== null}
-          busy={busy === 'clipboard'}
-        >
-          이미지 복사
-        </ActionButton>
-      ) : null}
-      <ActionButton
-        onClick={onSavePdf}
-        disabled={disabled || busy !== null}
-        busy={busy === 'pdf'}
-        primary
-      >
-        PDF 저장
-      </ActionButton>
     </div>
-  )
-}
-
-function ActionButton({
-  children,
-  onClick,
-  disabled,
-  busy,
-  primary = false,
-}: {
-  children: React.ReactNode
-  onClick: () => void
-  disabled: boolean
-  busy: boolean
-  primary?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`shrink-0 rounded-md px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors disabled:opacity-50 ${
-        primary
-          ? 'bg-accent text-white hover:bg-accent-strong'
-          : 'border border-line bg-surface text-ink-2 hover:bg-surface-sunken'
-      }`}
-    >
-      {busy ? '처리 중…' : children}
-    </button>
   )
 }
 
