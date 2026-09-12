@@ -58,7 +58,7 @@ export function IngredientCopyButton({ getText, label = '원료 정보 복사', 
   </div>
 }
 
-export function ProductProvenanceSection({ product, loading = false, error, onRetry }: { product: Product; loading?: boolean; error?: string; onRetry?: () => void }) {
+export function ProductProvenanceSection({ product, loading = false, refreshing = false, error, onRetry }: { product: Product; loading?: boolean; refreshing?: boolean; error?: string; onRetry?: () => void }) {
   const [showAll, setShowAll] = useState(false)
   const rows = productProvenance(product)
   const origins = rows.filter(row => row.country).length
@@ -74,6 +74,7 @@ export function ProductProvenanceSection({ product, loading = false, error, onRe
       </div>
       {rows.length ? <IngredientCopyButton disabled={loading} getText={() => provenanceToText(rows.map((source) => ({ name: source.ingredientName, provenance: source })), product.name)} /> : null}
     </div>
+    {refreshing ? <p role="status" className="mt-2 text-[12px] text-ink-3">이전에 확인한 정보를 표시하며 최신 자료를 확인 중입니다.</p> : null}
     {error ? <div role="alert" className="mt-3 rounded border border-line-strong p-3 text-[12px] text-ink-2">
       <p>{error} 아래에는 기존에 확인된 자료만 표시합니다.</p>
       <button type="button" onClick={onRetry} className="mt-2 rounded border border-line-strong px-3 py-1.5">다시 조회</button>

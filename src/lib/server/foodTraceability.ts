@@ -126,14 +126,14 @@ async function lookup(product: Reference): Promise<TraceLookup> {
   const links = exact.slice(0, 6).map(c => ({ productName: c.productName, manufacturer: c.manufacturer, sourceUrl: traceDetailUrl(c.registrationNo) }))
   if (!exact.length) return { status: 'not_found', checkedAt, message: '조회한 공개 이력에서 제품명과 제조원이 일치하는 자료를 찾지 못했습니다.', candidates: [] }
   // Bound requests per selection. Show the actual reference lot rather than implying all lots were checked.
-  const lots: TraceLot[] = []
-  for (const candidate of exact.slice(0, 3)) {
+  const checked = await Promise.all(exact.slice(0, 3).map(async candidate => {
     const list = parseTraceLots(await readHtml(traceDetailUrl(candidate.registrationNo), signal))
-    if (!list.length) continue
+    if (!list.length) return null
     const lot = parseTraceDetail(await readHtml(traceDetailUrl(candidate.registrationNo, list[0].traceabilityNo), signal))
-    if (lot.registrationNo !== candidate.registrationNo || lot.traceabilityNo !== list[0].traceabilityNo || !traceProductMatches(product.name, lot.productName) || !traceCompanyMatches(product.manufacturer, lot.manufacturer)) continue
-    if (traceIngredientsMatch([...product.mainIngredients, ...product.subIngredients], lot.ingredients)) lots.push(lot)
-  }
+    if (lot.registrationNo !== candidate.registrationNo || lot.traceabilityNo !== list[0].traceabilityNo || !traceProductMatches(product.name, lot.productName) || !traceCompanyMatches(product.manufacturer, lot.manufacturer)) return null
+    return traceIngredientsMatch([...product.mainIngredients, ...product.subIngredients], lot.ingredients) ? lot : null
+  }))
+  const lots = checked.filter((lot): lot is TraceLot => lot !== null)
   if (!lots.length) return { status: 'needs_review', checkedAt, message: '같은 이름의 이력이 있으나 원료 구성 또는 생산 정보를 대조해야 합니다. 원산지를 자동으로 적용하지 않았습니다.', candidates: links }
   const lot = lots.sort((a, b) => b.productionDate.localeCompare(a.productionDate))[0]
   return { status: 'matched', checkedAt, lot, candidates: links, message: '제품명·제조원·원료 구성이 일치하는 공개 생산 이력입니다. 해당 생산분의 등록 정보이며 다른 생산분은 달라질 수 있습니다.' }

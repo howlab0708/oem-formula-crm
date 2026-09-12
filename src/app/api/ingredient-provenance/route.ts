@@ -1,7 +1,6 @@
-import { lookupFoodTraceability } from '@/lib/server/foodTraceability'
+import { cachedFoodTraceability } from '@/lib/server/traceabilityCache'
 
 export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
 
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers: { 'Cache-Control': 'no-store' } })
 const validText = (value: unknown, max: number): value is string => typeof value === 'string' && Boolean(value.trim()) && value.length <= max
@@ -22,7 +21,7 @@ export async function POST(request: Request) {
     !validNames(value.mainIngredients) || !validNames(value.subIngredients) ||
     !value.mainIngredients.length && !value.subIngredients.length) return json({ error: '제품명·제조원·원료 목록을 확인해 주세요.' }, 400)
   try {
-    return json(await lookupFoodTraceability({ name: value.name, manufacturer: value.manufacturer,
+    return json(await cachedFoodTraceability({ name: value.name, manufacturer: value.manufacturer,
       reportNo: value.reportNo, mainIngredients: value.mainIngredients, subIngredients: value.subIngredients }))
   } catch (error) {
     const code = error instanceof Error ? error.message : 'UNKNOWN'

@@ -1,10 +1,11 @@
 'use client'
 
-import { useRef, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { formatInt, formatMilligrams } from '@/lib/format'
 import { uniqueMainIngredients } from '@/lib/ingredientNames'
 import { referencePage, referencePageButtons } from '@/lib/pagination'
 import type { Product } from '@/lib/types'
+import { traceabilityClient, traceabilityPayload } from '@/lib/traceabilityClient'
 
 const GRID_TEMPLATE = 'md:grid-cols-[minmax(0,2fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_minmax(0,2fr)_auto]'
 
@@ -17,15 +18,23 @@ type Props = {
   onSelect: (product: Product) => void
   scrollRef: RefObject<HTMLDivElement | null>
   actions?: ReactNode
+  active?: boolean
 }
 
 /** 목록만 50건씩 나눈다. 통계와 CSV 내보내기는 부모의 전체 검색 결과를 사용한다. */
 export function ReferenceGrid({
-  products, totalCount, page, onPageChange, selectedId, onSelect, scrollRef, actions,
+  products, totalCount, page, onPageChange, selectedId, onSelect, scrollRef, actions, active = true,
 }: Props) {
   const sectionRef = useRef<HTMLElement>(null)
   const bounds = referencePage(products.length, page)
   const rows = products.slice(bounds.start, bounds.end)
+  const preloadKeys = JSON.stringify(rows.slice(0, 3).map(traceabilityPayload))
+  useEffect(() => {
+    if (!active) return
+    let cancel: (() => void) | undefined
+    const timer = setTimeout(() => { cancel = traceabilityClient.prefetch(JSON.parse(preloadKeys)) }, 650)
+    return () => { clearTimeout(timer); cancel?.() }
+  }, [preloadKeys, active])
   const changePage = (next: number) => {
     onPageChange(next)
     const section = sectionRef.current
@@ -73,6 +82,8 @@ export function ReferenceGrid({
                 <button
                   type="button"
                   onClick={() => onSelect(product)}
+                  onPointerEnter={() => traceabilityClient.request(traceabilityPayload(product), false)}
+                  onFocus={() => traceabilityClient.request(traceabilityPayload(product), false)}
                   aria-label={`${product.name} 상세보기`}
                   aria-current={selected ? 'true' : undefined}
                   className={`grid w-full grid-cols-[minmax(0,1fr)_auto] ${GRID_TEMPLATE} items-center gap-x-4 gap-y-2 rounded-md px-3 py-3 text-left transition-colors ${

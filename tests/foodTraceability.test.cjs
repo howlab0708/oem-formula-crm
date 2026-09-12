@@ -60,6 +60,33 @@ test('live lookup validates the whole recipe, caches successful reads and distin
   } finally { global.fetch = original }
 })
 
+test('independent package histories start together while every lot still requires a full recipe match', async () => {
+  const original = global.fetch
+  const ids = ['10000001', '10000002', '10000003']
+  let release
+  const gate = new Promise(resolve => { release = resolve })
+  const started = []
+  const search = ids.map((id, i) => `<td><input name="regNum${i}" value="${id}"><strong>기업명:</strong><span>${fixtures.product.manufacturer}</span><strong>제품명:</strong><span>${fixtures.product.name}</span></td>`).join('')
+  try {
+    global.fetch = async url => {
+      const parsed = new URL(url), id = parsed.searchParams.get('regNum')
+      if (!id) return new Response(search)
+      if (url.includes('nhq201ListDataP')) {
+        started.push(id)
+        await gate
+        return new Response(fixtures.lots.replaceAll('10659923', id))
+      }
+      return new Response(fixtures.detail.replaceAll('10659923', id))
+    }
+    const lookup = createLoader()('src/lib/server/foodTraceability.ts').lookupFoodTraceability
+    const pending = lookup(fixtures.product)
+    await new Promise(resolve => setImmediate(resolve))
+    assert.deepEqual(started, ids)
+    release()
+    assert.equal((await pending).status, 'matched')
+  } finally { release(); global.fetch = original }
+})
+
 test('production snapshot survives formula import and JSON validation, including multiple source countries', () => {
   const lot = parseTraceDetail(fixtures.detail)
   lot.ingredients.push({ name: '비타민C', country: '영국' }, { name: '비타민 C', country: '' })
@@ -131,8 +158,8 @@ test('PDF pages retain production dates, traceability numbers and supplementary 
 
 test('read-only API validates inputs, blocks cross-site calls, and returns safe failures without upstream details', async () => {
   let calls = 0
-  const POST = createLoader({ [path.resolve(__dirname, '../src/lib/server/foodTraceability.ts')]: {
-    lookupFoodTraceability: async () => { calls++; throw new Error('private upstream detail') },
+  const POST = createLoader({ [path.resolve(__dirname, '../src/lib/server/traceabilityCache.ts')]: {
+    cachedFoodTraceability: async () => { calls++; throw new Error('private upstream detail') },
   } })('src/app/api/ingredient-provenance/route.ts').POST
   const request = (body, headers = {}) => new Request('http://localhost/api/ingredient-provenance', { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) })
   assert.equal((await POST(request(fixtures.product, { 'sec-fetch-site': 'cross-site' }))).status, 403)

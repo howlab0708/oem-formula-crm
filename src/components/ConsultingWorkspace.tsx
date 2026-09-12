@@ -473,6 +473,7 @@ function LoadedConsultingWorkspace({
             />
 
             <ReferenceGrid
+              active={activeTab === 'consulting'}
               products={filtered}
               totalCount={products.length}
               page={page}

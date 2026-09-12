@@ -147,7 +147,7 @@ export function DetailPanel({
               )}
             </Block>
 
-            <ProductProvenanceSection key={rendered.id} product={rendered} loading={trace.loading} error={trace.error} onRetry={trace.retry} />
+            <ProductProvenanceSection key={rendered.id} product={rendered} loading={trace.loading} refreshing={trace.refreshing} error={trace.error} onRetry={trace.retry} />
 
             <Block label="지표성분 상세 함량">
               {rendered.markers.length ? (
