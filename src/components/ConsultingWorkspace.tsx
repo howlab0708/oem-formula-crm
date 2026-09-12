@@ -37,6 +37,7 @@ import { filterHistoryReducer, INITIAL_FILTER_HISTORY, type FilterUpdate } from 
 import { mainIngredientKey, uniqueMainIngredients } from '@/lib/ingredientNames'
 import { sourceFormOptions, sourceNutrientOptions } from '@/lib/ingredientSource'
 import { REFERENCE_PAGE_SIZE } from '@/lib/pagination'
+import { prepareReferences } from '@/lib/referenceOrder'
 import { SEED_PRODUCTS } from '@/lib/seed'
 import type { FormType, Product } from '@/lib/types'
 import type { FormulaDesignerHandle } from '@/components/formula/FormulaDesigner'
@@ -122,7 +123,13 @@ function LoadedConsultingWorkspace({
   /** 회사 이름표(`APP_LABEL`). 배포가 여러 개일 때 화면만 보고 구분하려고 붙인다. */
   deployLabel: string
 }) {
-  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [rawProducts, setProducts] = useState<Product[]>(initialProducts)
+  /**
+   * 제조원 표기를 통일하고 메이저 제조사부터 보이도록 순서를 다시 세운다.
+   * 데이터셋이 바뀔 때만 한 번 돌고, 아래의 모든 필터·통계·내보내기가 이 결과를
+   * 그대로 물려받는다(`applyFilters`는 걸러내기만 하고 순서를 건드리지 않는다).
+   */
+  const products = useMemo(() => prepareReferences(rawProducts), [rawProducts])
   const [source, setSource] = useState<'seed' | 'csv' | 'db'>(initialSource)
   const [datasetMeta, setDatasetMeta] = useState(initialMeta)
   const [provenance, setProvenance] = useState<DatasetProvenance | null>(initialMeta?.provenance ?? null)
