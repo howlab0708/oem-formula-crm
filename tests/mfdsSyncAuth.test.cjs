@@ -37,3 +37,19 @@ test('cross-origin or origin-less manual requests are rejected before work start
   }
   assert.equal(started, false)
 })
+
+test('storage diagnostics omit upstream URLs, secrets, SQL details and invalid error codes', async t => {
+  const logged = []
+  t.mock.method(console, 'error', (...args) => logged.push(args))
+  const { collectSync } = createLoader()('src/lib/server/mfdsSync.ts')
+  let stopped
+  const secret = 'private-test-value-never-to-be-logged'
+  for (const code of ['23505', `https://example.test/${secret}`]) {
+    const failure = Object.assign(new Error(`request ${secret}`), { code, detail: secret, query: secret })
+    const state = await collectSync({ reclaimSpace: async () => {}, chargeRequest: async () => {}, savePage: async () => { throw failure }, stop: async (_, error) => { stopped = error } }, { fetched: 0, expected: null }, async () => ({ total: 1, products: [] }))
+    assert.equal(state, 'failed')
+    assert.equal(stopped.code, 'storage')
+  }
+  assert.deepEqual(logged.map(entry => entry[1]), [{ phase: 'save', fetched: 0, code: '23505' }, { phase: 'save', fetched: 0, code: 'UNKNOWN' }])
+  assert.equal(JSON.stringify(logged).includes(secret), false)
+})

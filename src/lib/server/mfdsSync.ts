@@ -43,21 +43,33 @@ export async function collectSync(
 ) {
   let run = initialRun
   const deadline = Date.now() + budgetMs
+  let phase = 'reclaim'
   try {
     await store.reclaimSpace()
     while (run.expected === null || run.fetched < run.expected) {
       if (Date.now() >= deadline - 25_000) throw new SyncError('duration', '이번 수집 시간을 마쳤습니다. 이어받기로 계속하거나 다음 자동 실행을 기다려 주세요.', true)
+      phase = 'quota'
       await store.chargeRequest(run)
+      phase = 'fetch'
       const page = await read(run.fetched + 1, Math.min(run.fetched + MFDS_PAGE_SIZE, run.expected ?? Infinity))
+      phase = 'save'
       run = await store.savePage(run, page)
     }
     // Recheck the source count just before changing the visible generation.
     if (Date.now() >= deadline - 25_000) throw new SyncError('duration', '수집이 끝났습니다. 이어받기로 최종 확인을 진행해 주세요.', true)
+    phase = 'verify-quota'
     await store.chargeRequest(run)
+    phase = 'verify-fetch'
     const probe = await read(1, 1)
+    phase = 'publish'
     await store.publish(run, probe.total)
     return 'complete' as const
   } catch (error) {
+    if (!(error instanceof SyncError)) {
+      // Error messages, details, SQL parameters and stacks may contain credentials or product data.
+      const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
+      console.error('[mfds-sync]', { phase, fetched: run.fetched, code: /^[A-Z0-9_]{1,40}$/.test(code) ? code : 'UNKNOWN' })
+    }
     const safe = error instanceof SyncError ? error : new SyncError('storage', '수집 결과를 저장하지 못해 기존 데이터를 유지합니다. 다시 시도해 주세요.')
     // An old worker must never overwrite the status of its replacement.
     if (safe.code !== 'lease') await store.stop(run, safe)
