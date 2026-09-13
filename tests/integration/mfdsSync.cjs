@@ -11,7 +11,7 @@ const { collectSync } = load('src/lib/server/mfdsSync.ts')
 const { parseC003, SyncError } = load('src/lib/server/mfdsC003.ts')
 const sample = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/mfds-c003-sample.json'), 'utf8'))
 const products = parseC003(sample, 1, 5).products
-let pg, store
+let pg, store, wireServer, wireSql
 const active = async () => (await pg.query("select generation from import_status where status='complete'")).rows.map(r => r.generation)
 const queryFor = connection => async (sql, params = []) => (await connection.query(sql, params)).rows
 before(async () => {
@@ -19,9 +19,18 @@ before(async () => {
   await pg.exec(`create table import_status(generation text primary key, status text not null, file_name text, total_rows integer, imported_rows integer not null default 0, started_at timestamptz not null default now(), finished_at timestamptz, provenance jsonb);
     create table products(id text not null,generation text not null references import_status(generation) on delete cascade,seq integer not null,payload jsonb not null, primary key(generation,id));`)
   await pg.exec(SYNC_SCHEMA)
-  store = new SyncStore({ query: queryFor(pg), transaction: fn => pg.transaction(tx => fn(queryFor(tx))) })
+  if (process.env.PGLITE_SOCKET_TEST_PATH) {
+    const { PGLiteSocketServer } = require(process.env.PGLITE_SOCKET_TEST_PATH)
+    wireServer = new PGLiteSocketServer({ db: pg, host: '127.0.0.1', port: 0 })
+    await wireServer.start()
+    wireSql = require('postgres')(`postgres://postgres@${wireServer.getServerConn()}/postgres`, { prepare: false, max: 1, onnotice: () => {} })
+    const wireQuery = connection => async (sql, params = []) => [...await connection.unsafe(sql, params)]
+    store = new SyncStore({ query: wireQuery(wireSql), transaction: fn => wireSql.begin(tx => fn(wireQuery(tx))) })
+  } else {
+    store = new SyncStore({ query: queryFor(pg), transaction: fn => pg.transaction(tx => fn(queryFor(tx))) })
+  }
 })
-after(async () => { await pg.close() })
+after(async () => { await wireSql?.end(); await wireServer?.stop(); await pg.close() })
 beforeEach(async () => {
   await pg.exec("truncate import_status cascade; truncate oem_sync.runs; update oem_sync.requests set times='{}'; insert into import_status(generation,status,total_rows,imported_rows,finished_at) values('old','complete',2,2,now());")
   // One matched product and one no longer returned by MFDS. Existing brand/manual extras survive.

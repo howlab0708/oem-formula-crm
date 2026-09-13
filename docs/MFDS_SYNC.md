@@ -47,6 +47,8 @@ Vercel Fluid Compute의 300초 실행 시간을 확인한다. 같은 저장소�
 
 DB 통합 검증: 별도로 설치한 `@electric-sql/pglite` 경로를 `PGLITE_TEST_PATH`에 지정하고 `node --test tests/integration/mfdsSync.cjs` 실행. 테스트는 메모리 PostgreSQL만 사용한다. 운영 비밀번호나 DB 연결값은 필요 없다.
 
+운영 드라이버 검증: `PGLITE_SOCKET_TEST_PATH`에 `@electric-sql/pglite-socket` 경로도 지정하면 같은 통합 검증을 실제 `postgres.js` 드라이버와 로컬 PostgreSQL 프로토콜로 실행한다. 2026-09-13 PGlite 0.5.8, pglite-socket 0.2.11로 확인했다. JSON 문자열 인수를 `text`로 전달한 뒤 SQL에서 `jsonb`로 바꾸어 드라이버의 JSON 이중 직렬화를 방지한다.
+
 공개 표본 출처: 2026-09-12 `https://openapi.foodsafetykorea.go.kr/api/sample/C003/json/1/5`. 인증키 없는 공개 표본 5건을 `tests/fixtures/mfds-c003-sample.json`에 보관한다. 전체 건수는 표본 응답의 메타데이터이며 전체 수집 완료를 뜻하지 않는다.
 
 운영 전 확인할 공식 문서:

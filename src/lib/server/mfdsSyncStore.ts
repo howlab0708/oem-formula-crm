@@ -113,9 +113,10 @@ export class SyncStore {
         if (page.total < baseline.count * 0.9) throw new SyncError('shrink', '식약처 전체 건수가 기존보다 크게 줄어 반영을 중단했습니다.')
       }
       const reports = page.products.map(p => p.reportNo)
-      const prior = await q<{ id: string; payload: Product }>(`select id,payload from public.products where generation=$1 and payload->>'reportNo' in (select jsonb_array_elements_text($2::jsonb))`, [run.baseline, JSON.stringify(reports)])
+      // JSON is already serialized here. Infer text parameters so postgres.js does not encode it twice.
+      const prior = await q<{ id: string; payload: Product }>(`select id,payload from public.products where generation=$1 and payload->>'reportNo' in (select jsonb_array_elements_text($2::text::jsonb))`, [run.baseline, JSON.stringify(reports)])
       const oldByReport = new Map(prior.map(p => [p.payload.reportNo, p]))
-      if ((await q(`select 1 from public.products where generation=$1 and payload->>'reportNo' in (select jsonb_array_elements_text($2::jsonb)) limit 1`, [run.id, JSON.stringify(reports)])).length) throw new SyncError('duplicate', '수집된 신고번호가 중복되어 기존 데이터를 유지합니다.')
+      if ((await q(`select 1 from public.products where generation=$1 and payload->>'reportNo' in (select jsonb_array_elements_text($2::text::jsonb)) limit 1`, [run.id, JSON.stringify(reports)])).length) throw new SyncError('duplicate', '수집된 신고번호가 중복되어 기존 데이터를 유지합니다.')
       let added = 0, changed = 0, dated = 0, through = run.updated_through
       const rows = page.products.map((incoming, index) => {
         const old = oldByReport.get(incoming.reportNo)
@@ -131,7 +132,7 @@ export class SyncStore {
         if (incoming.sourceUpdatedAt) { dated++; if (!through || incoming.sourceUpdatedAt > through) through = incoming.sourceUpdatedAt }
         return { id: product.id, seq: run.fetched + index, payload: product }
       })
-      await q(`insert into public.products(generation,id,seq,payload) select $1,r.id,r.seq,r.payload from jsonb_to_recordset($2::jsonb) as r(id text,seq integer,payload jsonb)`, [run.id, JSON.stringify(rows)])
+      await q(`insert into public.products(generation,id,seq,payload) select $1,r.id,r.seq,r.payload from jsonb_to_recordset($2::text::jsonb) as r(id text,seq integer,payload jsonb)`, [run.id, JSON.stringify(rows)])
       await q(`update public.import_status set total_rows=$2, imported_rows=$3 where generation=$1 and status='sync_staging'`, [run.id, page.total, run.fetched + rows.length])
       const [updated] = await q<SyncRun>(`update oem_sync.runs set expected=$3, fetched=fetched+$4, added=added+$5, changed=changed+$6, updated_through=$7, dated_rows=dated_rows+$8, lease_until=now()+interval '6 minutes' where id=$1 and owner=$2 returning *`, [run.id, run.owner, page.total, rows.length, added, changed, through, dated])
       return updated
@@ -151,7 +152,7 @@ export class SyncStore {
         where p.generation=$2 and not exists(select 1 from public.products n where n.generation=$1 and n.id=p.id) returning id`, [run.id, run.baseline, run.fetched])
       const provenance = { source: 'mfds-c003', transport: 'api', updatedThrough: run.updated_through, datedRows: run.dated_rows }
       await q(`update public.import_status set status='archived' where status='complete'`)
-      await q(`update public.import_status set status='complete', finished_at=now(), total_rows=$2, imported_rows=$2, provenance=$3::jsonb where generation=$1 and status='sync_staging'`, [run.id, run.fetched + retained.length, JSON.stringify(provenance)])
+      await q(`update public.import_status set status='complete', finished_at=now(), total_rows=$2, imported_rows=$2, provenance=$3::text::jsonb where generation=$1 and status='sync_staging'`, [run.id, run.fetched + retained.length, JSON.stringify(provenance)])
       await q(`update oem_sync.runs set state='complete', retained=$3, finished_at=now(), owner=null, lease_until=null, message=null where id=$1 and owner=$2`, [run.id, run.owner, retained.length])
     })
   }
