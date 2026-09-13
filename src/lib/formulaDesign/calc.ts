@@ -77,11 +77,25 @@ export type Batch = {
   totalBatchKg: number
 }
 
+export function validYield(spec: PackagingSpec): boolean {
+  return spec.lossMode !== 'yield' || (num(spec.yieldPercent) > 0 && num(spec.yieldPercent) <= 100)
+}
+
+/** 공장의 Loss 추가(순량 × 1.1)와 수율(순량 ÷ 0.9)을 구분한다. */
+export function adjustedBatchKg(netKg: number, spec: PackagingSpec): number {
+  if (spec.lossMode === 'yield') return validYield(spec) ? (netKg * 100) / num(spec.yieldPercent) : 0
+  return (netKg * (100 + num(spec.lossPercent))) / 100
+}
+
+export function allowanceLabel(spec: PackagingSpec): string {
+  return spec.lossMode === 'yield' ? `수율 ${spec.yieldPercent || '-'}% 적용` : `Loss ${num(spec.lossPercent)}% 추가`
+}
+
 export function batchOf(spec: PackagingSpec, setCount = num(spec.setCount)): Batch {
   const totalUnits = num(spec.unitsPerSet) * setCount
   const netBatchKg = (num(spec.unitWeightMg) * totalUnits) / 1000000
   // 48 × 1.1 은 부동소수 오차로 52.800000000000004 가 된다. 나눗셈을 마지막에 둔다.
-  const totalBatchKg = (netBatchKg * (100 + num(spec.lossPercent))) / 100
+  const totalBatchKg = adjustedBatchKg(netBatchKg, spec)
   return { totalUnits, netBatchKg, totalBatchKg }
 }
 
@@ -89,8 +103,10 @@ export function batchOf(spec: PackagingSpec, setCount = num(spec.setCount)): Bat
  * 부자재·가공·분석 한 줄의 수량.
  * fixed 는 직접 입력, set·unit 은 세트 수·낱개 수를 팩 크기로 나눠 올린다.
  */
-export function lineQuantity(row: LineRow, setCount: number, totalUnits: number): number {
+export function lineQuantity(row: LineRow, setCount: number, totalUnits: number, batchKg = 0): number {
   if (row.basis === 'fixed') return num(row.quantity)
+  // 혼합 공정은 원료의 실제 배합 kg로 계산하며 입수 올림이나 팩 청구량을 쓰지 않는다.
+  if (row.basis === 'batchKg') return batchKg
   const total = row.basis === 'set' ? setCount : totalUnits
   const pack = num(row.packSize) || 1
   if (pack <= 0) return 0
@@ -99,7 +115,11 @@ export function lineQuantity(row: LineRow, setCount: number, totalUnits: number)
 
 export type MaterialCalc = {
   row: MaterialRow
-  /** 배합비율로 역산한 배합량(kg) */
+  /** 입력한 mg 또는 %에서 계산한 유효 배합비율(%) */
+  ratio: number
+  /** 해당 원료의 Loss 제외 필요량(kg) */
+  netKg: number
+  /** 해당 원료의 Loss 포함 필요량(kg) */
   batchKg: number
   /** 실제 투입·발주량(kg). 직접 입력이 있으면 그 값. */
   usageKg: number
@@ -108,7 +128,7 @@ export type MaterialCalc = {
   /** 팩 단위 청구로 사용량이 팩 배수까지 올라간 줄인지 */
   packedUp: boolean
   amount: number
-  /** 1정(1캡슐)당 투입량(mg). 표시량 검토용 참고값. */
+  /** 낱개당 원료 배합량(mg). Loss·팩 올림·사용량 직접 입력은 포함하지 않는다. */
   mgPerUnit: number
 }
 
@@ -117,6 +137,8 @@ export type LineCalc = { row: LineRow; quantity: number; amount: number; counted
 export type OverheadCalc = { row: OverheadRow; amount: number; basis: string }
 
 export type Totals = Batch & {
+  unitAmountSumMg: number
+  unitAmountGapMg: number
   ratioSum: number
   /** 100% 까지 남은 배합비율. 부형제로 채울 양. */
   ratioGap: number
@@ -157,11 +179,11 @@ export type Totals = Batch & {
   perSet: { label: string; total: number; perSet: number }[]
 }
 
-function lineTotals(rows: LineRow[], setCount: number, totalUnits: number, factor = 1) {
+function lineTotals(rows: LineRow[], setCount: number, totalUnits: number, batchKg: number, factor = 1) {
   let included = 0
   let excluded = 0
   const calcs = rows.map((row) => {
-    const quantity = lineQuantity(row, setCount, totalUnits)
+    const quantity = lineQuantity(row, setCount, totalUnits, batchKg)
     const amount = quantity * num(row.unitPrice) * factor
     if (row.included) included += amount
     else excluded += amount
@@ -238,6 +260,16 @@ export function applyRounding(value: number, unit: number, mode: RoundMode): num
  * 세트 수를 바꿔 계산할 수 있다(수량 구간별 단가). 비우면 시트에 적힌 수량을 쓴다.
  * `discount` 는 그 구간에서 공장이 낮춰 준 단가를 블록별 할인율로 받는다(양수가 인하).
  */
+/** 직접 입력한 쪽(mg 또는 %)을 기준으로 계산한다. 표시용 반올림을 계산에 되먹이지 않는다. */
+export function materialComposition(row: MaterialRow, unitWeightMg: number) {
+  if (!blank(row.unitAmountMg)) {
+    const mgPerUnit = num(row.unitAmountMg)
+    return { mgPerUnit, ratio: unitWeightMg > 0 ? (mgPerUnit / unitWeightMg) * 100 : 0 }
+  }
+  const ratio = num(row.ratio)
+  return { ratio, mgPerUnit: (unitWeightMg * ratio) / 100 }
+}
+
 export function calculate(sheet: FormulaSheet, setCountOverride?: number, discount: TierDiscount = NO_DISCOUNT): Totals {
   const { spec, quote } = sheet
   const setCount = setCountOverride ?? num(spec.setCount)
@@ -246,13 +278,18 @@ export function calculate(sheet: FormulaSheet, setCountOverride?: number, discou
   const factor = (percent: number) => 1 - percent / 100
 
   let ratioSum = 0
+  let unitAmountSumMg = 0
   let batchSumKg = 0
   let usageSumKg = 0
   let materialCost = 0
 
   const materials = sheet.materials.map((row) => {
-    const ratio = num(row.ratio)
-    const batchKg = (batch.totalBatchKg * ratio) / 100
+    const { ratio, mgPerUnit } = materialComposition(row, num(spec.unitWeightMg))
+    const netKg = (mgPerUnit * batch.totalUnits) / 1000000
+    // 기존 % 시트의 계산 순서·금액을 보존한다. mg 입력은 % 반올림을 거치지 않는다.
+    const batchKg = blank(row.unitAmountMg)
+      ? (batch.totalBatchKg * ratio) / 100
+      : adjustedBatchKg(netKg, spec)
     // 사용량 직접 입력은 시트에 적힌 수량 기준이라 구간 계산에서는 쓰지 않는다.
     const overridden = setCountOverride === undefined && !blank(row.usage)
     // 팩 단위 청구는 배합량에서 계산하므로 구간 계산에도 그대로 적용된다.
@@ -261,24 +298,27 @@ export function calculate(sheet: FormulaSheet, setCountOverride?: number, discou
     const usageKg = overridden ? num(row.usage) : packedUp ? Math.ceil(batchKg / packKg) * packKg : batchKg
     const amount = usageKg * num(row.unitPrice) * factor(discount.material)
     ratioSum += ratio
+    unitAmountSumMg += mgPerUnit
     batchSumKg += batchKg
     usageSumKg += usageKg
     materialCost += amount
     return {
       row,
+      ratio,
+      netKg,
       batchKg,
       usageKg,
       overridden,
       packedUp,
       amount,
-      mgPerUnit: (num(spec.unitWeightMg) * ratio) / 100,
+      mgPerUnit,
     }
   })
 
-  const packaging = lineTotals(sheet.packagingItems, setCount, batch.totalUnits, factor(discount.packaging))
-  const process = lineTotals(sheet.processItems, setCount, batch.totalUnits, factor(discount.process))
+  const packaging = lineTotals(sheet.packagingItems, setCount, batch.totalUnits, batchSumKg, factor(discount.packaging))
+  const process = lineTotals(sheet.processItems, setCount, batch.totalUnits, batchSumKg, factor(discount.process))
   // 분석비는 초도 1회성이라 수량 구간의 할인 대상이 아니다.
-  const analysis = lineTotals(sheet.analysisItems, setCount, batch.totalUnits)
+  const analysis = lineTotals(sheet.analysisItems, setCount, batch.totalUnits, batchSumKg)
 
   const blockCost = materialCost + packaging.included + process.included + analysis.included
   // 재고비는 재고로 쥐고 있는 실물(원료·부자재)에만 걸린다.
@@ -333,6 +373,8 @@ export function calculate(sheet: FormulaSheet, setCountOverride?: number, discou
     ...batch,
     setCount,
     ratioSum,
+    unitAmountSumMg,
+    unitAmountGapMg: num(spec.unitWeightMg) - unitAmountSumMg,
     ratioGap: 100 - ratioSum,
     batchSumKg,
     usageSumKg,
@@ -412,10 +454,18 @@ export function calculateTiers(sheet: FormulaSheet, settings: QuoteSettings = sh
 }
 
 /** 배합비율 합이 100 이 되도록 지정한 줄에 남은 양을 넣는다. 부형제 조정용. */
-export function fillRemainder(materials: MaterialRow[], rowId: string): MaterialRow[] {
+export function fillRemainder(materials: MaterialRow[], rowId: string, unitWeightMg = 0): MaterialRow[] {
+  if (unitWeightMg > 0) {
+    const others = materials.reduce((sum, row) => row.id === rowId ? sum : sum + materialComposition(row, unitWeightMg).mgPerUnit, 0)
+    // 잔량은 mg로 보관하여 미량 원료 때문에 남은 중량이 % 네 자리에서 잘리지 않게 한다.
+    return materials.map((row) => row.id === rowId
+      ? { ...row, unitAmountMg: String(Math.max(0, unitWeightMg - others)), ratio: '' } : row)
+  }
+  // 규격이 없는 기존 비율 시트에서도 잔량 채우기는 계속 사용할 수 있다.
+  if (materials.some((row) => !blank(row.unitAmountMg))) return materials
   const others = materials.reduce((sum, row) => (row.id === rowId ? sum : sum + num(row.ratio)), 0)
   const remainder = Math.max(0, 100 - others)
-  return materials.map((row) => (row.id === rowId ? { ...row, ratio: trimRatio(remainder) } : row))
+  return materials.map((row) => (row.id === rowId ? { ...row, unitAmountMg: '', ratio: trimRatio(remainder) } : row))
 }
 
 /** 배합비율은 소수 네 자리까지 쓴다(엑셀의 45.5042% 와 같은 정밀도). */
@@ -433,6 +483,12 @@ export function ratioFromMgPerUnit(mgPerUnit: number, unitWeightMg: number): str
 export function formatKg(value: number, digits = 3): string {
   if (!Number.isFinite(value)) return '-'
   return value.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+}
+
+/** 미량 원료도 0으로 보이지 않게 유효숫자로 표시한다. 저장·계산에는 반올림 전 값을 쓴다. */
+export function formatMaterialQuantity(value: number): string {
+  if (!Number.isFinite(value)) return '-'
+  return value.toLocaleString('ko-KR', { maximumSignificantDigits: 12 })
 }
 
 export function formatWon(value: number): string {

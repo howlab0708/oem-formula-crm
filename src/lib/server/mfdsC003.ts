@@ -4,7 +4,7 @@ import { sourceDate } from '../datasetProvenance'
 import type { Product } from '../types'
 
 export const MFDS_PAGE_SIZE = 1000
-const HEADERS = ['PRDLST_REPORT_NO', 'PRDLST_NM', 'BSSH_NM', 'PRDT_SHAP_CD_NM', 'DISPOS', 'NTK_MTHD', 'STDR_STND', 'PRIMARY_FNCLTY', 'PRMS_DT', 'RAWMTRL_NM']
+const HEADERS = ['PRDLST_REPORT_NO', 'PRDLST_NM', 'BSSH_NM', 'PRDT_SHAP_CD_NM', 'DISPOS', 'NTK_MTHD', 'STDR_STND', 'PRIMARY_FNCLTY', 'PRMS_DT', 'RAWMTRL_NM', 'POG_DAYCNT', 'CSTDY_MTHD', 'IFTKN_ATNT_MATR_CN']
 const MAPPING = mapHeaders(HEADERS)
 export class SyncError extends Error {
   constructor(public readonly code: string, message: string, public readonly retryable = false) { super(message) }

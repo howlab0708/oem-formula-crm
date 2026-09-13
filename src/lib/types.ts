@@ -35,7 +35,11 @@ export type Marker = {
   raw: string
 }
 
+/** Source facts retained separately from the legacy, inferred weightLabel. */
+export type ReferenceDetails = Partial<Record<'declaredWeight' | 'unitsPerSet' | 'packaging' | 'shelfLife' | 'storageGuide' | 'appearance' | 'intakeCaution', string>>
+
 export type Product = {
+  referenceDetails?: ReferenceDetails
   /** Loaded on demand from a matched public production record, not part of the CSV dataset. */
   traceability?: import('./server/foodTraceability').TraceLookup
   id: string

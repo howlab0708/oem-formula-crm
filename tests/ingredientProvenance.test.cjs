@@ -74,7 +74,7 @@ test('renaming by typing or pasting clears stale provenance, while price/ratio e
     const pasted = sheetReducer(sheet, { type: 'paste-materials', row: 0, column: 0, matrix: [['다른 비타민C', '25']], enrich })
     assert.equal(pasted.materials[0].provenance, undefined)
   }
-  const pastedRatio = sheetReducer(sheet, { type: 'paste-materials', row: 0, column: 1, matrix: [['30']] })
+  const pastedRatio = sheetReducer(sheet, { type: 'paste-materials', row: 0, column: 2, matrix: [['30']] })
   assert.equal(pastedRatio.materials[0].provenance.supplier, 'DSM')
   assert.equal(sheet.materials[0].provenance.supplier, 'DSM')
 })

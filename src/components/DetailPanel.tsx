@@ -4,9 +4,10 @@ import { useEffect, useRef } from 'react'
 import { Modal } from '@/components/Modal'
 import { ProductProvenanceSection } from '@/components/IngredientProvenance'
 import { formatInt, formatMilligrams } from '@/lib/format'
-import { ORIGIN_LABELS, originOfForm, productSources } from '@/lib/ingredientSource'
+import { ORIGIN_LABELS, originOfForm, productSources, declaredNutrientIngredients } from '@/lib/ingredientSource'
 import type { Product } from '@/lib/types'
 import { useProductTraceability } from '@/lib/useProductTraceability'
+import { referenceSpecifications } from '@/lib/referenceSpecifications'
 
 type Props = {
   product: Product | null
@@ -79,6 +80,10 @@ export function DetailPanel({
   }, [rendered?.id])
 
   if (!rendered) return null
+  const specs = referenceSpecifications(rendered)
+  const declared = declaredNutrientIngredients(rendered)
+  const mainIngredients = [...rendered.mainIngredients, ...rendered.subIngredients.filter(name => declared.has(name) && !rendered.mainIngredients.includes(name))]
+  const subIngredients = rendered.subIngredients.filter(name => !declared.has(name))
 
   return (
     <Modal title={`레퍼런스 상세 · ${rendered.name}`} onClose={onClose} footer={
@@ -128,12 +133,17 @@ export function DetailPanel({
                   : undefined
               }
             />
-            <Row label="1알 중량" value={formatMilligrams(rendered.unitWeightMg)} sub={rendered.intakeMethod || undefined} />
+            <Row label="1개 중량" value={formatMilligrams(specs.unitWeightMg)} sub={rendered.intakeMethod || undefined} />
+            <Row label="포장 개수" value={specs.unitsPerSet ? `${specs.unitsPerSet}개 / set` : '원본 미제공'} />
+            <Row label="포장 형태" value={specs.packaging || '원본 미제공'} />
+            <Row label="소비기한" value={specs.shelfLife || '원본 미제공'} />
+            {specs.officialSource ? <p className="mb-3 text-[12px] text-ink-2">포장 규격 보완: <a className="text-accent-strong underline" href={specs.officialSource.sourceUrl} target="_blank" rel="noreferrer">공식몰 고시정보 ↗</a> · 확인 {specs.officialSource.checkedAt}</p> : null}
+            {specs.evidence.length ? <details className="mb-4 text-[12px] text-ink-2"><summary className="cursor-pointer">규격·보관방법 원문 보기</summary>{specs.evidence.map((line, i) => <p key={i} className="mt-2 whitespace-pre-line">{line}</p>)}</details> : null}
 
             <Block label="기능성 주원료">
-              {rendered.mainIngredients.length ? (
+              {mainIngredients.length ? (
                 <ul className="flex flex-wrap gap-1.5">
-                  {rendered.mainIngredients.map((name) => (
+                  {mainIngredients.map((name) => (
                     <li
                       key={name}
                       className="rounded border border-accent-line bg-accent-soft px-2 py-1 text-[13px] text-accent-strong"
@@ -213,12 +223,12 @@ export function DetailPanel({
             </Block>
 
             <Block
-              label={`부원료 전체 내역 (${formatInt(rendered.subIngredients.length)}종)`}
+              label={`부원료 전체 내역 (${formatInt(subIngredients.length)}종)`}
               hint="누르면 해당 부원료를 포함 조건으로 겁니다."
             >
-              {rendered.subIngredients.length ? (
+              {subIngredients.length ? (
                 <ul className="flex flex-wrap gap-1.5">
-                  {rendered.subIngredients.map((name) => (
+                  {subIngredients.map((name) => (
                     <li key={name}>
                       <button
                         type="button"

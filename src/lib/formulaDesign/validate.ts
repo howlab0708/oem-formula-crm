@@ -136,6 +136,7 @@ function materialRow(value: unknown, index: number): MaterialRow {
     name: text(row.name, '원료명'),
     provenance: provenance(row.provenance, text(row.name, '원료명')),
     ratio: numeric(row.ratio, '배합비율'),
+    unitAmountMg: numeric(row.unitAmountMg, '낱개당 배합량(mg)'),
     usage: numeric(row.usage, '사용량'),
     unitPrice: numeric(row.unitPrice, '원료단가'),
     note: text(row.note, '비고'),
@@ -154,7 +155,7 @@ function materialRow(value: unknown, index: number): MaterialRow {
 }
 
 function quantityBasis(value: unknown): QuantityBasis {
-  return value === 'fixed' || value === 'unit' ? value : 'set'
+  return value === 'fixed' || value === 'unit' || value === 'batchKg' ? value : 'set'
 }
 
 function lineRow(value: unknown, index: number, label: string): LineRow {
@@ -162,7 +163,7 @@ function lineRow(value: unknown, index: number, label: string): LineRow {
   return {
     id: rowIdOf(row.id, index, 'l'),
     label: text(row.label, `${label} 항목명`),
-    unit: text(row.unit, '기준단위', 20),
+    unit: row.basis === 'batchKg' ? 'kg' : text(row.unit, '기준단위', 20),
     basis: quantityBasis(row.basis),
     quantity: numeric(row.quantity, '수량'),
     packSize: numeric(row.packSize, '입수') || '1',
@@ -174,6 +175,12 @@ function lineRow(value: unknown, index: number, label: string): LineRow {
 
 function spec(value: unknown): PackagingSpec {
   const row = record(value, '포장 단위')
+  if (row.lossMode != null && row.lossMode !== 'additive' && row.lossMode !== 'yield') fail('생산 손실 계산 방식을 확인해 주세요.')
+  const yieldPercent = numeric(row.yieldPercent, '수율')
+  if (row.lossMode === 'yield') {
+    const value = Number(yieldPercent.replace(/[,\s%]/g, ''))
+    if (!yieldPercent || value <= 0 || value > 100) fail('수율은 0 초과 100 이하의 숫자로 입력해 주세요.')
+  }
   return {
     productName: text(row.productName, '제품명'),
     customer: text(row.customer, '고객사'),
@@ -184,6 +191,8 @@ function spec(value: unknown): PackagingSpec {
     unitsPerSet: numeric(row.unitsPerSet, '1세트 개수'),
     setCount: numeric(row.setCount, '수량(set)'),
     lossPercent: numeric(row.lossPercent, 'Loss율'),
+    lossMode: row.lossMode === 'yield' ? 'yield' : 'additive',
+    yieldPercent,
     intakeGuide: text(row.intakeGuide, '섭취방법', LONG_TEXT_LIMIT),
     shelfLife: text(row.shelfLife, '유통기한', 100),
     quotedOn: text(row.quotedOn, '견적일', 40),

@@ -15,7 +15,7 @@
  * 알아야 하는 값(최종 단가·합계·제안가·별도 청구 항목)만 선택적으로 넣는다.
  */
 
-import { formatKg, formatWon, num, packageLabel, unitNoun } from '../formulaDesign/calc'
+import { formatMaterialQuantity, formatWon, num, packageLabel, unitNoun } from '../formulaDesign/calc'
 import type { Tier, Totals } from '../formulaDesign/calc'
 import type { FormulaSheet } from '../formulaDesign/types'
 import { currentProvenance, hasProvenance, originLabel, type IngredientProvenance } from '../ingredientProvenance'
@@ -537,7 +537,7 @@ export async function renderFormulaSheetPages(
   // ── 원료별 상세(참고) ───────────────────────────────────────
   // 1정당 투입량은 배합 근거로 고객이 자주 요구한다. 단가·금액은 넣지 않는다.
   if (functional.length) {
-    sectionTitle(page, '기능성 원료 1회분 투입량 (참고)')
+    sectionTitle(page, `선택 원료 1${noun}당 투입량 (참고)`)
     const columns: Column[] = [
       { label: '원료명', width: 380 },
       { label: `1${noun}당 투입량 (mg)`, width: 260, align: 'right' },
@@ -545,12 +545,12 @@ export async function renderFormulaSheetPages(
     ]
     tableHead(page, columns)
     for (const item of functional) {
-      tableRow(page, columns, [item.row.name, formatKg(item.mgPerUnit, 3), item.row.labelAmount || '-'])
+      tableRow(page, columns, [item.row.name, formatMaterialQuantity(item.mgPerUnit), item.row.labelAmount || '-'])
     }
     page.y += 8
     page.space(30)
     page.text(
-      `1회분 중량 ${num(spec.unitWeightMg).toLocaleString('ko-KR')}mg 기준 · 염·혼합제제는 표시량과 투입량이 다릅니다.`,
+      `1${noun} 중량 ${num(spec.unitWeightMg).toLocaleString('ko-KR')}mg 기준 · 염·혼합제제는 표시량과 투입량이 다릅니다.`,
       MARGIN,
       11,
       400,

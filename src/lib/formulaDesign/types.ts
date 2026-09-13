@@ -28,6 +28,8 @@ export type MaterialRow = {
   name: string
   /** 배합비율(%). 전체 합이 100 이 되어야 한다. */
   ratio: string
+  /** 낱개당 원료 배합량(mg). 값이 있으면 이 값을 기준으로 비율을 계산한다. 기존 시트는 비율 기준. */
+  unitAmountMg?: string
   /** 사용량(kg) 직접 입력. 비우면 배합량을 그대로 쓴다(팩 단위 올림 등에만 입력). */
   usage: string
   /** 원료단가(원/kg) */
@@ -72,7 +74,7 @@ export type MaterialRow = {
  * set·unit 은 `packSize` 로 나눈 뒤 올림한다(카톤 200개입 → 1,000세트에 5개).
  * 수량 구간별 단가를 뽑을 때 세트 수만 바꿔도 전부 다시 계산되는 이유가 이 값이다.
  */
-export type QuantityBasis = 'fixed' | 'set' | 'unit'
+export type QuantityBasis = 'fixed' | 'set' | 'unit' | 'batchKg'
 
 /** 2·3·4 블록(부자재비·가공비·분석비) 공통 한 줄. 금액 = 수량 × 단가. */
 export type LineRow = {
@@ -112,6 +114,10 @@ export type PackagingSpec = {
   setCount: string
   /** 원료 손실 할증(%). 공장마다 3~10%. */
   lossPercent: string
+  /** 생략된 기존 시트는 Loss 추가 방식. 수율 방식과 서로 다른 계산이다. */
+  lossMode?: 'additive' | 'yield'
+  /** 수율(완제품 중량 / 원료 투입 중량 × 100). 0 초과 100 이하. */
+  yieldPercent?: string
   /** 섭취방법(예: `1일 1회, 1회 1정씩(총 2개월분)`) */
   intakeGuide: string
   /** 유통기한(예: 제조일로부터 24개월) */

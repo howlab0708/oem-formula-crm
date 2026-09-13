@@ -7,7 +7,7 @@
  * 수량이 전부 나온다. 그래서 이 블록만 고쳐도 표 세 개가 같이 다시 계산된다.
  */
 
-import { formatKg, num, packageLabel } from '@/lib/formulaDesign/calc'
+import { allowanceLabel, formatKg, num, packageLabel, unitNoun, validYield } from '@/lib/formulaDesign/calc'
 import type { Totals } from '@/lib/formulaDesign/calc'
 import type { SheetAction } from '@/lib/formulaDesign/reducer'
 import type { PackagingSpec } from '@/lib/formulaDesign/types'
@@ -37,6 +37,7 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
     dispatch({ type: 'spec', key, value: event.target.value })
 
   const label = packageLabel(spec)
+  const noun = unitNoun(spec.form)
 
   /*
    * 아래 표가 전부 0 으로 나오는 원인은 거의 늘 이 세 칸이다. 무엇이 비었는지 이름으로
@@ -45,9 +46,9 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
    */
   const missing = (
     [
-      ['1회분 중량', spec.unitWeightMg],
+      [`1${noun} 중량`, spec.unitWeightMg],
       ['1세트 개수', spec.unitsPerSet],
-      ['수량', spec.setCount],
+      ['제작 수량', spec.setCount],
     ] as const
   )
     .filter(([, value]) => num(value) <= 0)
@@ -67,7 +68,7 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
                 <>
                   {' '}· 총 배합량{' '}
                   <span className="tnum font-medium text-ink">{formatKg(totals.totalBatchKg, 2)}kg</span> · 총{' '}
-                  <span className="tnum font-medium text-ink">{totals.totalUnits.toLocaleString('ko-KR')}</span>개
+                  <span className="tnum font-medium text-ink">{totals.totalUnits.toLocaleString('ko-KR')}</span>{noun}
                 </>
               ) : (
                 ' · '
@@ -103,18 +104,33 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
           </select>
         </Field>
 
-        <Field label="1회분 중량 (mg)" hint="1정·1캡슐·1포의 중량">
-          <input className={`${fieldClass} text-right tnum`} value={spec.unitWeightMg} onChange={set('unitWeightMg')} inputMode="numeric" placeholder="예: 800" />
+        <Field label={`1${noun} 중량 (mg)`} hint="원료별 mg 합계가 맞춰질 목표 중량">
+          <input className={`${fieldClass} text-right tnum`} value={spec.unitWeightMg} onChange={set('unitWeightMg')} inputMode="decimal" placeholder="예: 800" />
         </Field>
-        <Field label="1세트 개수" hint="한 통에 들어가는 정 수">
+        <Field label="1세트 개수" hint={`한 세트에 들어가는 ${noun} 수`}>
           <input className={`${fieldClass} text-right tnum`} value={spec.unitsPerSet} onChange={set('unitsPerSet')} inputMode="numeric" placeholder="예: 60" />
         </Field>
-        <Field label="수량 (set)" hint="발주 수량">
+        <Field label="제작 수량 (set)" hint={`총 ${totals.totalUnits.toLocaleString('ko-KR')}${noun} 제작 · 낱개로 주문 시 1세트 개수를 1로 입력`}>
           <input className={`${fieldClass} text-right tnum`} value={spec.setCount} onChange={set('setCount')} inputMode="numeric" placeholder="예: 1,000" />
         </Field>
-        <Field label="Loss율 (%)" hint="원료 투입량 할증. 공장마다 3~10%">
-          <input className={`${fieldClass} text-right tnum`} value={spec.lossPercent} onChange={set('lossPercent')} inputMode="decimal" placeholder="10" />
-        </Field>
+        <div className="space-y-2">
+          <Field label="생산 손실 계산 방식">
+            <select className={fieldClass} value={spec.lossMode ?? 'additive'} onChange={set('lossMode')}>
+              <option value="additive">Loss 추가 · 순량에 가산</option>
+              <option value="yield">수율 적용 · 순량을 수율로 나눔</option>
+            </select>
+          </Field>
+          {spec.lossMode === 'yield' ? (
+            <Field label="수율 (%)" hint="예: 수율 90% → 순량 ÷ 0.9">
+              <input className={`${fieldClass} text-right tnum`} value={spec.yieldPercent ?? ''} onChange={set('yieldPercent')} inputMode="decimal" placeholder="예: 90" aria-invalid={!validYield(spec)} />
+            </Field>
+          ) : (
+            <Field label="Loss율 (%)" hint="예: Loss 10% → 순량 × 1.1">
+              <input className={`${fieldClass} text-right tnum`} value={spec.lossPercent} onChange={set('lossPercent')} inputMode="decimal" placeholder="10" />
+            </Field>
+          )}
+          {!validYield(spec) ? <p role="alert" className="text-[12px] text-danger">수율을 0 초과 100 이하로 입력해야 필요량을 계산할 수 있습니다.</p> : null}
+        </div>
 
         <Field label="포장 형태">
           <input className={fieldClass} value={spec.packaging} onChange={set('packaging')} placeholder="예: PE병 / PTP 포장" />
@@ -134,6 +150,7 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
           </Field>
         </div>
       </div>
+      <p className="mt-3 text-[12px] text-ink-3">{allowanceLabel(spec)} · Loss 10% 추가와 수율 90%는 서로 다른 계산입니다. 공장 견적서의 방식을 선택하세요.</p>
     </section>
   )
 }

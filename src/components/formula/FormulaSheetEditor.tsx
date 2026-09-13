@@ -12,8 +12,9 @@
  * 어떤 칸만 갱신되지 않는 사고가 안 생기는 이유다.
  */
 
-import { useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useState, type Ref } from 'react'
+import { useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState, type Ref } from 'react'
 import type { Product } from '@/lib/types'
+import { referenceSpecifications } from '@/lib/referenceSpecifications'
 import { DEFAULT_SHEET_EXPORT } from '@/lib/export/renderFormulaSheet'
 import { refreshProductProvenance } from '@/lib/formulaDesign/fromProduct'
 import { formulaReferenceKey, type FormulaDraft, type FormulaTabMeta } from '@/lib/formulaDesign/workspace'
@@ -85,6 +86,14 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
   const [priceBookOpen, setPriceBookOpen] = useState(false)
   const [refresh, setRefresh] = useState(0)
   const [notes, setNotes] = useState<NoteSummary[]>([])
+  const [jumpTarget, setJumpTarget] = useState('')
+  const jumpTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (jumpTimer.current) clearTimeout(jumpTimer.current) }, [])
+
+  const destinationClass = (id: string) => `scroll-mt-4 rounded-lg outline-none transition-shadow motion-reduce:transition-none ${jumpTarget === id ? 'ring-4 ring-accent/50 shadow-lg' : ''}`
+  const destinationNotice = (id: string, label: string) => <div className={`flex min-h-12 items-center gap-2 rounded-t-lg border border-accent-line px-4 py-2 text-[14px] font-semibold ${jumpTarget === id ? 'bg-accent text-white' : 'bg-accent-soft text-accent-strong'}`}>
+    {label}<span role="status">{jumpTarget === id ? <span className="rounded bg-white px-2 py-0.5 text-[12px] text-accent-strong">현재 위치</span> : null}</span>
+  </div>
 
   useImperativeHandle(editorRef, () => ({
     refreshReference(product) {
@@ -118,6 +127,9 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
   const jumpTo = (id: string) => {
     const section = document.getElementById(id)
     if (!section) return
+    if (jumpTimer.current) clearTimeout(jumpTimer.current)
+    setJumpTarget(id)
+    jumpTimer.current = setTimeout(() => setJumpTarget(''), 6000)
     let scroller: HTMLElement | null = null
     for (let node = section.parentElement; node; node = node.parentElement) {
       const overflowY = getComputedStyle(node).overflowY
@@ -129,9 +141,9 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
     if (scroller) {
       const toolbarHeight = scroller.querySelector('[data-formula-workspace-toolbar]')?.getBoundingClientRect().height ?? 0
       const top = section.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - toolbarHeight - 16
-      scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      scroller.scrollTo({ top: Math.max(0, top), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
     }
-    section.querySelector<HTMLElement>('input, select, button')?.focus({ preventScroll: true })
+    section.focus({ preventScroll: true })
   }
 
   /**
@@ -279,7 +291,7 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
         <nav aria-label="견적 작성 순서" className="mt-4 grid gap-2 sm:grid-cols-3">
           {[
             ['quote-spec', '1. 규격·수량 확인', '1개 중량 · 포장 개수 · 발주 수량'],
-            ['quote-materials', '2. 배합비율·단가 입력', '가져온 원료를 확인하고 원가 계산'],
+            ['quote-materials', '2. 배합량·단가 입력', '낱개당 mg 입력 · 제작 수량별 kg·원가 계산'],
             ['quote-export', '3. 견적서 내보내기', '고객용 PDF 미리보기 · 저장'],
           ].map(([id, label, hint]) => <div key={id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface-sunken px-3 py-3">
             <div>
@@ -461,16 +473,17 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
         />
       ) : null}
 
-      <div id="quote-spec" className="scroll-mt-4"><SpecPanel spec={sheet.spec} totals={totals} dispatch={(action) => {
+      <div id="quote-spec" tabIndex={-1} aria-label="1. 규격·수량 확인" className={destinationClass('quote-spec')}>{destinationNotice('quote-spec', '1. 규격·수량 확인')}
+        {reference ? <p className="border-x border-accent-line bg-surface px-3 py-2 text-[12px] leading-5 text-ink-2">참고 제품에서 확인된 규격을 가져왔습니다. {referenceSpecifications(reference).missing.length ? `원본에 명확히 기재되지 않은 ${referenceSpecifications(reference).missing.join('·')}은 직접 입력해 주세요. ` : ''}발주 수량은 새 견적 조건으로 입력합니다.</p> : null}
+        <SpecPanel spec={sheet.spec} totals={totals} dispatch={(action) => {
         if (action.type === 'spec' && action.key === 'customer') { setCompany(action.value); setNoteId(null) }
         act(action)
       }} /></div>
 
-      <div id="quote-materials" className="scroll-mt-4"><MaterialGrid
+      <div id="quote-materials" tabIndex={-1} aria-label="2. 배합량·단가 입력" className={destinationClass('quote-materials')}>{destinationNotice('quote-materials', '2. 배합량·단가 입력')}<MaterialGrid
         materials={sheet.materials}
-        productName={sheet.spec.productName}
+        spec={sheet.spec}
         totals={totals}
-        lossPercent={sheet.spec.lossPercent}
         index={index}
         dispatch={act}
       /></div>
@@ -518,7 +531,7 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
         dispatch={act}
       />
 
-      <div id="quote-export" className="scroll-mt-4"><SheetExportPanel sheet={sheet} totals={totals} tiers={tiers} options={exportOptions} onOptionsChange={setExportOptions} /></div>
+      <div id="quote-export" tabIndex={-1} aria-label="3. 견적서 내보내기" className={destinationClass('quote-export')}>{destinationNotice('quote-export', '3. 견적서 내보내기')}<SheetExportPanel sheet={sheet} totals={totals} tiers={tiers} options={exportOptions} onOptionsChange={setExportOptions} /></div>
       </fieldset>
     </div>
   )

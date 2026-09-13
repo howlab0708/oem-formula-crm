@@ -10,7 +10,7 @@
  * 작업량이 이 동작 하나로 정해진다.
  */
 
-import { fillRemainder } from './calc'
+import { blank, fillRemainder, num } from './calc'
 import { currentProvenance } from '../ingredientProvenance'
 import { newLineRow, newMaterialRow, newOverheadRow, newTierRow } from './preset'
 import type { FormulaSheet, LineRow, MaterialRow, OverheadRow, PackagingSpec, QuoteSettings, QuoteTier } from './types'
@@ -48,7 +48,8 @@ export type SheetAction =
   | { type: 'paste-lines'; block: LineBlock; row: number; column: number; matrix: string[][] }
 
 /** 붙여넣기가 채울 원료비 칸 순서. 화면의 열 순서와 같아야 한다. */
-export const MATERIAL_PASTE_KEYS = ['name', 'ratio', 'usage', 'unitPrice', 'note'] as const
+// 계산 결과 열은 null로 건너뛴다. 엑셀에서 보이는 열을 통째로 복사해도 단가가 밀리지 않는다.
+export const MATERIAL_PASTE_KEYS = ['name', 'unitAmountMg', 'ratio', null, 'usage', 'unitPrice', null, 'packKg', 'note'] as const
 /** 붙여넣기가 채울 2·3·4 블록 칸 순서. */
 export const LINE_PASTE_KEYS = ['label', 'unit', 'quantity', 'unitPrice', 'note'] as const
 
@@ -58,6 +59,15 @@ function replaceById<T extends { id: string }>(rows: T[], id: string, patch: Par
   const next = rows.slice()
   next[index] = { ...next[index], ...patch }
   return next
+}
+
+/** 마지막으로 편집한 쪽이 기준. mg와 %를 함께 붙여넣으면 mg 원값을 우선한다. */
+function materialPatch(patch: Partial<MaterialRow>): Partial<MaterialRow> {
+  if ('unitAmountMg' in patch && (!blank(patch.unitAmountMg) || !('ratio' in patch))) {
+    return { ...patch, ratio: '' }
+  }
+  if ('ratio' in patch) return { ...patch, unitAmountMg: '' }
+  return patch
 }
 
 function insertAfter<T extends { id: string }>(rows: T[], after: string | undefined, made: T[]): T[] {
@@ -91,8 +101,9 @@ function pasteInto<T extends { id: string }>(
   row: number,
   column: number,
   matrix: string[][],
-  keys: readonly string[],
+  keys: readonly (string | null)[],
   make: () => T,
+  normalizePatch: (patch: Partial<T>) => Partial<T> = (patch) => patch,
 ): T[] {
   const next = rows.slice()
   matrix.forEach((cells, offset) => {
@@ -103,7 +114,7 @@ function pasteInto<T extends { id: string }>(
       const key = keys[column + cellOffset]
       if (key) patch[key] = cell.trim()
     })
-    next[index] = { ...next[index], ...patch }
+    next[index] = { ...next[index], ...normalizePatch(patch as Partial<T>) }
   })
   return next
 }
@@ -119,7 +130,7 @@ export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaS
     case 'quote':
       return { ...state, quote: { ...state.quote, [action.key]: action.value } }
     case 'material': {
-      const rows = replaceById(state.materials, action.id, action.patch)
+      const rows = replaceById(state.materials, action.id, materialPatch(action.patch))
       return { ...state, materials: rows.map((row) => row.id === action.id
         ? { ...row, provenance: currentProvenance(row.name, row.provenance) } : row) }
     }
@@ -159,7 +170,7 @@ export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaS
     case 'move':
       return { ...state, [action.block]: move<{ id: string }>(state[action.block], action.id, action.delta) }
     case 'fill-remainder':
-      return { ...state, materials: fillRemainder(state.materials, action.id) }
+      return { ...state, materials: fillRemainder(state.materials, action.id, num(state.spec.unitWeightMg)) }
     case 'paste-materials': {
       const pasted = pasteInto(
         state.materials,
@@ -168,6 +179,7 @@ export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaS
         action.matrix,
         MATERIAL_PASTE_KEYS,
         newMaterialRow,
+        materialPatch,
       ).map((item) => ({ ...item, provenance: currentProvenance(item.name, item.provenance) }))
       const enrich = action.enrich
       if (!enrich) return { ...state, materials: pasted }

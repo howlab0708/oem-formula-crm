@@ -1,13 +1,15 @@
 import type { DatasetMeta } from './api/products'
-import type { FormType, Product } from './types'
+import type { FormType, Product, ReferenceDetails } from './types'
 
-export const SNAPSHOT_VERSION = 4
+export const SNAPSHOT_VERSION = 5
+const DETAIL_KEYS = ['declaredWeight', 'unitsPerSet', 'packaging', 'shelfLife', 'storageGuide', 'appearance', 'intakeCaution'] as const
 export const SNAPSHOT_FORMAT = `snapshot-v${SNAPSHOT_VERSION}`
 
 type PackedProduct = [
   number, number, number, number, number, number, number | null,
   number[], number, [number, number, number, number | null, number][],
   number[], number, number, number, number, [] | [number | null], number, number, number,
+  number[],
 ]
 
 export type DatasetSnapshot = {
@@ -44,6 +46,7 @@ export function packSnapshot(meta: DatasetMeta, products: Product[]): DatasetSna
       intern(p.intakeMethod), p.unitWeightMg === undefined ? [] : [p.unitWeightMg],
       intern(p.brand),
       intern(p.licenseNo), intern(p.sourceUpdatedAt),
+      p.referenceDetails ? DETAIL_KEYS.map(key => intern(p.referenceDetails![key])) : [],
     ]),
   }
 }
@@ -66,7 +69,7 @@ export function unpackSnapshot(snapshot: DatasetSnapshot, expected: DatasetMeta)
     return value
   }
   return snapshot.products.map((row): Product => {
-    if (!Array.isArray(row) || row.length !== 19) {
+    if (!Array.isArray(row) || row.length !== 20 || !Array.isArray(row[19]) || (row[19].length !== 0 && row[19].length !== DETAIL_KEYS.length)) {
       throw new Error('저장된 데이터 형식을 읽지 못했습니다.')
     }
     return {
@@ -83,6 +86,7 @@ export function unpackSnapshot(snapshot: DatasetSnapshot, expected: DatasetMeta)
       ...(row[16] === -1 ? {} : { brand: text(row[16]) }),
       ...(row[17] === -1 ? {} : { licenseNo: text(row[17]) }),
       ...(row[18] === -1 ? {} : { sourceUpdatedAt: text(row[18]) }),
+      ...(row[19].length === 0 ? {} : { referenceDetails: Object.fromEntries(DETAIL_KEYS.flatMap((key, i) => row[19][i] === -1 ? [] : [[key, text(row[19][i])]])) as ReferenceDetails }),
     }
   })
 }

@@ -1,4 +1,6 @@
 import type { Product } from '../types'
+import { referenceSpecifications } from '../referenceSpecifications'
+import { declaredNutrientIngredients } from '../ingredientSource'
 import { currentProvenance, provenanceForIngredient, provenanceKey } from '../ingredientProvenance'
 import { emptySheet, newMaterialRow } from './preset'
 import type { FormulaSheet, MaterialRow } from './types'
@@ -22,6 +24,8 @@ export function refreshProductProvenance(sheet: FormulaSheet, product: Product):
 /** Transfer reference facts only. Ingredient purity and marker content are not formulation ratios. */
 export function draftFromProduct(product: Product): { title: string; sheet: FormulaSheet } {
   const sheet = emptySheet()
+  const specs = referenceSpecifications(product)
+  const declared = declaredNutrientIngredients(product)
   const materials = new Map<string, MaterialRow>()
   const add = (name: string, functional: boolean) => {
     const trimmed = name.trim()
@@ -30,15 +34,15 @@ export function draftFromProduct(product: Product): { title: string; sheet: Form
     materials.set(key, newMaterialRow({ name: trimmed, functional, provenance: provenanceForIngredient(product, trimmed) }))
   }
   product.mainIngredients.forEach((name) => add(name, true))
-  product.subIngredients.forEach((name) => add(name, false))
+  product.subIngredients.forEach((name) => add(name, declared.has(name)))
   sheet.materials = materials.size ? [...materials.values()] : [newMaterialRow()]
   sheet.spec.productName = product.name
   sheet.spec.form = product.form
-  sheet.spec.unitWeightMg = typeof product.unitWeightMg === 'number' && Number.isFinite(product.unitWeightMg) && product.unitWeightMg > 0
-    ? String(product.unitWeightMg) : ''
+  sheet.spec.unitWeightMg = specs.unitWeightMg === null ? '' : String(specs.unitWeightMg)
+  sheet.spec.unitsPerSet = specs.unitsPerSet
+  sheet.spec.packaging = specs.packaging
   sheet.spec.intakeGuide = product.intakeMethod ?? ''
-  // These describe the new factory quote, not facts supplied by the reference product.
-  sheet.spec.shelfLife = ''
+  sheet.spec.shelfLife = specs.shelfLife
   sheet.processItems[0].label = '혼합 · 제조 · 포장 · 품질검사'
   sheet.processItems[0].unit = product.form === '정제' ? '정' : product.form.includes('캡슐') ? '캡슐' : '개'
   sheet.memo = [
@@ -46,9 +50,11 @@ export function draftFromProduct(product: Product): { title: string; sheet: Form
     `제조원: ${product.manufacturer}`,
     product.reportNo ? `품목 신고번호: ${product.reportNo}` : '',
     `원본 규격: ${product.weightLabel}`,
+    ...specs.evidence,
+    specs.missing.length ? `원본에서 확인되지 않아 직접 입력할 규격: ${specs.missing.join(' · ')}` : '',
     product.primaryFunction ? `원본 기능성: ${product.primaryFunction}` : '',
     product.mainDetail ? `지표성분 원문 (투입 비율 아님): ${product.mainDetail}` : '',
-    '원료명·제형·확인된 1개 중량·섭취방법을 가져왔습니다. 배합비율·단가·발주 수량은 별도 입력이 필요합니다.',
+    '확인된 원료·중량·포장 규격·섭취방법·소비기한을 가져왔습니다. 참고 제품의 규격이므로 새 제품의 조건을 확인해 주세요. 배합비율·단가·발주 수량은 직접 입력합니다.',
   ].filter(Boolean).join('\n').slice(0, 5000)
   return { title: `${product.name} · 견적`.slice(0, 150), sheet }
 }

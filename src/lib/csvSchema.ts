@@ -38,6 +38,7 @@ export type SchemaField =
   | 'reportNo'
   | 'reportedAt'
   | 'primaryFunction'
+  | 'unitsPerSet' | 'packaging' | 'shelfLife' | 'storageGuide' | 'intakeCaution'
 
 export const FIELD_LABELS: Record<SchemaField, string> = {
   name: '제품명',
@@ -55,6 +56,7 @@ export const FIELD_LABELS: Record<SchemaField, string> = {
   reportNo: '신고번호',
   reportedAt: '신고일자',
   primaryFunction: '주된 기능성',
+  unitsPerSet: '포장 개수', packaging: '포장 형태', shelfLife: '소비기한', storageGuide: '보관방법', intakeCaution: '섭취 시 주의사항',
 }
 
 /**
@@ -77,6 +79,11 @@ const COLUMN_ALIASES: Record<SchemaField, string[]> = {
   reportNo: ['품목제조신고번호', '품목보고번호', '신고번호', '보고번호', 'prdlstreportno'],
   reportedAt: ['신고일자', '보고일자', '제조일자', '허가일자', 'prmsdt'],
   primaryFunction: ['주된기능성', '기능성내용', '기능성', 'primaryfnclty'],
+  unitsPerSet: ['1세트개수', '포장개수', 'unitsperset'],
+  packaging: ['포장형태', '포장방법', 'packaging'],
+  shelfLife: ['소비기한', '유통기한', 'pogdaycnt', 'shelflife'],
+  storageGuide: ['보관방법', 'cstdymthd', 'storageguide'],
+  intakeCaution: ['섭취시주의사항', 'iftknatntmatrcn', 'intakecaution'],
 }
 
 const ALIAS_ENTRIES = Object.entries(COLUMN_ALIASES) as Array<[SchemaField, string[]]>
@@ -236,6 +243,11 @@ export function rowToProduct(row: string[], mapping: HeaderMapping, seq: number)
   const weightMg = declaredWeightMg ?? spec.servingWeightMg ?? intakeWeightMg
   const weightLabel =
     declaredWeight || spec.servingWeightLabel || (weightMg !== null ? formatMg(weightMg) : '-')
+  const referenceDetails = Object.fromEntries(Object.entries({
+    declaredWeight, appearance: formDetail, unitsPerSet: cell(row, index.unitsPerSet),
+    packaging: cell(row, index.packaging), shelfLife: cell(row, index.shelfLife),
+    storageGuide: cell(row, index.storageGuide), intakeCaution: cell(row, index.intakeCaution),
+  }).filter(([, value]) => value))
 
   return {
     id: `csv-${seq}`,
@@ -246,6 +258,7 @@ export function rowToProduct(row: string[], mapping: HeaderMapping, seq: number)
     formRaw: formRaw || formDetail || '미상',
     weightLabel,
     weightMg,
+    ...(Object.keys(referenceDetails).length ? { referenceDetails } : {}),
     intakeMethod,
     unitWeightMg: parseUnitWeightMg({ form, intakeMethod, declaredWeight, unitWeight: cell(row, index.unitWeight) }),
     mainIngredients,

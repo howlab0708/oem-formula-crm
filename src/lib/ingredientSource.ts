@@ -534,6 +534,14 @@ function declaredNutrients(product: Product): Set<string> {
   return declared
 }
 
+/** Include named nutrient sources even when legacy main/sub classification missed a form such as D3. */
+export function declaredNutrientIngredients(product: Product): Set<string> {
+  const declared = declaredNutrients(product)
+  return new Set([...product.mainIngredients, ...product.subIngredients].filter(name =>
+    classifySources(name).some(match => match.nutrient !== null && declared.has(match.nutrient)),
+  ))
+}
+
 export type ProductSources = {
   /** 영양성분 -> 그 제품이 쓴 형태들 */
   forms: Map<string, Set<string>>

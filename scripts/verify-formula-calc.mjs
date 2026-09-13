@@ -38,6 +38,7 @@ try {
       'node_modules/typescript/bin/tsc',
       'src/lib/formulaDesign/calc.ts',
       'src/lib/formulaDesign/preset.ts',
+      '--rootDir', 'src',
       '--outDir', out,
       '--target', 'es2022',
       '--module', 'esnext',
@@ -51,8 +52,10 @@ try {
   process.exit(1)
 }
 
-const { calculate, calculateTiers, packageLabel, num } = await import(pathToFileURL(join(out, 'calc.js')).href)
-const { tabletSheet, compactSheet } = await import(pathToFileURL(join(out, 'preset.js')).href)
+// 원료 출처 타입의 의존 파일까지 컴파일되므로 src 기준의 디렉터리 구조를 명시한다.
+const compiledFormula = join(out, 'lib', 'formulaDesign')
+const { calculate, calculateTiers, packageLabel, num } = await import(pathToFileURL(join(compiledFormula, 'calc.js')).href)
+const { tabletSheet, compactSheet } = await import(pathToFileURL(join(compiledFormula, 'preset.js')).href)
 
 const round = (value) => Math.round(value)
 const fixed = (value, digits) => Number(value.toFixed(digits))

@@ -3,9 +3,8 @@
 /**
  * 1. 원료비 표.
  *
- * 엑셀 견적서의 원료비 블록을 그대로 옮긴 표다. 열 순서(원료명 → 배합비율 →
- * 배합량 → 사용량 → 단가 → 금액 → 비고)를 엑셀과 같게 두어 옮겨 적을 때 눈이
- * 헤매지 않게 했다. 배합량·금액은 계산 결과라 입력란이 아니다.
+ * 낱개당 mg 또는 %로 배합을 설계하고 제작 수량에 따라 총 kg와 원가를 계산한다.
+ * 총 필요량·금액은 계산 결과다. 붙여넣기와 복사도 화면의 열 순서를 따른다.
  *
  * 원료명 칸은 기능성 원료 DB 자동완성이다. 고르면 일일섭취기준·기능성내용·기준
  * 성분이 함께 붙고, 지난 견적에서 쓴 단가가 있으면 단가까지 채운다.
@@ -13,12 +12,12 @@
 
 import { useRef, useState } from 'react'
 import { IngredientCopyButton, ReferenceIngredientInfo } from '@/components/IngredientProvenance'
-import { provenanceToText } from '@/lib/ingredientProvenance'
-import { formatKg, formatRatio, formatWon, num } from '@/lib/formulaDesign/calc'
+import { allowanceLabel, blank, formatMaterialQuantity, formatRatio, formatWon, num, unitNoun, validYield } from '@/lib/formulaDesign/calc'
+import { materialSheetToText } from '@/lib/formulaDesign/materialExport'
 import type { MaterialCalc, Totals } from '@/lib/formulaDesign/calc'
 import { MATERIAL_PASTE_KEYS, parseClipboardMatrix, type SheetAction } from '@/lib/formulaDesign/reducer'
 import { exactSuggestion, suggestIngredients, type Suggestion, type SuggestionIndex } from '@/lib/formulaDesign/suggest'
-import type { MaterialRow } from '@/lib/formulaDesign/types'
+import type { MaterialRow, PackagingSpec } from '@/lib/formulaDesign/types'
 import { focusCellSoon, handleGridKeyDown } from './gridKeys'
 import { cellClass, headClass, numberCellClass, rowNumberClass } from './cellStyles'
 
@@ -73,16 +72,15 @@ function PriceCell({
 
 type Props = {
   materials: MaterialRow[]
-  productName: string
+  spec: PackagingSpec
   totals: Totals
-  /** 포장 단위 블록에 적힌 Loss율(%). 소계 줄의 각주에 그대로 보여준다. */
-  lossPercent: string
   index: SuggestionIndex
   dispatch: (action: SheetAction) => void
 }
 
-export function MaterialGrid({ materials, productName, totals, lossPercent, index, dispatch }: Props) {
+export function MaterialGrid({ materials, spec, totals, index, dispatch }: Props) {
   const gridRef = useRef<HTMLTableElement>(null)
+  const noun = unitNoun(spec.form)
 
   const patch = (id: string, next: Partial<MaterialRow>) => dispatch({ type: 'material', id, patch: next })
 
@@ -154,16 +152,14 @@ export function MaterialGrid({ materials, productName, totals, lossPercent, inde
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2">
         <div>
           <h3 id="material-grid-title" className="text-[14px] font-semibold text-ink">
-            1. 원료비
+            1. 원료 배합 · 원료비
           </h3>
           <p className="text-[12px] text-ink-3">
-            총 배합량 {formatKg(totals.totalBatchKg, 2)}kg (순 {formatKg(totals.netBatchKg, 2)}kg + Loss {num(lossPercent)}%)
-            {' · '}Enter 아래 칸 · Alt+↑↓ 줄 이동 · 엑셀 표 붙여넣기 지원
+            1{noun}당 mg 또는 배합비율을 입력하세요. 마지막으로 입력한 값을 기준으로 서로 계산됩니다.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <RatioBadge gap={totals.ratioGap} sum={totals.ratioSum} />
-          <IngredientCopyButton label="배합표 복사" getText={() => provenanceToText(materials, productName)} />
+          <IngredientCopyButton label="배합표 복사" getText={() => materialSheetToText(spec, totals)} />
           <button
             type="button"
             onClick={() => {
@@ -177,18 +173,38 @@ export function MaterialGrid({ materials, productName, totals, lossPercent, inde
         </div>
       </header>
 
+      <div className="grid gap-3 border-b border-line bg-surface-sunken p-3 sm:grid-cols-3">
+        <CompositionBadge totals={totals} unitWeightMg={num(spec.unitWeightMg)} noun={noun} />
+        <div className="rounded-md border border-line bg-surface px-3 py-2">
+          <p className="text-[12px] text-ink-3">총 제작 수량</p>
+          <p className="mt-1 text-[18px] font-semibold text-ink tnum">{totals.totalUnits.toLocaleString('ko-KR')}{noun}</p>
+          <p className="text-[12px] text-ink-3">{num(spec.unitsPerSet).toLocaleString('ko-KR')}{noun}/set × {totals.setCount.toLocaleString('ko-KR')}set</p>
+        </div>
+        <div className="rounded-md border border-line bg-surface px-3 py-2">
+          <p className="text-[12px] text-ink-3">입력한 원료의 총 필요량 · {allowanceLabel(spec)}</p>
+          <p className="mt-1 text-[18px] font-semibold text-ink tnum">{validYield(spec) ? `${formatMaterialQuantity(totals.batchSumKg)}kg` : '수율 입력 필요'}</p>
+          <p className="text-[12px] text-ink-3">손실 반영 전 {formatMaterialQuantity(totals.materials.reduce((sum, item) => sum + item.netKg, 0))}kg · {spec.lossMode === 'yield' ? '순량 ÷ (수율 ÷ 100)' : '순량 × (1 + Loss ÷ 100)'}</p>
+        </div>
+      </div>
+
+      <p className="px-3 pt-2 text-[12px] leading-5 text-ink-2">
+        mg는 원료 자체의 배합량입니다. 영양성분 표시량은 아래 표시량 검토에서 확인하세요.
+        {' '}제작 수량을 바꿔도 1{noun}당 배합은 유지됩니다. 사용량(kg)을 직접 적은 칸은 고정되며, 비우면 자동 계산됩니다.
+      </p>
+
       <p className="border-b border-line px-3 py-2 text-[12px] leading-5 text-ink-3">원료사·원산지는 참고 제품의 공개 자료입니다. 실제 사용할 원료는 별도 확인이 필요하며, 원료명을 바꾸면 기존 출처 정보가 해제됩니다.</p>
+      <p className="border-b border-line px-3 py-2 text-[12px] leading-5 text-ink-2">‘구성표 포함’은 아래 검토표와 견적서의 구성·투입량 표에 넣을 원료를 선택합니다. 참고 제품의 주원료와 영양성분 함량이 명시된 원료를 기본 선택합니다. 기능성 표시 가능 여부의 판정이 아니며, 해제한 원료도 배합량·원가 계산에 포함됩니다.</p>
 
       <div className="overflow-x-auto">
-        <table data-grid ref={gridRef} className="w-full min-w-[62rem] border-collapse text-[13px]">
+        <table data-grid ref={gridRef} className="w-full min-w-[76rem] border-collapse text-[13px]">
           <caption className="sr-only">
-            원료명, 배합비율, 배합량, 사용량, 원료단가, 금액, 팩 단위, 비고 순서의 배합비 입력 표
+            원료명, 낱개당 배합량(mg), 배합비율, 총 필요량(kg), 사용량, 원료단가, 금액, 팩 단위, 비고 순서의 배합비 입력 표
           </caption>
           <thead>
-            {/* 열이 열한 개라 한 줄로는 훑기 어렵다. 견적서와 같은 묶음으로 갈라 준다. */}
+            {/* 낱개 설계와 생산 총량을 한 묶음에서 비교한다. */}
             <tr className="text-[11px] text-ink-3">
               <th scope="col" colSpan={2} className="px-2 pb-1" />
-              <th scope="colgroup" colSpan={3} className="border-b border-line px-2 pb-1 text-center font-medium">
+              <th scope="colgroup" colSpan={4} className="border-b border-line px-2 pb-1 text-center font-medium">
                 배합 · 투입량
               </th>
               <th scope="colgroup" colSpan={2} className="border-b border-line px-2 pb-1 text-center font-medium">
@@ -202,10 +218,11 @@ export function MaterialGrid({ materials, productName, totals, lossPercent, inde
             <tr>
               <th scope="col" className={`${headClass} w-9`} aria-label="줄 번호" />
               <th scope="col" className={`${headClass} min-w-[13rem] text-left`}>원료명</th>
+              <th scope="col" className={`${headClass} w-32 bg-accent-soft text-accent-strong`}>1{noun}당 배합량<br />(mg)</th>
               <th scope="col" className={`${headClass} w-24`}>배합비율(%)</th>
-              <th scope="col" className={`${headClass} w-24`}>배합량(kg)</th>
-              <th scope="col" className={`${headClass} w-24`}>사용량(kg)</th>
-              <th scope="col" className={`${headClass} w-24`}>원료단가(원)</th>
+              <th scope="col" className={`${headClass} w-28`}>총 필요량(kg)<br /><span className="font-normal text-ink-3">손실 반영 · 자동</span></th>
+              <th scope="col" className={`${headClass} w-28`}>사용량(kg)<br /><span className="font-normal text-ink-3">필요 시 직접 입력</span></th>
+              <th scope="col" className={`${headClass} w-28`}>원료단가<br />(원/kg)</th>
               <th scope="col" className={`${headClass} w-28`}>금액(원)</th>
               <th
                 scope="col"
@@ -215,7 +232,7 @@ export function MaterialGrid({ materials, productName, totals, lossPercent, inde
                 팩 단위(kg)
               </th>
               <th scope="col" className={`${headClass} min-w-[9rem] text-left`}>비고</th>
-              <th scope="col" className={`${headClass} w-20`}>기능성</th>
+              <th scope="col" className={`${headClass} w-24`}>구성표 포함</th>
               <th scope="col" className={`${headClass} w-16`} aria-label="줄 삭제" />
             </tr>
           </thead>
@@ -225,6 +242,8 @@ export function MaterialGrid({ materials, productName, totals, lossPercent, inde
                 key={calc.row.id}
                 calc={calc}
                 rowIndex={rowIndex}
+                noun={noun}
+                unitWeightMg={num(spec.unitWeightMg)}
                 index={index}
                 gridRef={gridRef}
                 keyOptions={keyOptions}
@@ -241,20 +260,17 @@ export function MaterialGrid({ materials, productName, totals, lossPercent, inde
             <tr className="bg-surface-sunken font-medium">
               <td className="px-2 py-2" />
               <th scope="row" className="px-2 py-2 text-left">소계</th>
+              <td className={`${numberCellClass} bg-accent-soft text-accent-strong`}>{formatMaterialQuantity(totals.unitAmountSumMg)}</td>
               <td className={numberCellClass}>{formatRatio(totals.ratioSum)}</td>
-              <td className={numberCellClass}>{formatKg(totals.batchSumKg, 2)}</td>
+              <td className={numberCellClass}>{formatMaterialQuantity(totals.batchSumKg)}</td>
               <td className={numberCellClass}>
-                {formatKg(totals.usageSumKg, 2)}
-                {/* 견적서 소계는 발주 단위인 정수 kg 로 올려 적는다(52.80 → 53). */}
-                <span className="block text-[11px] font-normal text-ink-3">
-                  발주 {Math.ceil(totals.usageSumKg).toLocaleString('ko-KR')}kg
-                </span>
+                {formatMaterialQuantity(totals.usageSumKg)}
               </td>
               <td className={numberCellClass} />
               <td className={numberCellClass}>{formatWon(totals.materialCost)}</td>
               <td className={numberCellClass} />
               <td className="px-2 py-2 text-[12px] text-ink-3" colSpan={3}>
-                Loss {num(lossPercent)}% UP · 부가세 별도
+                {allowanceLabel(spec)} · 부가세 별도
               </td>
             </tr>
           </tfoot>
@@ -264,23 +280,31 @@ export function MaterialGrid({ materials, productName, totals, lossPercent, inde
   )
 }
 
-function RatioBadge({ gap, sum }: { gap: number; sum: number }) {
-  const settled = Math.abs(gap) < 0.00005
+function CompositionBadge({ totals, unitWeightMg, noun }: { totals: Totals; unitWeightMg: number; noun: string }) {
+  const gap = totals.unitAmountGapMg
+  const valid = unitWeightMg > 0
+  const settled = valid && Math.abs(gap) <= Math.max(1, unitWeightMg) * 1e-12 &&
+    totals.materials.every((item) => item.mgPerUnit >= 0)
   return (
-    <p
+    <div
       role="status"
-      className={`rounded-md px-2 py-1 text-[12px] tnum ${
+      className={`rounded-md border border-line px-3 py-2 tnum ${
         settled ? 'bg-accent-soft text-accent-strong' : 'bg-danger-soft text-danger'
       }`}
     >
-      {settled ? `배합비율 합 ${formatRatio(sum)}%` : `잔량 ${formatRatio(gap)}%`}
-    </p>
+      <p className="text-[12px]">1{noun}당 배합 합계 / 목표 중량</p>
+      <p className="mt-1 text-[18px] font-semibold">{formatMaterialQuantity(totals.unitAmountSumMg)} / {valid ? formatMaterialQuantity(unitWeightMg) : '-'}mg</p>
+      <p className="text-[12px]">{!valid ? '포장 단위에서 낱개 중량을 입력하세요' : settled ? '중량 일치 · 배합비율 100%' : `중량 ${formatMaterialQuantity(Math.abs(gap))}mg ${gap < 0 ? '초과' : '부족'} · 배합비율 ${formatMaterialQuantity(totals.ratioSum)}%`}</p>
+      {totals.materials.some((item) => item.mgPerUnit < 0) ? <p className="text-[12px]">음수 배합량을 확인하세요</p> : null}
+    </div>
   )
 }
 
 type RowProps = {
   calc: MaterialCalc
   rowIndex: number
+  noun: string
+  unitWeightMg: number
   index: SuggestionIndex
   gridRef: React.RefObject<HTMLTableElement | null>
   keyOptions: (rowIndex: number, column: number, id: string) => Parameters<typeof handleGridKeyDown>[1]
@@ -295,6 +319,8 @@ type RowProps = {
 function MaterialRowView({
   calc,
   rowIndex,
+  noun,
+  unitWeightMg,
   index,
   keyOptions,
   onPaste,
@@ -328,22 +354,35 @@ function MaterialRowView({
       <td className="p-0">
         <input
           {...cell(1)}
-          value={row.ratio}
+          value={!blank(row.unitAmountMg) ? row.unitAmountMg : blank(row.ratio) ? '' : formatMaterialQuantity(calc.mgPerUnit)}
           inputMode="decimal"
-          aria-label={`${rowIndex + 1}번째 원료 배합비율(%)`}
-          onChange={(event) => onPatch(row.id, { ratio: event.target.value })}
-          className={`${cellClass} text-right tnum`}
+          placeholder="mg 입력"
+          aria-label={`${rowIndex + 1}번째 원료 1${noun}당 배합량(mg)`}
+          title={`1${noun}에 들어가는 원료 자체의 중량. 직접 입력하면 배합비율과 총 kg가 계산됩니다.`}
+          onChange={(event) => onPatch(row.id, { unitAmountMg: event.target.value })}
+          className={`${cellClass} bg-accent-soft text-right font-medium tnum`}
         />
-      </td>
-      <td className={`${numberCellClass} text-ink-2`} title="배합비율 × 총 배합량">
-        {formatKg(calc.batchKg)}
       </td>
       <td className="p-0">
         <input
           {...cell(2)}
+          value={blank(row.unitAmountMg) ? row.ratio : unitWeightMg > 0 ? formatMaterialQuantity(calc.ratio) : ''}
+          inputMode="decimal"
+          aria-label={`${rowIndex + 1}번째 원료 배합비율(%)`}
+          title="직접 입력하면 이 비율을 기준으로 낱개당 mg와 총 kg가 계산됩니다."
+          onChange={(event) => onPatch(row.id, { ratio: event.target.value })}
+          className={`${cellClass} text-right tnum`}
+        />
+      </td>
+      <td className={`${numberCellClass} text-ink-2`} title={`손실 반영 전 ${formatMaterialQuantity(calc.netKg)}kg · 낱개당 mg × 총 제작 수량 ÷ 1,000,000에 선택한 손실 계산 방식을 적용`}>
+        {formatMaterialQuantity(calc.batchKg)}
+      </td>
+      <td className="p-0">
+        <input
+          {...cell(4)}
           value={row.usage}
           inputMode="decimal"
-          placeholder={formatKg(calc.usageKg)}
+          placeholder={formatMaterialQuantity(calc.usageKg)}
           aria-label={`${rowIndex + 1}번째 원료 사용량(kg) 직접 입력`}
           title="비우면 배합량(또는 팩 단위로 올린 양)을 그대로 씁니다."
           onChange={(event) => onPatch(row.id, { usage: event.target.value })}
@@ -351,12 +390,19 @@ function MaterialRowView({
             calc.overridden || calc.packedUp ? 'bg-accent-soft' : ''
           }`}
         />
+        {calc.overridden ? (
+          <button type="button" onClick={() => onPatch(row.id, { usage: '' })}
+            aria-label={`${rowIndex + 1}번째 원료 사용량 자동 계산으로 복원`}
+            className="block w-full pb-1 text-center text-[11px] text-accent-strong underline underline-offset-2">
+            고정값 · 자동으로 복원
+          </button>
+        ) : null}
       </td>
       <td className="p-0">
         <PriceCell
           value={row.unitPrice}
-          cellProps={cell(3)}
-          ariaLabel={`${rowIndex + 1}번째 원료 단가(원)`}
+          cellProps={cell(5)}
+          ariaLabel={`${rowIndex + 1}번째 원료 단가(원/kg)`}
           onChange={(next) => onPatch(row.id, { unitPrice: next })}
         />
       </td>
@@ -365,6 +411,7 @@ function MaterialRowView({
       <td className="px-1 py-1">
         <span className="flex items-center justify-end gap-1">
           <input
+            {...cell(7)}
             value={row.packKg}
             inputMode="decimal"
             placeholder="-"
@@ -388,7 +435,7 @@ function MaterialRowView({
       </td>
       <td className="p-0">
         <input
-          {...cell(4)}
+          {...cell(8)}
           value={row.note}
           aria-label={`${rowIndex + 1}번째 원료 비고`}
           onChange={(event) => onPatch(row.id, { note: event.target.value })}
@@ -401,9 +448,9 @@ function MaterialRowView({
             type="checkbox"
             checked={row.functional}
             onChange={(event) => onPatch(row.id, { functional: event.target.checked })}
-            aria-label={`${rowIndex + 1}번째 원료를 기능성 주원료로 표시`}
+            aria-label={`${rowIndex + 1}번째 원료를 구성표에 포함`}
           />
-          표시
+          포함
         </label>
       </td>
       <td className="whitespace-nowrap px-1 py-1 text-center">

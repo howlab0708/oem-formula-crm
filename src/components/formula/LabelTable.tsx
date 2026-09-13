@@ -13,7 +13,7 @@
  * 함량 오류로 바로 이어진다.
  */
 
-import { formatKg, num } from '@/lib/formulaDesign/calc'
+import { formatMaterialQuantity, num } from '@/lib/formulaDesign/calc'
 import type { MaterialCalc } from '@/lib/formulaDesign/calc'
 import {
   dailyValuePercent,
@@ -48,13 +48,13 @@ export function LabelTable({ materials, intakeGuide, unitWeightMg, dispatch }: P
         </h3>
         <p className="text-[12px] text-ink-3">
           {intakeGuide ? `${intakeGuide} · ` : ''}
-          표시량과 역가를 넣고 ‘배합비율 역산’을 누르면 원료비 표의 배합비율이 채워집니다. 이 표가 고객용 PDF 로 나갑니다.
+          표시량과 역가를 넣고 ‘배합비율 역산’을 누르면 원료 표의 낱개당 mg와 배합비율이 채워집니다. 이 표가 고객용 PDF 로 나갑니다.
         </p>
       </header>
 
       {functional.length === 0 ? (
         <p className="px-3 py-6 text-center text-[13px] text-ink-3">
-          기능성 주원료로 표시한 줄이 없습니다. 원료비 표의 ‘기능성 표시’ 를 켜 주세요.
+          구성표에 선택한 원료가 없습니다. 원료비 표에서 ‘구성표 포함’을 체크해 주세요.
         </p>
       ) : (
         <div className="overflow-x-auto">
@@ -118,7 +118,7 @@ function LabelRow({
   const parsed = parseLabelAmount(row.labelAmount)
   const current = labelFromInput(item.mgPerUnit, row.potency, row.overage, parsed?.unit ?? 'mg')
   const nrv = dailyValuePercent(row.basis, row.labelAmount)
-  const matches = derived !== null && Math.abs(derived.ratio - num(row.ratio)) < 0.0001
+  const matches = derived !== null && Math.abs(derived.inputMg - item.mgPerUnit) <= Math.max(1, derived.inputMg) * 1e-12
 
   return (
     <tr className="border-t border-line align-top">
@@ -126,7 +126,7 @@ function LabelRow({
         <span className="block text-ink">{row.basis || row.name || '이름 없음'}</span>
         <span className="block text-[11px] text-ink-3">
           {row.basis && row.basis !== row.name ? `${row.name} · ` : ''}
-          1정당 투입 {formatKg(item.mgPerUnit, 3)}mg
+          낱개당 투입 {formatMaterialQuantity(item.mgPerUnit)}mg
         </span>
       </th>
       <td className="p-0">
@@ -187,20 +187,20 @@ function LabelRow({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => onPatch(row.id, { ratio: trimPercent(derived.ratio) })}
+              onClick={() => onPatch(row.id, { unitAmountMg: String(derived.inputMg) })}
               disabled={matches}
               className="shrink-0 rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:bg-surface-sunken disabled:opacity-50"
             >
               {matches ? '반영됨' : '배합비율 역산'}
             </button>
             <span className="text-[11px] text-ink-3 tnum">
-              {trimPercent(derived.ratio)}% · 투입 {formatKg(derived.inputMg, 3)}mg
+              {trimPercent(derived.ratio)}% · 투입 {formatMaterialQuantity(derived.inputMg)}mg
             </span>
           </div>
         )}
         {derived !== null && !matches && current !== null ? (
           <span className="mt-1 block text-[11px] text-danger">
-            현재 배합비율 {num(row.ratio) || 0}% 는 표시량 {formatKg(current, 3)}
+            현재 배합비율 {formatMaterialQuantity(item.ratio)}% 는 표시량 {formatMaterialQuantity(current)}
             {parsed?.unit ? ` ${parsed.unit}` : 'mg'} 에 해당합니다
           </span>
         ) : null}

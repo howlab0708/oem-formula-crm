@@ -12,7 +12,7 @@
  */
 
 import { useRef } from 'react'
-import { formatWon } from '@/lib/formulaDesign/calc'
+import { formatMaterialQuantity, formatWon } from '@/lib/formulaDesign/calc'
 import type { LineCalc } from '@/lib/formulaDesign/calc'
 import { LINE_PASTE_KEYS, parseClipboardMatrix, type LineBlock, type SheetAction } from '@/lib/formulaDesign/reducer'
 import type { LineRow, QuantityBasis } from '@/lib/formulaDesign/types'
@@ -24,6 +24,7 @@ const COLUMNS = LINE_PASTE_KEYS.length
 const BASIS_LABELS: { value: QuantityBasis; label: string }[] = [
   { value: 'set', label: '세트당' },
   { value: 'unit', label: '낱개당' },
+  { value: 'batchKg', label: '배합 kg당' },
   { value: 'fixed', label: '직접' },
 ]
 
@@ -107,6 +108,7 @@ export function LineGrid({ title, block, rows, calcs, total, excluded, itemLabel
                 },
               })
               const fixed = row.basis === 'fixed'
+              const batchKg = row.basis === 'batchKg'
               return (
                 <tr key={row.id} className={`border-t border-line ${row.included ? '' : 'bg-surface-muted'}`}>
                   <td className={rowNumberClass}>{rowIndex + 1}</td>
@@ -122,7 +124,8 @@ export function LineGrid({ title, block, rows, calcs, total, excluded, itemLabel
                   <td className="p-0">
                     <input
                       {...cell(1)}
-                      value={row.unit}
+                      value={batchKg ? 'kg' : row.unit}
+                      disabled={batchKg}
                       aria-label={`${rowIndex + 1}번째 항목 기준단위`}
                       onChange={(event) => patch(row.id, { unit: event.target.value })}
                       className={`${cellClass} text-center`}
@@ -144,8 +147,8 @@ export function LineGrid({ title, block, rows, calcs, total, excluded, itemLabel
                   </td>
                   <td className="p-0">
                     <input
-                      value={fixed ? '' : row.packSize}
-                      disabled={fixed}
+                      value={fixed || batchKg ? '' : row.packSize}
+                      disabled={fixed || batchKg}
                       inputMode="numeric"
                       aria-label={`${rowIndex + 1}번째 항목 입수`}
                       title="한 개에 몇 세트(또는 몇 정)가 들어가는지. 카톤 200개입이면 200."
@@ -164,8 +167,8 @@ export function LineGrid({ title, block, rows, calcs, total, excluded, itemLabel
                         className={`${cellClass} text-right tnum`}
                       />
                     ) : (
-                      <span className={`${numberCellClass} block text-ink-2`} title="수량 기준과 입수로 자동 계산됩니다.">
-                        {calc.quantity.toLocaleString('ko-KR')}
+                      <span className={`${numberCellClass} block text-ink-2`} title={batchKg ? '원료 표의 총 필요량 합계(손실 반영). 팩 청구량·사용량 직접 입력과 별개입니다.' : '수량 기준과 입수로 자동 계산됩니다.'}>
+                        {formatMaterialQuantity(calc.quantity)}
                       </span>
                     )}
                   </td>
@@ -175,9 +178,11 @@ export function LineGrid({ title, block, rows, calcs, total, excluded, itemLabel
                       value={row.unitPrice}
                       inputMode="decimal"
                       aria-label={`${rowIndex + 1}번째 항목 단가(원)`}
+                      title={batchKg ? '원료 배합량 1kg당 가공 단가(원/kg)' : `기준단위 ${row.unit}당 단가(원)`}
                       onChange={(event) => patch(row.id, { unitPrice: event.target.value })}
                       className={`${cellClass} text-right tnum`}
                     />
+                    {batchKg ? <span className="block px-2 pb-1 text-right text-[11px] text-ink-3">원/kg</span> : null}
                   </td>
                   <td className={`${numberCellClass} ${row.included ? '' : 'text-ink-3 line-through'}`}>
                     {formatWon(calc.amount)}
