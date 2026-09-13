@@ -9,7 +9,8 @@
  * 항목 포함을 칸 세 개로 나누면 조합이 24 가지가 되어 배우지 않고는 쓸 수 없다.
  */
 
-import { formatWon, formatWonDecimal, num, overheadBaseOf } from '@/lib/formulaDesign/calc'
+import { useId } from 'react'
+import { applyRounding, formatWon, formatWonDecimal, num, overheadBaseOf } from '@/lib/formulaDesign/calc'
 import type { Tier, Totals } from '@/lib/formulaDesign/calc'
 import type { SheetAction } from '@/lib/formulaDesign/reducer'
 import type {
@@ -81,7 +82,7 @@ const recipePatch = (recipe: Recipe): Partial<OverheadRow> => ({
 const ROUND_UNITS = ['1', '10', '100', '1000']
 const ROUND_MODES: { value: RoundMode; label: string }[] = [
   { value: 'round', label: '반올림' },
-  { value: 'floor', label: '절사' },
+  { value: 'floor', label: '내림(절사)' },
   { value: 'ceil', label: '올림' },
 ]
 
@@ -93,6 +94,8 @@ type Props = {
 }
 
 export function QuotePanel({ quote, totals, tiers, dispatch }: Props) {
+  const settingsId = useId()
+  const roundingExample = applyRounding(12345.67, num(quote.roundUnit) || 1, quote.roundMode)
   const setQuote = (key: keyof QuoteSettings, value: string) => dispatch({ type: 'quote', key, value })
   const patch = (id: string, next: Partial<OverheadRow>) => dispatch({ type: 'overhead', id, patch: next })
   const patchTier = (id: string, next: Partial<QuoteTier>) => dispatch({ type: 'tier', id, patch: next })
@@ -200,58 +203,69 @@ export function QuotePanel({ quote, totals, tiers, dispatch }: Props) {
         ) : null}
 
         {/* 공장마다 한 번 정하고 다시 건드리지 않는 값들. 한 묶음으로 모아 둔다. */}
-        <fieldset className="border-t border-line px-3 py-3">
-          <legend className="text-[12px] font-semibold text-ink-2">견적 마무리 규칙</legend>
-          <div className="mt-1 flex flex-wrap items-end gap-x-4 gap-y-2">
-            <label className="block">
-              <span className="block text-[12px] text-ink-2">부가세율</span>
-              <span className="flex items-center gap-1">
+        <fieldset className="min-w-0 border-t border-line px-3 py-4">
+          <legend className="text-[14px] font-semibold text-ink">부가세·재고비·단가 설정</legend>
+          <div className="mt-2 grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1.35fr]">
+            <label className="block h-full min-w-0 rounded-md border border-line bg-surface-sunken/50 p-3">
+              <span className="block text-[13px] font-medium leading-5 text-ink">부가세율</span>
+              <span className="relative mt-2 block">
                 <input
                   value={quote.vatRate}
                   inputMode="decimal"
+                  aria-label="부가세율(%)"
+                  aria-describedby={`${settingsId}-vat-hint`}
                   onChange={(event) => setQuote('vatRate', event.target.value)}
-                  className={`${fieldClass} w-16 text-right tnum`}
+                  className={`${fieldClass} h-10 w-full pr-8 text-right tnum`}
                 />
-                <span className="text-[12px] text-ink-3">%</span>
+                <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[13px] text-ink-2">%</span>
+              </span>
+              <span id={`${settingsId}-vat-hint`} className="mt-2 block text-[12px] leading-5 text-ink-2">
+                견적 합계에 더할 세율입니다.
+                <span className="block text-ink-3">0%이면 부가세를 더하지 않습니다.</span>
               </span>
             </label>
-            <label className="block">
-              <span className="block text-[12px] text-ink-2">재고비</span>
-              <span className="flex items-center gap-1">
+            <label className="block h-full min-w-0 rounded-md border border-line bg-surface-sunken/50 p-3">
+              <span className="block text-[13px] font-medium leading-5 text-ink">재고비 추가율</span>
+              <span className="relative mt-2 block">
                 <input
                   value={quote.stockRate}
                   inputMode="decimal"
-                  placeholder="없음"
-                  aria-describedby="stock-hint"
+                  placeholder="0"
+                  aria-label="재고비 추가율(%)"
+                  aria-describedby={`${settingsId}-stock-hint`}
                   onChange={(event) => setQuote('stockRate', event.target.value)}
-                  className={`${fieldClass} w-16 text-right tnum`}
+                  className={`${fieldClass} h-10 w-full pr-8 text-right tnum`}
                 />
-                <span className="text-[12px] text-ink-3">%</span>
+                <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[13px] text-ink-2">%</span>
               </span>
-              <span id="stock-hint" className="mt-0.5 block text-[11px] text-ink-3">
-                원료비+부자재비에 걸립니다
+              <span id={`${settingsId}-stock-hint`} className="mt-2 block text-[12px] leading-5 text-ink-2">
+                원료비 + 부자재비에 추가합니다.
+                <span className="block text-ink-3">빈칸 또는 0%이면 추가하지 않습니다.</span>
               </span>
             </label>
-            <div>
-              <span className="block text-[12px] text-ink-2">최종 단가 끝자리</span>
-              <span className="mt-0.5 flex items-center gap-1">
+            <div role="group" aria-labelledby={`${settingsId}-round-title`}
+              className="h-full min-w-0 rounded-md border border-line bg-surface-sunken/50 p-3 sm:col-span-2 xl:col-span-1">
+              <span id={`${settingsId}-round-title`} className="block text-[13px] font-medium leading-5 text-ink">단가 반올림·절사</span>
+              <span className="mt-2 grid grid-cols-2 gap-2">
                 <select
                   value={quote.roundUnit}
-                  aria-label="최종 단가를 맞출 자리"
+                  aria-label="단가 처리 단위"
+                  aria-describedby={`${settingsId}-round-hint ${settingsId}-round-example`}
                   onChange={(event) => setQuote('roundUnit', event.target.value)}
-                  className={fieldClass}
+                  className={`${fieldClass} h-10 min-w-0 w-full`}
                 >
                   {ROUND_UNITS.map((unit) => (
                     <option key={unit} value={unit}>
-                      {Number(unit).toLocaleString('ko-KR')}원
+                      {Number(unit).toLocaleString('ko-KR')}원 단위
                     </option>
                   ))}
                 </select>
                 <select
                   value={quote.roundMode}
-                  aria-label="최종 단가 끝자리 처리"
+                  aria-label="단가 처리 방식"
+                  aria-describedby={`${settingsId}-round-hint ${settingsId}-round-example`}
                   onChange={(event) => setQuote('roundMode', event.target.value)}
-                  className={fieldClass}
+                  className={`${fieldClass} h-10 min-w-0 w-full`}
                 >
                   {ROUND_MODES.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -260,6 +274,12 @@ export function QuotePanel({ quote, totals, tiers, dispatch }: Props) {
                   ))}
                 </select>
               </span>
+              <p id={`${settingsId}-round-hint`} className="mt-2 text-[12px] leading-5 text-ink-2">
+                세트당 단가와 부가세 포함 제안가에 적용합니다.
+              </p>
+              <p id={`${settingsId}-round-example`} className="mt-1 text-[12px] leading-5 text-accent-strong tnum">
+                예: 12,345.67원 → <strong className="font-semibold">{formatWon(roundingExample)}원</strong>
+              </p>
             </div>
           </div>
         </fieldset>
