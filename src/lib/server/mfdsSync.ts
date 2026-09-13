@@ -24,7 +24,7 @@ export async function syncStatus() {
   return {
     configured: syncConfigured(), enabled, canRun: syncConfigured(),
     generation: meta?.generation ?? null, lastSuccess: meta?.provenance?.transport === 'api' ? meta.finished_at : null,
-    run: run ? { state: run.state, busy: run.busy, fetched: run.fetched, expected: run.expected, added: run.added, changed: run.changed, retained: run.retained, message: run.message, finishedAt: run.finished_at } : null,
+    run: run ? { state: run.state, busy: run.busy, fetched: run.fetched, expected: run.expected, added: run.added, changed: run.changed, retained: run.retained, removed: run.removed ?? 0, message: run.message, finishedAt: run.finished_at } : null,
   }
 }
 

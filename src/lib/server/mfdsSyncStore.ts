@@ -9,7 +9,7 @@ export type Query = <T extends Row = Row>(sql: string, params?: unknown[]) => Pr
 export type SyncDatabase = { query: Query; transaction: <T>(fn: (q: Query) => Promise<T>) => Promise<T> }
 export type SyncRun = {
   id: string; baseline: string | null; state: 'running' | 'paused' | 'complete' | 'failed'
-  expected: number | null; fetched: number; added: number; changed: number; retained: number
+  expected: number | null; fetched: number; added: number; changed: number; retained: number; removed: number
   owner: string | null; lease_until: string | null; started_at: string; finished_at: string | null
   message: string | null; updated_through: string | null; dated_rows: number
 }
@@ -23,6 +23,7 @@ export const SYNC_SCHEMA = `
     owner text, lease_until timestamptz, started_at timestamptz not null default now(), finished_at timestamptz,
     message text, updated_through text, dated_rows integer not null default 0
   );
+  alter table oem_sync.runs add column if not exists removed integer not null default 0;
   create unique index if not exists one_pending_sync on oem_sync.runs ((true)) where state in ('running', 'paused');
   create table if not exists oem_sync.requests (singleton boolean primary key default true check(singleton), times timestamptz[] not null default '{}');
   insert into oem_sync.requests(singleton) values(true) on conflict do nothing;
@@ -146,14 +147,13 @@ export class SyncStore {
       const [active] = await q<{ generation: string }>(`select generation from public.import_status where status='complete' order by finished_at desc limit 1`)
       const [count] = await q<{ count: number }>(`select count(*)::int as count from public.products where generation=$1`, [run.id])
       if ((active?.generation ?? null) !== run.baseline || run.expected !== verifiedTotal || run.fetched !== verifiedTotal || count.count !== verifiedTotal) throw new SyncError('publish', '전체 자료 검증이 일치하지 않아 기존 데이터를 유지합니다.')
-      // Missing from the API is not proof of cancellation. Retain those records, and show the retained count.
-      const retained = await q(`insert into public.products(generation,id,seq,payload)
-        select $1,p.id,$3+row_number() over(order by p.seq)::int-1,p.payload from public.products p
-        where p.generation=$2 and not exists(select 1 from public.products n where n.generation=$1 and n.id=p.id) returning id`, [run.id, run.baseline, run.fetched])
+      // Publish only the fully validated MFDS snapshot. Old rows must not reappear in search or statistics.
+      const [removed] = await q<{ count: number }>(`select count(*)::int as count from public.products p
+        where p.generation=$2 and not exists(select 1 from public.products n where n.generation=$1 and n.id=p.id)`, [run.id, run.baseline])
       const provenance = { source: 'mfds-c003', transport: 'api', updatedThrough: run.updated_through, datedRows: run.dated_rows }
       await q(`update public.import_status set status='archived' where status='complete'`)
-      await q(`update public.import_status set status='complete', finished_at=now(), total_rows=$2, imported_rows=$2, provenance=$3::text::jsonb where generation=$1 and status='sync_staging'`, [run.id, run.fetched + retained.length, JSON.stringify(provenance)])
-      await q(`update oem_sync.runs set state='complete', retained=$3, finished_at=now(), owner=null, lease_until=null, message=null where id=$1 and owner=$2`, [run.id, run.owner, retained.length])
+      await q(`update public.import_status set status='complete', finished_at=now(), total_rows=$2, imported_rows=$2, provenance=$3::text::jsonb where generation=$1 and status='sync_staging'`, [run.id, run.fetched, JSON.stringify(provenance)])
+      await q(`update oem_sync.runs set state='complete', retained=0, removed=$3, finished_at=now(), owner=null, lease_until=null, message=null where id=$1 and owner=$2`, [run.id, run.owner, removed.count])
     })
   }
 

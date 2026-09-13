@@ -11,6 +11,7 @@ const { collectSync } = load('src/lib/server/mfdsSync.ts')
 const { parseC003, SyncError } = load('src/lib/server/mfdsC003.ts')
 const sample = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/mfds-c003-sample.json'), 'utf8'))
 const products = parseC003(sample, 1, 5).products
+const alignLatestSql = fs.readFileSync(path.join(__dirname, '../../scripts/sql/align-latest-mfds.sql'), 'utf8')
 let pg, store, wireServer, wireSql
 const active = async () => (await pg.query("select generation from import_status where status='complete'")).rows.map(r => r.generation)
 const queryFor = connection => async (sql, params = []) => (await connection.query(sql, params)).rows
@@ -39,23 +40,77 @@ beforeEach(async () => {
   }
 })
 
-test('complete publish preserves old IDs, factory identity, brand, missing records and rollback generation', async () => {
+test('complete publish matches the current source exactly while preserving matching IDs, factories and brands', async () => {
   let run = await store.claim()
   run = await store.savePage(run, { total: 5, products })
   assert.deepEqual(await active(), ['old'])
   await store.publish(run, 5)
   assert.deepEqual(await active(), [run.id])
   const current = (await pg.query('select payload from products where generation=$1', [run.id])).rows.map(r => r.payload)
-  assert.equal(current.length, 6)
+  assert.equal(current.length, 5)
+  assert.deepEqual(current.map(p => p.reportNo).sort(), products.map(p => p.reportNo).sort())
   const matched = current.find(p => p.id === 'csv-151')
   assert.equal(matched.brand, '기존 브랜드')
   assert.equal(matched.name, products[0].name)
   assert.equal(matched.licenseNo, products[0].licenseNo)
-  assert.ok(current.some(p => p.id === 'csv-retained'))
+  assert.equal(current.some(p => p.id === 'csv-retained'), false)
+  const meta = (await pg.query('select total_rows,imported_rows from import_status where generation=$1', [run.id])).rows[0]
+  assert.equal(meta.total_rows, 5); assert.equal(meta.imported_rows, 5)
   assert.equal((await pg.query("select status from import_status where generation='old'")).rows[0].status, 'archived')
   const status = await store.latest()
-  assert.equal(status.added, 4); assert.equal(status.changed, 1); assert.equal(status.retained, 1)
+  assert.equal(status.added, 4); assert.equal(status.changed, 1); assert.equal(status.retained, 0); assert.equal(status.removed, 1)
   await assert.rejects(store.claim(), /1시간/)
+})
+
+test('subsequent syncs do not restore removed records and legitimate source returns count as new', async () => {
+  let run = await store.claim()
+  run = await store.savePage(run, { total: 5, products })
+  await store.publish(run, 5)
+  await pg.exec("update oem_sync.runs set finished_at=now()-interval '2 hours'")
+  run = await store.claim()
+  run = await store.savePage(run, { total: 5, products })
+  await store.publish(run, 5)
+  assert.equal((await store.latest()).removed, 0)
+  assert.equal((await pg.query("select count(*)::int as n from products where payload->>'reportNo'='99999999'")).rows[0].n, 0)
+  await pg.exec("update oem_sync.runs set finished_at=now()-interval '2 hours'")
+  run = await store.claim()
+  const returned = { ...products[1], id: 'mfds-returned', reportNo: '99999999' }
+  run = await store.savePage(run, { total: 6, products: [...products, returned] })
+  await store.publish(run, 6)
+  assert.equal((await store.latest()).added, 1)
+  assert.equal((await pg.query("select payload->>'id' as id from products where generation=$1 and payload->>'reportNo'='99999999'", [run.id])).rows[0].id, 'mfds-returned')
+})
+
+test('legacy cleanup publishes a fresh cache generation containing only the already verified source', async () => {
+  let run = await store.claim()
+  run = await store.savePage(run, { total: 5, products })
+  await store.publish(run, 5)
+  // Recreate the old release's completed snapshot: five API rows followed by one preserved CSV row.
+  await pg.query("insert into products select id,$1,5,payload from products where generation='old' and id='csv-retained'", [run.id])
+  await pg.query('update import_status set total_rows=6,imported_rows=6 where generation=$1', [run.id])
+  await pg.query('update oem_sync.runs set retained=1,removed=0 where id=$1', [run.id])
+  await pg.exec(alignLatestSql)
+  const [generation] = await active()
+  assert.notEqual(generation, run.id)
+  const current = (await pg.query('select payload from products where generation=$1 order by seq', [generation])).rows.map(r => r.payload)
+  const original = (await pg.query('select payload from products where generation=$1 and seq<5 order by seq', [run.id])).rows.map(r => r.payload)
+  assert.deepEqual(current, original)
+  const status = (await pg.query('select * from oem_sync.runs where id=$1', [generation])).rows[0]
+  assert.equal(status.removed, 1); assert.equal(status.retained, 0); assert.equal(status.fetched, 5)
+  assert.equal((await pg.query('select retained from oem_sync.runs where id=$1', [run.id])).rows[0].retained, 1)
+  await pg.exec(alignLatestSql)
+  assert.deepEqual(await active(), [generation])
+})
+
+test('legacy cleanup rejects an unverified dataset or a mismatching retained count', async () => {
+  await assert.rejects(pg.exec(alignLatestSql), /not a verified MFDS/)
+  assert.deepEqual(await active(), ['old'])
+  let run = await store.claim()
+  run = await store.savePage(run, { total: 5, products })
+  await store.publish(run, 5)
+  await pg.query('update oem_sync.runs set retained=1 where id=$1', [run.id])
+  await assert.rejects(pg.exec(alignLatestSql), /do not match/)
+  assert.deepEqual(await active(), [run.id])
 })
 
 test('network interruption resumes persisted pages without replacing the active dataset early', async () => {

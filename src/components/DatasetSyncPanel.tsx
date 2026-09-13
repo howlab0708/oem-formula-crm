@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 type Status = {
   configured: boolean; enabled: boolean; canRun: boolean; generation: string | null; lastSuccess: string | null
-  run: null | { state: 'running' | 'paused' | 'complete' | 'failed'; busy: boolean; fetched: number; expected: number | null; added: number; changed: number; retained: number; message: string | null; finishedAt: string | null }
+  run: null | { state: 'running' | 'paused' | 'complete' | 'failed'; busy: boolean; fetched: number; expected: number | null; added: number; changed: number; retained: number; removed: number; message: string | null; finishedAt: string | null }
 }
 const dateLabel = (value: string) => new Date(value).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
 
@@ -65,7 +65,11 @@ export function DatasetSyncPanel({ productCount, generation, onRefresh }: { prod
     {status?.lastSuccess && <p className="mt-1 text-[12px] text-ink-3">최근 반영 {dateLabel(status.lastSuccess)}</p>}
     {run && <div className="my-2 text-[12px] leading-5 text-ink-2" role="status" aria-live="polite">
       {run.busy ? <><p>식약처 자료 확인 중 {run.fetched.toLocaleString('ko-KR')}{run.expected ? ` / ${run.expected.toLocaleString('ko-KR')}건` : '건'}</p>{run.expected && <progress className="mt-1 w-full accent-blue-600" aria-label="식약처 자료 수집" value={run.fetched} max={run.expected} />}</>
-        : run.state === 'complete' ? <><p>신규 {run.added.toLocaleString('ko-KR')}건 · 변경 {run.changed.toLocaleString('ko-KR')}건</p>{run.retained > 0 && <p>원본 미확인 {run.retained.toLocaleString('ko-KR')}건은 기존 자료 유지</p>}</>
+        : run.state === 'complete' ? <>
+          <p>신규 {run.added.toLocaleString('ko-KR')}건 · 변경 {run.changed.toLocaleString('ko-KR')}건 · 삭제 {(run.removed ?? 0).toLocaleString('ko-KR')}건</p>
+          {run.retained > 0 ? <p>최신 원본에서 제외된 {run.retained.toLocaleString('ko-KR')}건은 다음 업데이트에서 삭제됩니다.</p>
+            : <p>최신 식약처 원본에 있는 제품만 반영합니다.</p>}
+        </>
           : <p>{run.message ?? '수집이 중단됐습니다. 이어받기로 다시 진행할 수 있습니다.'}</p>}
     </div>}
     {visibleError && <p role="alert" className="my-2 text-[12px] leading-5 text-red-700">{visibleError}</p>}
