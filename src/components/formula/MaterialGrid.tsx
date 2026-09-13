@@ -214,7 +214,7 @@ export function MaterialGrid({ materials, spec, totals, index, dispatch }: Props
 
       <div className="overflow-x-auto">
         <table data-grid ref={gridRef}
-          className={`${styles.grid} w-full min-w-[76rem] border-collapse text-[13px]`}>
+          className={`${styles.grid} w-full min-w-[80rem] border-collapse text-[13px]`}>
           <caption className="sr-only">
             원료명, 낱개당 배합량(mg), 배합비율, 총 필요량(kg), 사용량, 원료단가, 금액, 팩 단위, 비고 순서의 배합비 입력 표
           </caption>
@@ -236,7 +236,7 @@ export function MaterialGrid({ materials, spec, totals, index, dispatch }: Props
             <tr>
               <th scope="col" className={`${headClass} w-9`} aria-label="줄 번호" />
               <th scope="col" className={`${headClass} min-w-[13rem] text-left`}>원료명</th>
-              <th scope="col" className={`${headClass} w-36 bg-accent-soft text-accent-strong`}>1{noun}당 배합량<br />(mg)</th>
+              <th scope="col" className={`${headClass} min-w-48 w-48 bg-accent-soft text-accent-strong`}>1{noun}당 배합량<br />(mg)</th>
               <th scope="col" className={`${headClass} w-24`}>배합비율(%)</th>
               <th scope="col" className={`${headClass} w-28`}>총 필요량(kg)<br /><span className="font-normal text-ink-3">손실 반영 · 자동</span></th>
               <th scope="col" className={`${headClass} w-28`}>사용량(kg)<br /><span className="font-normal text-ink-3">필요 시 직접 입력</span></th>
@@ -433,19 +433,22 @@ function MaterialRowView({
         />
         <ReferenceIngredientInfo name={row.name} source={row.provenance} />
       </td>
-      <td className="p-0">
-        <input
-          {...cell(1)}
-          value={!blank(row.unitAmountMg) ? row.unitAmountMg : blank(row.ratio) ? '' : formatMaterialQuantity(calc.mgPerUnit)}
-          inputMode="decimal"
-          placeholder="mg 입력"
-          aria-label={`${rowIndex + 1}번째 원료 1${noun}당 배합량(mg)`}
-          aria-describedby={weightWarningId}
-          title={`1${noun}에 들어가는 원료 자체의 중량. 직접 입력하면 배합비율과 총 kg가 계산됩니다.`}
-          onChange={(event) => onPatch(row.id, { unitAmountMg: event.target.value })}
-          className={`${cellClass} bg-accent-soft text-right font-medium tnum`}
-        />
-        <div className="px-1.5 pb-2 text-center">
+      <td className={styles.unitAmountCell}>
+        <div className={styles.unitAmountField}>
+          <input
+            {...cell(1)}
+            value={!blank(row.unitAmountMg) ? row.unitAmountMg : blank(row.ratio) ? '' : formatMaterialQuantity(calc.mgPerUnit)}
+            inputMode="decimal"
+            placeholder="중량 입력"
+            aria-label={`${rowIndex + 1}번째 원료 1${noun}당 배합량(mg)`}
+            aria-describedby={weightWarningId}
+            title={`1${noun}에 들어가는 원료 자체의 중량. 직접 입력하면 배합비율과 총 kg가 계산됩니다.`}
+            onChange={(event) => onPatch(row.id, { unitAmountMg: event.target.value })}
+            className={`${styles.unitAmountInput} tnum`}
+          />
+          <span aria-hidden="true" className={styles.unitAmountUnit}>mg</span>
+        </div>
+        <div className="mt-2 text-center">
           <button type="button" onClick={onFillRemainder} disabled={Boolean(remainderReason)}
             aria-label={`${rowIndex + 1}번째 원료 ${remainderLabel}${remainderReason ? '' : `, ${formatMaterialQuantity(nextAmount)}${remainderUnit}으로 변경`}`}
             title={remainderReason || `다른 원료의 배합량은 유지하고 이 원료를 ${formatMaterialQuantity(currentAmount)}${remainderUnit}에서 ${formatMaterialQuantity(nextAmount)}${remainderUnit}으로 조정합니다.`}

@@ -14,3 +14,52 @@
   background: #24518b;
   color: #ffffff;
 }
+
+.unitAmountCell {
+  min-width: 12rem;
+  padding: 12px;
+  vertical-align: middle;
+}
+
+.unitAmountField {
+  position: relative;
+}
+
+.unitAmountInput {
+  display: block;
+  width: 100%;
+  height: 48px;
+  border: 1px solid #a8bdd8;
+  border-radius: 6px;
+  background: #f3f7fd;
+  padding: 0 38px 0 12px;
+  color: var(--color-ink);
+  font-size: 16px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.unitAmountInput::placeholder {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.unitAmountInput:hover {
+  border-color: var(--color-accent);
+}
+
+.unitAmountInput:focus {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.unitAmountUnit {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #526581;
+  font-size: 13px;
+}
