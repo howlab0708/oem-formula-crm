@@ -1,29 +1,69 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { copyText } from '@/lib/export/download'
 import { currentProvenance, hasProvenance, originLabel, productProvenance, provenanceToText, type IngredientProvenance } from '@/lib/ingredientProvenance'
 import type { Product } from '@/lib/types'
 
 export function ProvenanceDetails({ source }: { source: IngredientProvenance }) {
-  return <details className="mt-1 text-[12px] leading-5 text-ink-2">
-    <summary className="cursor-pointer underline underline-offset-2">근거 보기</summary>
-    <div className="mt-2 space-y-1 break-words rounded border border-line bg-surface-sunken p-2">
-      <p>{source.statement}</p>
-      {source.scope ? <p>확인 범위: {source.scope}</p> : null}
-      <p>참고 제품: {source.productName}</p>
-      {source.referenceVariant ? <p>이력 제품명: {source.referenceVariant}</p> : null}
-      {source.productionDate ? <p>생산일: {source.productionDate} · 식품이력번호: {source.traceabilityNo}</p> : null}
-      <p>확인일: {source.checkedAt || '미확인'}</p>
+  return <details className="mt-2 text-[13px] leading-6 text-ink-2">
+    <summary className="w-fit cursor-pointer rounded-md border border-line-strong bg-surface px-2.5 py-1 font-medium hover:bg-surface-sunken">근거 보기</summary>
+    <div className="mt-2"><ProvenanceContent source={source} /></div>
+  </details>
+}
+
+function ProvenanceContent({ source }: { source: IngredientProvenance }) {
+  const fields = [
+    ['참고 제품', source.productName],
+    ['이력 제품명', source.referenceVariant],
+    ['생산일', source.productionDate],
+    ['식품이력번호', source.traceabilityNo],
+    ['확인 범위', source.scope],
+    ['확인일', source.checkedAt || '미확인'],
+  ]
+  return <div className="min-w-0 rounded-lg border border-line bg-surface-sunken p-4 text-[13px] leading-6 text-ink-2 keep-all">
+      <p className="mb-3 font-semibold text-ink">{source.ingredientName} · 확인 근거</p>
+      <dl className="space-y-2">{fields.filter(([, value]) => value).map(([label, value]) => <div key={label} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3">
+        <dt className="font-medium text-ink-2">{label}</dt><dd className="min-w-0 text-ink">{value}</dd>
+      </div>)}</dl>
+      {source.statement ? <div className="my-3 border-t border-line pt-3">
+        <p className="mb-1 font-medium text-ink">대조 내용</p>
+        <p className="whitespace-pre-line">{source.statement}</p>
+      </div> : null}
       {/^https?:\/\//i.test(source.sourceUrl) ? <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer"
-        className="underline underline-offset-2">{source.sourceTitle} ↗</a> : null}
-      {source.additionalSources?.map(extra => <div key={extra.sourceUrl} className="mt-2 border-t border-line pt-2">
-        <p>{extra.statement}</p>
-        <p>확인일: {extra.checkedAt}</p>
-        <a href={extra.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{extra.sourceTitle} ↗</a>
+        className="mt-1 inline-block font-medium text-accent-strong underline underline-offset-4">{source.sourceTitle} (원문 보기)<span className="sr-only"> · 새 창</span></a> : null}
+      {source.additionalSources?.map(extra => <div key={extra.sourceUrl} className="mt-4 space-y-2 border-t border-line pt-3">
+        <p className="font-medium text-ink">추가 근거</p>
+        <p className="whitespace-pre-line">{extra.statement}</p>
+        <p>확인일: {extra.checkedAt || '미확인'}</p>
+        {/^https?:\/\//i.test(extra.sourceUrl) ? <a href={extra.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-block font-medium text-accent-strong underline underline-offset-4">{extra.sourceTitle} (원문 보기)<span className="sr-only"> · 새 창</span></a> : null}
       </div>)}
     </div>
-  </details>
+}
+
+function ProductProvenanceRow({ source, loading }: { source: IngredientProvenance; loading: boolean }) {
+  const [expanded, setExpanded] = useState(false)
+  const contentId = useId()
+  const documented = hasProvenance(source)
+  return <>
+    <tr className={`border-b border-line align-top ${expanded ? 'bg-surface-sunken' : ''}`}>
+      <th scope="row" className="w-2/5 p-2 font-normal text-ink keep-all">{source.ingredientName}
+        {source.scope ? <p className="mt-1 text-[11px] text-ink-2">{source.scope}</p> : null}
+      </th>
+      <td className="p-2 text-ink-2 keep-all">{source.supplier || '미확인'}</td>
+      <td className="p-2 text-ink-2 keep-all">{loading && !documented ? '조회 중…' : originLabel(source)}
+        {documented ? <button type="button" aria-expanded={expanded} aria-controls={contentId}
+          aria-label={`${source.ingredientName} 근거 ${expanded ? '접기' : '보기'}`}
+          onClick={() => setExpanded(value => !value)}
+          className="mt-2 flex items-center gap-1.5 rounded-md border border-line-strong bg-surface px-2.5 py-1 text-[12px] font-medium hover:bg-surface-sunken">
+          {expanded ? '근거 접기' : '근거 보기'}<span aria-hidden>{expanded ? '⌃' : '⌄'}</span>
+        </button> : null}
+      </td>
+    </tr>
+    {documented ? <tr id={contentId} hidden={!expanded} className="border-b border-line">
+      <td colSpan={3} className="p-2 pb-4"><ProvenanceContent source={source} /></td>
+    </tr> : null}
+  </>
 }
 
 export function ReferenceIngredientInfo({ name, source }: { name: string; source?: IngredientProvenance }) {
@@ -96,13 +136,7 @@ export function ProductProvenanceSection({ product, loading = false, refreshing 
           <th scope="col" className="p-2 font-medium">원료사</th>
           <th scope="col" className="p-2 font-medium">원산지 · 근거</th>
         </tr></thead>
-        <tbody>{visible.map((source) => <tr key={source.ingredientName} className="border-b border-line align-top">
-          <th scope="row" className="w-2/5 p-2 font-normal text-ink">{source.ingredientName}
-            {source.scope ? <p className="mt-1 text-[11px] text-ink-2">{source.scope}</p> : null}
-          </th>
-          <td className="p-2 text-ink-2">{source.supplier || '미확인'}</td>
-          <td className="p-2 text-ink-2">{loading && !hasProvenance(source) ? '조회 중…' : originLabel(source)}{hasProvenance(source) ? <ProvenanceDetails source={source} /> : null}</td>
-        </tr>)}</tbody>
+        <tbody>{visible.map((source) => <ProductProvenanceRow key={`${product.id}-${source.ingredientName}`} source={source} loading={loading} />)}</tbody>
       </table>
       {ordered.length > 6 ? <button type="button" onClick={() => setShowAll((value) => !value)}
         aria-expanded={showAll} className="mt-2 rounded-md border border-line px-3 py-1.5 text-[12px] text-ink-2 hover:bg-surface-sunken">

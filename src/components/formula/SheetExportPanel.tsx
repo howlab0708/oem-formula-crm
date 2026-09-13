@@ -99,7 +99,7 @@ export function SheetExportPanel({ sheet, totals, tiers, options, onOptionsChang
             aria-haspopup="dialog"
             onClick={() => setIdentityOpen(true)}
           >
-            직인 · 로고
+            직인 로고 삽입
             {storedIssuer?.seal ? <span className="ml-1 text-accent-strong">●</span> : null}
           </button>
           <button type="button" className={buttonClass} onClick={() => run('preview')} disabled={busy !== null}>
@@ -144,7 +144,7 @@ export function SheetExportPanel({ sheet, totals, tiers, options, onOptionsChang
       </div>
 
       <p className="mt-2 text-[12px] text-ink-3">
-        <strong>직인 · 로고</strong> 에서 한 번 등록하면 계속 쓰입니다. 지금은{' '}
+        <strong>직인 로고 삽입</strong>에서 한 번 등록하면 계속 쓰입니다. 지금은{' '}
         {storedLogo ? '로고 등록됨' : '로고 미등록'}
         {' · '}
         {hasIssuer(storedIssuer)
@@ -167,7 +167,7 @@ export function SheetExportPanel({ sheet, totals, tiers, options, onOptionsChang
 
 /** 내보내기 자리에서 바로 여는 직인·로고 등록. 같은 칸을 ‘내보내기 설정’ 과 함께 쓴다. */
 function IdentityDialog({ onClose }: { onClose: () => void }) {
-  return <Modal title="직인 · 로고 등록" onClose={onClose}><DocumentIdentity /></Modal>
+  return <Modal title="직인 로고 삽입" onClose={onClose}><DocumentIdentity /></Modal>
 }
 
 function PreviewDialog({ pages, onClose }: { pages: string[]; onClose: () => void }) {

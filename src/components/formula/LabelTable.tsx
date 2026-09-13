@@ -54,7 +54,7 @@ export function LabelTable({ materials, intakeGuide, unitWeightMg, dispatch }: P
 
       {functional.length === 0 ? (
         <p className="px-3 py-6 text-center text-[13px] text-ink-3">
-          구성표에 선택한 원료가 없습니다. 원료비 표에서 ‘구성표 포함’을 체크해 주세요.
+          주원료로 표시한 원료가 없습니다. 원료 배합표의 ‘주원료 표시’ 열에서 체크해 주세요.
         </p>
       ) : (
         <div className="overflow-x-auto">

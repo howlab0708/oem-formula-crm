@@ -62,7 +62,7 @@ export type MaterialRow = {
   packBilled: boolean
   /** 일일영양성분 기준치 대비 비율. 표시기준 값을 연구원이 직접 넣는다(예: `100%`). */
   labelPercent: string
-  /** 고객용 ‘구성 및 포장지’ 표에 넣을 기능성 원료인지. 부형제는 false. */
+  /** 주원료로 표시하고 표시량 검토·고객용 표에 반영할지. 기능성 표시 가능 여부의 판정은 아니다. */
   functional: boolean
 }
 

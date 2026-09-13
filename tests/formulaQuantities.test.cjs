@@ -17,7 +17,29 @@ function example() {
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) <= Math.max(1e-15, Math.abs(expected) * 1e-12), `${actual} != ${expected}`)
 const edit = (sheet, index, patch) => reduce(sheet, { type: 'material', id: sheet.materials[index].id, patch })
 
-test('구성표 포함 체크는 mg·kg·원가 계산에서 원료를 제외하지 않는다', () => {
+test('배합량 초기화는 혼합 mg/%와 kg 고정값을 비우고 원료·출처·규격·단가 및 견적 설정을 보존한다', () => {
+  let sheet = edit(example(), 1, { ratio: '30', usage: '25', packKg: '25', packBilled: true })
+  sheet = edit(sheet, 0, { labelAmount: '100mg', potency: '97', functional: true })
+  sheet.materials[0].provenance = { ingredientName: sheet.materials[0].name, sourceUrl: 'https://example.com/reference', statement: '검토용 출처' }
+  const before = structuredClone(sheet)
+  const reset = reduce(sheet, { type: 'reset-material-amounts' })
+  assert.deepEqual(sheet, before)
+  for (const key of Object.keys(sheet).filter(key => key !== 'materials')) assert.deepEqual(reset[key], sheet[key])
+  reset.materials.forEach((row, i) => {
+    assert.equal(row.unitAmountMg, '')
+    assert.equal(row.ratio, '')
+    assert.equal(row.usage, '')
+    for (const key of Object.keys(sheet.materials[i]).filter(key => !['unitAmountMg', 'ratio', 'usage'].includes(key))) assert.deepEqual(row[key], sheet.materials[i][key])
+  })
+  const totals = calculate(reset)
+  for (const key of ['unitAmountSumMg', 'ratioSum', 'batchSumKg', 'usageSumKg', 'materialCost']) assert.equal(totals[key], 0)
+  assert.equal(totals.totalUnits, 60000)
+  const restarted = edit(reset, 0, { unitAmountMg: '400' })
+  near(calculate(restarted).batchSumKg, 26.4)
+  assert.equal(calculate(restarted).materials[1].overridden, false)
+})
+
+test('주원료 표시 체크는 mg·kg·원가 계산에서 원료를 제외하지 않는다', () => {
   const sheet = example()
   const before = calculate(sheet)
   sheet.materials.forEach(row => { row.functional = false })

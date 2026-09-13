@@ -46,7 +46,7 @@ export function DashboardSummaryCards({ briefing, summary }: {
           <p className="mt-2 text-[13px] leading-5 text-ink-3">확인 {formatInt(summary.recognizedCount)} / {formatInt(briefing.referenceCount)}건</p>
         </div>
         <div className="rounded-lg border border-line bg-surface px-6 py-5">
-          <p className="text-[14px] leading-5 font-medium text-ink-2">참여 제조사</p>
+          <p className="text-[14px] leading-5 font-medium text-ink-2">제조사</p>
           <p className="mt-2 text-[32px] leading-10 font-semibold tabular-nums text-ink">{formatInt(summary.manufacturerCount)}<span className="ml-1 text-[18px] font-medium text-ink-2">개</span></p>
           <p className="mt-2 text-[13px] leading-5 text-ink-3">제조사 확인 {formatInt(summary.manufacturerKnownCount)}건</p>
         </div>

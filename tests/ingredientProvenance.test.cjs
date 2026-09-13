@@ -79,6 +79,21 @@ test('renaming by typing or pasting clears stale provenance, while price/ratio e
   assert.equal(sheet.materials[0].provenance.supplier, 'DSM')
 })
 
+test('reference main ingredients start checked; numeric paste and save/load retain manual choices', () => {
+  const sheet = draftFromProduct(immune).sheet
+  assert.deepEqual(sheet.materials.map(row => row.functional), [true, true, true, false])
+  const changed = sheetReducer(sheet, { type: 'material', id: sheet.materials[1].id, patch: { functional: false } })
+  const added = sheetReducer(changed, { type: 'material', id: sheet.materials[3].id, patch: { functional: true } })
+  for (const column of [1, 2, 4, 5]) {
+    const pasted = sheetReducer(added, { type: 'paste-materials', row: 0, column,
+      matrix: [['50'], ['150'], ['100'], ['20']],
+      enrich: () => { throw new Error('numeric paste must not reclassify ingredients') },
+    })
+    assert.deepEqual(pasted.materials.map(row => row.functional), [true, false, true, true])
+    assert.deepEqual(validateSheet(JSON.parse(JSON.stringify(pasted))).materials.map(row => row.functional), [true, false, true, true])
+  }
+})
+
 test('save validation rejects unsafe or unsupported claims and drops mismatched source names', () => {
   for (const sourceUrl of ['javascript:alert(1)', 'data:text/html,unsafe', 'https://user:password@example.com']) {
     const sheet = draftFromProduct(immune).sheet

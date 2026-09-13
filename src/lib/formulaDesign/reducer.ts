@@ -34,6 +34,7 @@ export type SheetAction =
   | { type: 'remove'; block: 'materials' | LineBlock | 'overheads' | 'tiers'; id: string }
   | { type: 'move'; block: 'materials' | LineBlock; id: string; delta: number }
   | { type: 'fill-remainder'; id: string }
+  | { type: 'reset-material-amounts' }
   | {
       type: 'paste-materials'
       row: number
@@ -171,6 +172,8 @@ export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaS
       return { ...state, [action.block]: move<{ id: string }>(state[action.block], action.id, action.delta) }
     case 'fill-remainder':
       return { ...state, materials: fillRemainder(state.materials, action.id, num(state.spec.unitWeightMg)) }
+    case 'reset-material-amounts':
+      return { ...state, materials: state.materials.map(row => ({ ...row, unitAmountMg: '', ratio: '', usage: '' })) }
     case 'paste-materials': {
       const pasted = pasteInto(
         state.materials,
@@ -182,7 +185,9 @@ export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaS
         materialPatch,
       ).map((item) => ({ ...item, provenance: currentProvenance(item.name, item.provenance) }))
       const enrich = action.enrich
-      if (!enrich) return { ...state, materials: pasted }
+      // Only a pasted ingredient name may trigger a lookup. Numeric edits must keep
+      // the reference's main-ingredient flag and the user's checkbox selection.
+      if (!enrich || action.column !== 0) return { ...state, materials: pasted }
       // 이번에 붙여넣은 줄만 손댄다. 손으로 고쳐 둔 다른 줄을 되돌리지 않는다.
       const last = action.row + action.matrix.length - 1
       return {
