@@ -58,6 +58,9 @@ export type Product = {
   markers: Marker[]
   subIngredients: string[]
   reportNo?: string
+  /** 식약처 제조소 인허가번호. 같은 법인의 공장도 구분한다. */
+  licenseNo?: string
+  sourceUpdatedAt?: string
   reportedAt?: string
   primaryFunction?: string
 }

@@ -1,4 +1,4 @@
-export type DatasetProvenance = { source: 'mfds-c003' | 'user-csv'; updatedThrough: string | null; datedRows: number }
+export type DatasetProvenance = { source: 'mfds-c003' | 'user-csv'; updatedThrough: string | null; datedRows: number; transport?: 'api' }
 export const C003_SOURCE = 'https://www.foodsafetykorea.go.kr/api/openApiInfo.do?menu_grp=MENU_GRP31&menu_no=661&show_cnt=10&start_idx=1&svc_no=C003'
 
 export function sourceDate(raw: string): string | null {
@@ -36,7 +36,7 @@ export function freshnessLabel(provenance: DatasetProvenance | null | undefined,
     date: provenance?.updatedThrough ? `데이터 기준일: ${provenance.updatedThrough} · 원본 최종수정일 기준`
       : reflected ? `데이터 기준일: ${reflected} · 서버 반영일 기준 (원본 기준일 미보존)` : '데이터 기준일: 확인 필요',
     source: provenance?.source === 'mfds-c003' ? '출처: 식약처 식품안전나라 C003 품목제조신고' : '출처: 업로드 CSV · 원본 출처 미확인',
-    schedule: provenance?.source === 'mfds-c003' ? '원본 상시 갱신 · 서비스는 CSV 업로드 시 반영' : '서비스는 CSV 업로드 시 반영',
+    schedule: provenance?.transport === 'api' ? '식약처 API 연동 · 자동 갱신 상태는 왼쪽 패널에서 확인' : provenance?.source === 'mfds-c003' ? '원본 상시 갱신 · 서비스는 CSV 업로드 시 반영' : '서비스는 CSV 업로드 시 반영',
     url: provenance?.source === 'mfds-c003' ? C003_SOURCE : null,
   }
 }

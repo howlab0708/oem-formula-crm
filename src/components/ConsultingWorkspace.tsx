@@ -5,18 +5,16 @@ import dynamic from 'next/dynamic'
 import { WorkspaceTabs, type WorkspaceTab } from '@/components/WorkspaceTabs'
 import { ActiveFilters } from '@/components/ActiveFilters'
 import { BriefingDashboard } from '@/components/BriefingDashboard'
-import { DatasetImporter } from '@/components/DatasetImporter'
+import { DatasetSyncPanel } from '@/components/DatasetSyncPanel'
 import { DetailPanel } from '@/components/DetailPanel'
 import { SavedSearches } from '@/components/SavedSearches'
 import { freshnessLabel } from '@/lib/datasetProvenance'
 import type { DatasetProvenance } from '@/lib/datasetProvenance'
-import type { ImportReport } from '@/lib/types'
 import type { SavedSearch } from '@/lib/savedSearches'
 import type { DatasetMeta } from '@/lib/api/products'
 import { ExportActions } from '@/components/ExportActions'
 import { FilterRail } from '@/components/FilterRail'
 import { ReferenceGrid } from '@/components/ReferenceGrid'
-import { useCsvImport } from '@/hooks/useCsvImport'
 import { fetchStoredDataset, type StoredDataset } from '@/lib/api/products'
 import { markerCatalog } from '@/lib/analytics'
 import { downloadProductsAsCsv } from '@/lib/export/download'
@@ -146,7 +144,6 @@ function LoadedConsultingWorkspace({
   }, [])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [railOpen, setRailOpen] = useState(false)
-  const [verifyNote, setVerifyNote] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('consulting')
   const [ingredientsVisited, setIngredientsVisited] = useState(false)
   const [notesVisited, setNotesVisited] = useState(false)
@@ -183,63 +180,15 @@ function LoadedConsultingWorkspace({
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
   }, [filters])
 
-  const handleLoaded = useCallback((next: Product[], report: ImportReport) => {
-    setProducts(next)
-    setSource('csv')
-    setDatasetMeta(null)
-    setProvenance(report.provenance ?? null)
-    dispatchFilters({ type: 'clear' })
-    setSelectedId(null)
-    setVerifyNote(null)
-    scrollRef.current?.scrollTo({ top: 0 })
-  }, [setVerifyNote])
-
-  const { status, saveStatus, importFile } = useCsvImport({ onLoaded: handleLoaded })
-
-  /**
-   * 저장(`saveStatus.phase === 'saved'`)이 끝난 직후, 방금 저장한 게 실제로
-   * 서버에서 다시 읽힐 때까지 확인한다. 화면에 보이는 데이터는 이미 맞지만,
-   * 이 확인이 끝나기 전에 다른 사람이 새로고침하면 아직 예시 데이터를 볼 수
-   * 있다 - 그래서 몇 번 재시도해서 실제로 반영됐는지 확인하고, 오래 걸리면
-   * 조용히 넘어가지 않고 화면에 알려준다.
-   */
-  useEffect(() => {
-    if (saveStatus.phase !== 'saved') return
-    let cancelled = false
-    const expectedRows = saveStatus.meta.imported_rows
-
-    async function verify() {
-      for (let attempt = 0; attempt < 6; attempt += 1) {
-        if (cancelled) return
-        await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 700 : 2000))
-        if (cancelled) return
-        try {
-          const result = await fetchStoredDataset()
-          if (cancelled) return
-          if (result.products && result.products.length === expectedRows) {
-            setProducts(result.products)
-            setSource('db')
-            setDatasetMeta(result.meta)
-            setProvenance(result.meta?.provenance ?? null)
-            setVerifyNote(null)
-            return
-          }
-        } catch {
-          // 재시도로 넘어간다 - 마지막에도 실패하면 아래에서 알린다.
-        }
-      }
-      if (!cancelled) {
-        setVerifyNote(
-          '저장은 완료됐지만, 서버에서 다시 불러오는 데 예상보다 오래 걸리고 있습니다. 잠시 후 새로고침해서 확인해 주세요.',
-        )
-      }
-    }
-
-    verify()
-    return () => {
-      cancelled = true
-    }
-  }, [saveStatus])
+  // Refresh only reference data. Filters, selected reference IDs and unsaved formula sheets survive.
+  const refreshDataset = useCallback(async () => {
+    const result = await fetchStoredDataset()
+    if (result.error || !result.products || !result.meta) throw new Error('업데이트된 자료를 불러오지 못했습니다.')
+    setProducts(result.products)
+    setSource('db')
+    setDatasetMeta(result.meta)
+    setProvenance(result.meta.provenance ?? null)
+  }, [])
 
   const options = useMemo(
     () => ({
@@ -426,13 +375,10 @@ function LoadedConsultingWorkspace({
             markers={markers}
             savedSearches={<SavedSearches current={{ filters, rdaProfile, generation: datasetMeta?.generation ?? null, resultCount: filtered.length }} onRestore={restoreSaved} onNotice={setSavedNotice} />}
             importer={
-              <DatasetImporter
-                status={status}
-                saveStatus={saveStatus}
-                verifyNote={verifyNote}
-                source={source}
+              <DatasetSyncPanel
                 productCount={products.length}
-                onFile={importFile}
+                generation={datasetMeta?.generation ?? null}
+                onRefresh={refreshDataset}
               />
             }
           />

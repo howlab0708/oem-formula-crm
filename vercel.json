@@ -1,6 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [{ "path": "/api/cron/mfds", "schedule": "0 13 * * *" }],
   "functions": {
+    "src/app/api/products/sync/route.ts": { "regions": ["icn1"] },
+    "src/app/api/cron/mfds/route.ts": { "regions": ["icn1"] },
     "src/app/api/ingredient-provenance/route.ts": {
       "regions": ["icn1"]
     },

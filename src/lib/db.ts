@@ -154,7 +154,7 @@ async function ensureSchema(): Promise<void> {
 }
 
 /** 스키마 생성은 서버리스 인스턴스당 한 번만 - 매 요청마다 확인하지 않는다. */
-async function withSchema() {
+export async function withSchema() {
   if (!schemaReady) schemaReady = ensureSchema()
   await schemaReady
   return getSql()
@@ -177,12 +177,18 @@ export type ImportStatusRow = {
  */
 export async function startImport(fileName: string, totalRows: number, provenance: DatasetProvenance | null = null): Promise<string> {
   const sql = await withSchema()
-  await sql`delete from import_status where status = 'in_progress'`
   const generation = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-  await sql`
-    insert into import_status (generation, status, file_name, total_rows, provenance)
-    values (${generation}, 'in_progress', ${fileName}, ${totalRows}, ${provenance ? sql.json(provenance) : null})
-  `
+  await sql.begin(async tx => {
+    await tx`select pg_advisory_xact_lock(734003, 1)`
+    if (process.env.MFDS_SYNC_ENABLED === '1' || (await tx`select 1 from import_status where status = 'sync_staging'`).length) {
+      throw new Error('식약처 자동 연동 중에는 CSV로 교체할 수 없습니다.')
+    }
+    await tx`delete from import_status where status = 'in_progress'`
+    await tx`
+      insert into import_status (generation, status, file_name, total_rows, provenance)
+      values (${generation}, 'in_progress', ${fileName}, ${totalRows}, ${provenance ? tx.json(provenance) : null})
+    `
+  })
   return generation
 }
 
@@ -194,30 +200,34 @@ export async function insertBatch(
 ): Promise<void> {
   if (products.length === 0) return
   const sql = await withSchema()
-  const rows = products.map((product, index) => ({
-    id: product.id,
-    generation,
-    seq: seqOffset + index,
-    payload: sql.json(product),
-  }))
-  await sql`insert into products ${sql(rows, 'id', 'generation', 'seq', 'payload')}`
-  await sql`
-    update import_status set imported_rows = imported_rows + ${products.length}
-    where generation = ${generation}
-  `
+  await sql.begin(async tx => {
+    await tx`select pg_advisory_xact_lock(734003, 1)`
+    if (process.env.MFDS_SYNC_ENABLED === '1' || !(await tx`select 1 from import_status where generation=${generation} and status='in_progress'`).length) {
+      throw new Error('CSV 적재 중인 데이터에만 추가할 수 있습니다.')
+    }
+    const rows = products.map((product, index) => ({ id: product.id, generation, seq: seqOffset + index, payload: tx.json(product) }))
+    await tx`insert into products ${tx(rows, 'id', 'generation', 'seq', 'payload')}`
+    await tx`update import_status set imported_rows = imported_rows + ${products.length} where generation = ${generation}`
+  })
 }
 
 /** 적재를 마무리한다. 이 세대만 `complete` 로 표시하고 나머지는 지운다(연쇄삭제로 상품행도 함께). */
 export async function finishImport(generation: string): Promise<ImportStatusRow> {
   const sql = await withSchema()
-  const [status] = await sql<ImportStatusRow[]>`
-    update import_status set status = 'complete', finished_at = now()
-    where generation = ${generation}
-    returning generation, status, file_name, total_rows, imported_rows, started_at::text, finished_at::text, provenance
-  `
-  if (!status) throw new Error('알 수 없는 세대입니다. 처음부터 다시 업로드해 주세요.')
-  await sql`delete from import_status where generation <> ${generation}`
-  return status
+  return sql.begin(async tx => {
+    await tx`select pg_advisory_xact_lock(734003, 1)`
+    if (process.env.MFDS_SYNC_ENABLED === '1' || (await tx`select 1 from import_status where status = 'sync_staging'`).length) {
+      throw new Error('식약처 자동 연동 중에는 CSV로 교체할 수 없습니다.')
+    }
+    const [status] = await tx<ImportStatusRow[]>`
+      update import_status set status = 'complete', finished_at = now()
+      where generation = ${generation} and status = 'in_progress' and imported_rows = total_rows
+      returning generation, status, file_name, total_rows, imported_rows, started_at::text, finished_at::text, provenance
+    `
+    if (!status) throw new Error('적재가 완료되지 않았습니다. 처음부터 다시 업로드해 주세요.')
+    await tx`delete from import_status where generation <> ${generation}`
+    return status
+  }) as Promise<ImportStatusRow>
 }
 
 export type ActiveDataset = {

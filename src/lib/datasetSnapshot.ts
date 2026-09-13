@@ -1,13 +1,13 @@
 import type { DatasetMeta } from './api/products'
 import type { FormType, Product } from './types'
 
-export const SNAPSHOT_VERSION = 3
+export const SNAPSHOT_VERSION = 4
 export const SNAPSHOT_FORMAT = `snapshot-v${SNAPSHOT_VERSION}`
 
 type PackedProduct = [
   number, number, number, number, number, number, number | null,
   number[], number, [number, number, number, number | null, number][],
-  number[], number, number, number, number, [] | [number | null], number,
+  number[], number, number, number, number, [] | [number | null], number, number, number,
 ]
 
 export type DatasetSnapshot = {
@@ -43,6 +43,7 @@ export function packSnapshot(meta: DatasetMeta, products: Product[]): DatasetSna
       p.subIngredients.map(intern), intern(p.reportNo), intern(p.reportedAt), intern(p.primaryFunction),
       intern(p.intakeMethod), p.unitWeightMg === undefined ? [] : [p.unitWeightMg],
       intern(p.brand),
+      intern(p.licenseNo), intern(p.sourceUpdatedAt),
     ]),
   }
 }
@@ -65,7 +66,7 @@ export function unpackSnapshot(snapshot: DatasetSnapshot, expected: DatasetMeta)
     return value
   }
   return snapshot.products.map((row): Product => {
-    if (!Array.isArray(row) || row.length !== 17) {
+    if (!Array.isArray(row) || row.length !== 19) {
       throw new Error('저장된 데이터 형식을 읽지 못했습니다.')
     }
     return {
@@ -80,6 +81,8 @@ export function unpackSnapshot(snapshot: DatasetSnapshot, expected: DatasetMeta)
       ...(row[14] === -1 ? {} : { intakeMethod: text(row[14]) }),
       ...(row[15].length === 0 ? {} : { unitWeightMg: row[15][0] }),
       ...(row[16] === -1 ? {} : { brand: text(row[16]) }),
+      ...(row[17] === -1 ? {} : { licenseNo: text(row[17]) }),
+      ...(row[18] === -1 ? {} : { sourceUpdatedAt: text(row[18]) }),
     }
   })
 }

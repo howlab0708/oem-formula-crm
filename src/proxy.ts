@@ -9,7 +9,8 @@ import { AUTH_COOKIE, safeEqual, tokenFor } from '@/lib/auth'
  * 사이 공개돼 있는 상황이 가장 나쁘다. 로컬 개발에서는 변수 없이 그냥 쓴다.
  */
 
-const PUBLIC_PATHS = new Set(['/login', '/api/login'])
+// This exact cron route validates its own bearer secret; it does not use browser cookies.
+const PUBLIC_PATHS = new Set(['/login', '/api/login', '/api/cron/mfds'])
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
