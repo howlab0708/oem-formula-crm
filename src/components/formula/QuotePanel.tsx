@@ -11,6 +11,7 @@
 
 import { useId } from 'react'
 import { applyRounding, formatWon, formatWonDecimal, num, overheadBaseOf } from '@/lib/formulaDesign/calc'
+import { VAT_RATE } from '@/lib/formulaDesign/vat'
 import type { Tier, Totals } from '@/lib/formulaDesign/calc'
 import type { SheetAction } from '@/lib/formulaDesign/reducer'
 import type {
@@ -81,8 +82,8 @@ const recipePatch = (recipe: Recipe): Partial<OverheadRow> => ({
 
 const ROUND_UNITS = ['1', '10', '100', '1000']
 const ROUND_MODES: { value: RoundMode; label: string }[] = [
-  { value: 'round', label: '반올림' },
   { value: 'floor', label: '내림(절사)' },
+  { value: 'round', label: '반올림' },
   { value: 'ceil', label: '올림' },
 ]
 
@@ -206,24 +207,16 @@ export function QuotePanel({ quote, totals, tiers, dispatch }: Props) {
         <fieldset className="min-w-0 border-t border-line px-3 py-4">
           <legend className="text-[14px] font-semibold text-ink">부가세·재고비·단가 설정</legend>
           <div className="mt-2 grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1.35fr]">
-            <label className="block h-full min-w-0 rounded-md border border-line bg-surface-sunken/50 p-3">
-              <span className="block text-[13px] font-medium leading-5 text-ink">부가세율</span>
-              <span className="relative mt-2 block">
-                <input
-                  value={quote.vatRate}
-                  inputMode="decimal"
-                  aria-label="부가세율(%)"
-                  aria-describedby={`${settingsId}-vat-hint`}
-                  onChange={(event) => setQuote('vatRate', event.target.value)}
-                  className={`${fieldClass} h-10 w-full pr-8 text-right tnum`}
-                />
-                <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[13px] text-ink-2">%</span>
-              </span>
-              <span id={`${settingsId}-vat-hint`} className="mt-2 block text-[12px] leading-5 text-ink-2">
-                견적 합계에 더할 세율입니다.
-                <span className="block text-ink-3">0%이면 부가세를 더하지 않습니다.</span>
-              </span>
-            </label>
+            <div className="h-full min-w-0 rounded-md border border-line bg-surface-sunken/50 p-3">
+              <span className="block text-[13px] font-medium leading-5 text-ink">부가세(VAT)</span>
+              <div className="mt-2 flex h-10 items-center justify-between rounded-md bg-surface-sunken px-3">
+                <strong className="text-[16px] font-semibold text-ink tnum">{VAT_RATE}%</strong>
+                <span className="text-[12px] text-ink-2">고정</span>
+              </div>
+              <p className="mt-2 text-[12px] leading-5 text-ink-2">
+                견적서 내보내기에서<br />VAT 포함·미포함을 선택합니다.
+              </p>
+            </div>
             <label className="block h-full min-w-0 rounded-md border border-line bg-surface-sunken/50 p-3">
               <span className="block text-[13px] font-medium leading-5 text-ink">재고비 추가율</span>
               <span className="relative mt-2 block">

@@ -8,7 +8,7 @@
  * 청구 항목. 무엇이 들어가는지 미리보기로 눌러 확인한 뒤 내보내도록 했다.
  */
 
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useId, useState, useSyncExternalStore } from 'react'
 import { downloadPagesAsPdf } from '@/lib/export/download'
 import { loadStoredLogo, subscribeLogo } from '@/lib/export/logo'
 import { hasIssuer, loadStoredIssuer, subscribeIssuer } from '@/lib/export/issuer'
@@ -17,6 +17,7 @@ import { DocumentIdentity } from '@/components/DocumentIdentity'
 import { renderFormulaSheetPages, type SheetExportOptions } from '@/lib/export/renderFormulaSheet'
 import type { Tier, Totals } from '@/lib/formulaDesign/calc'
 import type { FormulaSheet } from '@/lib/formulaDesign/types'
+import { VAT_RATE, vatDisplayLabel, type VatDisplay } from '@/lib/formulaDesign/vat'
 
 const buttonClass =
   'rounded-md border border-line bg-surface px-3 py-2 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surface-sunken disabled:opacity-50'
@@ -24,7 +25,7 @@ const primaryClass =
   'rounded-md bg-accent px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50'
 
 const TOGGLES: { key: 'showPrice' | 'showExtras' | 'showTiers' | 'showIssuer' | 'showProvenance'; label: string; hint: string }[] = [
-  { key: 'showPrice', label: '견적 금액', hint: '최종 단가·합계·결제 금액' },
+  { key: 'showPrice', label: '견적 금액', hint: '선택한 VAT 기준의 단가·합계' },
   { key: 'showTiers', label: '수량 구간별 단가', hint: '1,000 / 3,000 / 5,000set 비교' },
   { key: 'showExtras', label: '별도 청구 항목', hint: '초도 1회성 비용' },
   { key: 'showIssuer', label: '공급자 정보 · 직인', hint: '오른쪽 위 공급자 칸' },
@@ -46,6 +47,8 @@ type Props = {
 }
 
 export function SheetExportPanel({ sheet, totals, tiers, options, onOptionsChange }: Props) {
+  const vatGroupId = useId()
+  const vatDisplay = options.vatDisplay === 'included' ? 'included' : 'excluded'
   const [busy, setBusy] = useState<'pdf' | 'preview' | null>(null)
   const [message, setMessage] = useState('')
   const [preview, setPreview] = useState<string[] | null>(null)
@@ -68,7 +71,7 @@ export function SheetExportPanel({ sheet, totals, tiers, options, onOptionsChang
     try {
       const pages = await render()
       if (kind === 'pdf') {
-        await downloadPagesAsPdf(pages, `${fileStem(sheet)}.pdf`)
+        await downloadPagesAsPdf(pages, `${fileStem(sheet)}_VAT${vatDisplay === 'included' ? '포함' : '미포함'}.pdf`)
         setMessage(`배합 제안서 PDF(${pages.length}쪽)를 저장했습니다.`)
       } else {
         setPreview(pages.map((page) => page.toDataURL('image/png')))
@@ -89,7 +92,7 @@ export function SheetExportPanel({ sheet, totals, tiers, options, onOptionsChang
             고객 배포용 PDF
           </h3>
           <p className="mt-0.5 text-[12px] text-ink-3">
-            제품 규격 · 구성 및 포장지 · 최종 배합표와 선택한 참고 원료 출처를 담습니다. 원료단가·금액·간접비·공급가는 들어가지 않습니다.
+            제품 규격 · 제품구성 · 최종 배합표와 선택한 참고 원료 출처를 담습니다. 원료단가·금액·간접비·공급가는 들어가지 않습니다.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -110,6 +113,28 @@ export function SheetExportPanel({ sheet, totals, tiers, options, onOptionsChang
           </button>
         </div>
       </div>
+
+      <fieldset className="mt-4 rounded-md border border-line bg-surface-sunken/50 px-3 pb-3 pt-2" disabled={busy !== null}>
+        <legend className="px-1 text-[13px] font-semibold text-ink">견적서 금액 표시 · VAT {VAT_RATE}% 고정</legend>
+        <div className="flex flex-wrap gap-2">
+          {(['excluded', 'included'] as VatDisplay[]).map((mode) => (
+            <label key={mode} className={`flex min-h-10 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-[13px] font-medium transition-colors ${vatDisplay === mode
+              ? 'border-accent bg-accent-soft text-accent-strong'
+              : 'border-line-strong bg-surface text-ink-2 hover:bg-surface-sunken'}`}>
+              <input type="radio" name={vatGroupId} value={mode} checked={vatDisplay === mode}
+                aria-describedby={`${vatGroupId}-hint`}
+                onChange={() => {
+                  onOptionsChange({ ...options, vatDisplay: mode })
+                  setPreview(null)
+                }} className="accent-accent" />
+              {vatDisplayLabel(mode)}
+            </label>
+          ))}
+        </div>
+        <p id={`${vatGroupId}-hint`} className="mt-2 text-[12px] leading-5 text-ink-2">
+          견적 금액·수량별 단가·별도 청구 금액을 선택한 기준으로 표시합니다. 미리보기와 저장 PDF에 동일하게 적용됩니다.
+        </p>
+      </fieldset>
 
       <div className="mt-3 flex flex-wrap items-end gap-4">
         <label className="block">

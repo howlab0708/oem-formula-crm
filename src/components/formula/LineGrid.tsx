@@ -11,7 +11,8 @@
  * 손으로 다시 적지 않아도 된다. 엑셀에서 매번 고쳐야 했던 칸이다.
  */
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
+import { Modal } from '@/components/Modal'
 import { formatMaterialQuantity, formatWon } from '@/lib/formulaDesign/calc'
 import type { LineCalc } from '@/lib/formulaDesign/calc'
 import { LINE_PASTE_KEYS, parseClipboardMatrix, type LineBlock, type SheetAction } from '@/lib/formulaDesign/reducer'
@@ -42,6 +43,9 @@ type Props = {
 
 export function LineGrid({ title, block, rows, calcs, total, excluded, itemLabel, dispatch }: Props) {
   const gridRef = useRef<HTMLTableElement>(null)
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const isAnalysis = block === 'analysisItems'
+  const removing = calcs.find((item) => item.row.id === removingId)
   const patch = (id: string, next: Partial<LineRow>) => dispatch({ type: 'line', block, id, patch: next })
 
   return (
@@ -83,7 +87,7 @@ export function LineGrid({ title, block, rows, calcs, total, excluded, itemLabel
               <th scope="col" className={`${headClass} w-28`}>금액(원)</th>
               <th scope="col" className={`${headClass} min-w-[9rem] text-left`}>비고</th>
               <th scope="col" className={`${headClass} w-20`}>견적 포함</th>
-              <th scope="col" className={`${headClass} w-10`} aria-label="줄 삭제" />
+              <th scope="col" className={`${headClass} ${isAnalysis ? 'w-16' : 'w-10'}`} aria-label="줄 삭제" />
             </tr>
           </thead>
           <tbody>
@@ -205,14 +209,17 @@ export function LineGrid({ title, block, rows, calcs, total, excluded, itemLabel
                       title="끄면 금액이 소계에서 빠지고 고객용 PDF 의 ‘별도 청구 항목’ 으로 옮겨집니다."
                     />
                   </td>
-                  <td className="px-1 py-1 text-center">
+                  <td className="whitespace-nowrap px-1 py-1 text-center">
                     <button
                       type="button"
-                      onClick={() => dispatch({ type: 'remove', block, id: row.id })}
+                      onClick={() => isAnalysis ? setRemovingId(row.id) : dispatch({ type: 'remove', block, id: row.id })}
                       aria-label={`${rowIndex + 1}번째 항목 삭제`}
-                      className="rounded px-1.5 py-1 text-[12px] text-ink-3 transition-colors hover:bg-danger-soft hover:text-danger"
+                      aria-haspopup={isAnalysis ? 'dialog' : undefined}
+                      className={isAnalysis
+                        ? 'rounded-md border border-line-strong bg-surface px-2.5 py-1.5 text-[12px] font-medium text-ink-2 transition-colors hover:border-danger hover:bg-danger-soft hover:text-danger'
+                        : 'rounded px-1.5 py-1 text-[12px] text-ink-3 transition-colors hover:bg-danger-soft hover:text-danger'}
                     >
-                      ✕
+                      {isAnalysis ? '삭제' : '✕'}
                     </button>
                   </td>
                 </tr>
@@ -228,6 +235,39 @@ export function LineGrid({ title, block, rows, calcs, total, excluded, itemLabel
           </tbody>
         </table>
       </div>
+      {removing ? (
+        <Modal
+          title="분석비·초도비용 삭제 확인"
+          onClose={() => setRemovingId(null)}
+          footer={
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setRemovingId(null)}
+                className="rounded-md border border-line-strong px-4 py-2 text-[14px] text-ink-2 hover:bg-surface-sunken">
+                취소
+              </button>
+              <button type="button" onClick={() => {
+                dispatch({ type: 'remove', block, id: removing.row.id })
+                setRemovingId(null)
+              }} className="rounded-md border border-danger bg-danger px-4 py-2 text-[14px] font-semibold text-white hover:opacity-90">
+                항목 삭제
+              </button>
+            </div>
+          }
+        >
+          <p className="text-[14px] leading-6 text-ink">이 항목을 견적에서 삭제하시겠습니까?</p>
+          <div className="mt-3 rounded-lg border border-line bg-surface-sunken p-4">
+            <p className="font-semibold text-ink keep-all">
+              {removing.row.label || `${calcs.indexOf(removing) + 1}번째 항목 (이름 미입력)`}
+            </p>
+            <p className="mt-1 text-[13px] text-ink-2">
+              {formatWon(removing.amount)}원 · {removing.row.included ? '견적 포함' : '별도 청구'}
+            </p>
+          </div>
+          <p className="mt-3 text-[13px] leading-5 text-ink-2">
+            이 행의 입력 내용이 삭제되고 소계와 별도 청구 금액이 다시 계산됩니다.
+          </p>
+        </Modal>
+      ) : null}
     </section>
   )
 }

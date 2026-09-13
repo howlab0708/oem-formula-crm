@@ -223,7 +223,7 @@ function overheadRow(value: unknown, index: number): OverheadRow {
 }
 
 function roundMode(value: unknown): RoundMode {
-  return value === 'floor' || value === 'ceil' ? value : 'round'
+  return value === 'round' || value === 'ceil' ? value : 'floor'
 }
 
 /**
@@ -257,7 +257,7 @@ function quote(value: unknown): QuoteSettings {
   const row = record(value, '견적 설정')
   return {
     overheads: list(row.overheads, '간접비', MAX_LINE_ROWS).map(overheadRow),
-    vatRate: numeric(row.vatRate, '부가세율'),
+    vatRate: '10',
     stockRate: numeric(row.stockRate, '재고비율'),
     roundUnit: numeric(row.roundUnit, '단가 절사 단위') || '1',
     roundMode: roundMode(row.roundMode),

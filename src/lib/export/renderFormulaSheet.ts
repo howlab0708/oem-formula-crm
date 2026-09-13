@@ -18,6 +18,7 @@
 import { formatMaterialQuantity, formatWon, num, packageLabel, unitNoun } from '../formulaDesign/calc'
 import type { Tier, Totals } from '../formulaDesign/calc'
 import type { FormulaSheet } from '../formulaDesign/types'
+import { exportConditions, extraAmountWithVat, vatDisplayLabel, type VatDisplay } from '../formulaDesign/vat'
 import { currentProvenance, hasProvenance, originLabel, type IngredientProvenance } from '../ingredientProvenance'
 import { hasIssuer, type Issuer } from './issuer'
 import { loadExportImage } from './loadImage'
@@ -53,6 +54,8 @@ export type SheetExportOptions = {
   showIssuer: boolean
   /** 참고 제품의 원료 출처. 실제 발주 원료로 확정된 정보가 아니다. */
   showProvenance?: boolean
+  /** 견적·수량별 단가·별도 청구 금액의 VAT 표시 기준. 과거 옵션은 미포함으로 연다. */
+  vatDisplay?: VatDisplay
   /** 문서 제목 */
   title: string
 }
@@ -65,6 +68,7 @@ export const DEFAULT_SHEET_EXPORT: SheetExportOptions = {
   showTiers: true,
   showIssuer: true,
   showProvenance: true,
+  vatDisplay: 'excluded',
   title: '배합 제안서',
 }
 
@@ -363,6 +367,9 @@ export async function renderFormulaSheetPages(
   if (typeof document !== 'undefined' && 'fonts' in document) await document.fonts.ready
 
   const spec = sheet.spec
+  const vatDisplay = options.vatDisplay === 'included' ? 'included' : 'excluded'
+  const vatIncluded = vatDisplay === 'included'
+  const vatLabel = vatDisplayLabel(vatDisplay)
   const noun = unitNoun(spec.form)
   const page = new Sheet()
   await drawHeader(page, spec, options)
@@ -379,10 +386,10 @@ export async function renderFormulaSheetPages(
     ['발주 수량', totals.setCount > 0 ? `${totals.setCount.toLocaleString('ko-KR')} set (총 ${totals.totalUnits.toLocaleString('ko-KR')}${noun})` : ''],
   ])
 
-  // ── 구성 및 포장지 ──────────────────────────────────────────
+  // ── 제품구성 ───────────────────────────────────────────────
   const functional = totals.materials.filter((item) => item.row.functional)
   if (functional.length) {
-    sectionTitle(page, '구성 및 포장지')
+    sectionTitle(page, '제품구성')
     const columns: Column[] = [
       { label: '기능성원료', width: 210 },
       { label: '일일섭취기준', width: 190 },
@@ -438,12 +445,12 @@ export async function renderFormulaSheetPages(
 
   // ── 견적 금액 ───────────────────────────────────────────────
   if (options.showPrice) {
-    sectionTitle(page, '견적 금액')
+    sectionTitle(page, `견적 금액 · ${vatLabel}`)
     const columns: Column[] = [
       { label: '구분', width: 300 },
       { label: '수량 (set)', width: 200, align: 'right' },
       { label: '단가 (원)', width: 200, align: 'right' },
-      { label: '금액 (VAT 별도)', width: CONTENT - 700, align: 'right' },
+      { label: '금액 (원)', width: CONTENT - 700, align: 'right' },
     ]
     tableHead(page, columns)
     tableRow(
@@ -452,39 +459,36 @@ export async function renderFormulaSheetPages(
       [
         [spec.productName || '제품', packageLabel(spec)].filter(Boolean).join(' '),
         totals.setCount.toLocaleString('ko-KR'),
-        formatWon(totals.unitPrice),
-        formatWon(totals.quoteTotal),
+        formatWon(vatIncluded ? totals.proposalPerSet : totals.unitPrice),
+        formatWon(vatIncluded ? totals.proposalTotal : totals.quoteTotal),
       ],
       true,
     )
-    // 제안가는 절사 전 공급가에 부가세를 걸어 구하므로(견적서와 같은 방식) 절사한 단가에
-    // 10% 를 곱한 값과 몇 원 어긋날 수 있다. 고객에게 보내는 표는 세 줄이 서로 맞아야
-    // 하니 부가세를 제안가에서 되짚어 적는다.
-    tableRow(page, columns, ['부가세', '', '', formatWon(totals.proposalTotal - totals.quoteTotal)])
+    // 포함 금액은 기존 공장 견적서와 동일하게 절사 전 공급가에 VAT를 적용한 제안가다.
     tableRow(
       page,
       columns,
-      ['결제 금액 (VAT 포함)', '', formatWon(totals.proposalPerSet), formatWon(totals.proposalTotal)],
+      ['견적 합계', '', '', formatWon(vatIncluded ? totals.proposalTotal : totals.quoteTotal)],
       true,
     )
 
     if (options.showTiers && tiers.length > 1) {
       page.y += 14
       page.space(60)
-      page.text('수량 구간별 단가', MARGIN, 13, 600, INK_2)
+      page.text(`수량 구간별 단가 · ${vatLabel}`, MARGIN, 13, 600, INK_2)
       page.y += 6
       const tierColumns: Column[] = [
         { label: '수량 (set)', width: 220, align: 'right' },
         { label: '단가 (원)', width: 220, align: 'right' },
-        { label: '금액 (VAT 별도)', width: 260, align: 'right' },
+        { label: '금액 (원)', width: 260, align: 'right' },
         { label: '비고', width: CONTENT - 700 },
       ]
       tableHead(page, tierColumns)
       for (const tier of tiers) {
         tableRow(page, tierColumns, [
           tier.setCount.toLocaleString('ko-KR'),
-          formatWon(tier.unitPrice),
-          formatWon(tier.quoteTotal),
+          formatWon(vatIncluded ? tier.proposalPerSet : tier.unitPrice),
+          formatWon(vatIncluded ? tier.proposalPerSet * tier.setCount : tier.quoteTotal),
           tier.row.note,
         ])
       }
@@ -497,7 +501,7 @@ export async function renderFormulaSheetPages(
       (item) => !item.counted && item.row.label.trim(),
     )
     if (extras.length) {
-      sectionTitle(page, '별도 청구 항목 (초도 1회성 비용)')
+      sectionTitle(page, `별도 청구 항목 (초도 1회성 비용) · ${vatLabel}`)
       const columns: Column[] = [
         { label: '항목', width: 340 },
         { label: '수량', width: 160, align: 'right' },
@@ -509,7 +513,7 @@ export async function renderFormulaSheetPages(
         tableRow(page, columns, [
           item.row.label,
           `${item.quantity.toLocaleString('ko-KR')}${item.row.unit}`,
-          item.amount > 0 ? formatWon(item.amount) : '실비',
+          item.amount > 0 ? formatWon(extraAmountWithVat(item.amount, vatDisplay)) : '실비',
           item.row.note,
         ])
       }
@@ -517,10 +521,7 @@ export async function renderFormulaSheetPages(
   }
 
   // ── 견적 조건 ───────────────────────────────────────────────
-  const conditions = sheet.quote.conditions
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+  const conditions = exportConditions(sheet.quote.conditions, vatDisplay, options.showPrice || options.showExtras)
   if (conditions.length) {
     sectionTitle(page, '견적 조건')
     const ctx = page.ctx

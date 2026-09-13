@@ -4,7 +4,7 @@
  * 예시는 실제로 받은 공장 견적서 두 종의 *구조* 를 옮긴 것이다. 처음 쓰는 연구원이
  * 어느 칸에 무엇을 넣는지, 공장마다 무엇이 다른지 바로 보게 하는 용도다.
  *
- *   tablet  정제 · 800mg×60정 · 1,000set · Loss 10% · 원 단위 반올림 · 간접비 가공비 연동
+ *   tablet  정제 · 800mg×60정 · 1,000set · Loss 10% · 원 단위 내림 · 간접비 가공비 연동
  *   compact 정제 · 800mg×30정 · 3,000set · Loss 5%  · 10원 절사   · 품질관리비 별도 항목
  *
  * 원료단가·가공비·간접비는 대표값이다. 이 저장소가 공개라서 공장에서 받은 실제
@@ -145,7 +145,7 @@ export function emptySheet(): FormulaSheet {
       vatRate: '10',
       stockRate: '',
       roundUnit: '1',
-      roundMode: 'round',
+      roundMode: 'floor',
       tiers: [],
       conditions: DEFAULT_CONDITIONS,
     },
@@ -263,7 +263,7 @@ export function tabletSheet(): FormulaSheet {
       vatRate: '10',
       stockRate: '',
       roundUnit: '1',
-      roundMode: 'round',
+      roundMode: 'floor',
       // 대량 발주 할인은 공장이 단가를 낮춰 주는 것이라 구간마다 직접 받는다.
       // 아래 할인율은 칸을 어떻게 쓰는지 보여 주는 예시값이고 실제 협상값이 아니다.
       tiers: [

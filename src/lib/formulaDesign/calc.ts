@@ -22,6 +22,7 @@
  * 단가·마진은 이 저장소가 공개라 담지 않고, git 에서 제외한 로컬 파일로 둔다.
  */
 
+import { VAT_RATE } from './vat'
 import type {
   FormulaSheet,
   LineRow,
@@ -342,12 +343,12 @@ export function calculate(sheet: FormulaSheet, setCountOverride?: number, discou
   const roundUnit = num(quote.roundUnit) || 1
   const unitPrice = applyRounding(supplyPerSet, roundUnit, quote.roundMode)
   const quoteTotal = unitPrice * setCount
-  const vatTotal = (quoteTotal * num(quote.vatRate)) / 100
+  const vatTotal = (quoteTotal * VAT_RATE) / 100
   // 제안가는 절사 전 set당 공급가에 부가세를 더해 절사한다. 같은 제품 견적서의 개정판
   // 세 장을 모두 맞추는 방식이 이것뿐이다 - 절사한 최종 단가에 부가세를 곱하면 그중
   // 한 장에서 1원 어긋난다. 대조는 `scripts/verify-formula-calc.mjs` 가 한다.
   const proposalPerSet = applyRounding(
-    supplyPerSet * (1 + num(quote.vatRate) / 100),
+    supplyPerSet * (1 + VAT_RATE / 100),
     roundUnit,
     quote.roundMode,
   )

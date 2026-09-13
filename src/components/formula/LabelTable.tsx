@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * 구성 및 포장지 표. 엑셀 견적서 맨 아래 블록이자 고객용 PDF 의 본문이다.
+ * 제품구성 표. 엑셀 견적서 맨 아래 블록이자 고객용 PDF 의 본문이다.
  *
  * 여기서 표시량을 정하고 **배합비율을 역산**한다. 연구원의 실제 작업 순서가 그 방향이다 -
  * "비타민B1을 1.2mg 표시하려면 몇 % 넣어야 하나"가 질문이고, 배합비율은 그 답이다.
@@ -44,7 +44,7 @@ export function LabelTable({ materials, intakeGuide, unitWeightMg, dispatch }: P
     <section aria-labelledby="label-table-title" className="rounded-lg border border-line bg-surface">
       <header className="border-b border-line px-3 py-2">
         <h3 id="label-table-title" className="text-[14px] font-semibold text-ink">
-          구성 및 포장지
+          제품구성
         </h3>
         <p className="text-[12px] text-ink-3">
           {intakeGuide ? `${intakeGuide} · ` : ''}

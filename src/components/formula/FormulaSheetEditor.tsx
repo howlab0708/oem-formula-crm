@@ -5,7 +5,7 @@
  *
  * 화면 순서를 공장 견적서와 같게 뒀다. 위에서 아래로 읽으면 엑셀 한 장을 그대로
  * 훑는 순서가 된다 - 포장 단위 → 원료비 → 부자재비 → 가공비 → 분석비 → 간접비·요약
- * → 구성 및 포장지.
+ * → 제품구성.
  *
  * 계산은 전부 `calculate()` 한 번으로 끝난다. 셀을 고치면 시트가 바뀌고, 시트가
  * 바뀌면 모든 표의 숫자가 같은 계산 결과에서 다시 나온다. 엑셀에서 수식이 끊겨
@@ -77,7 +77,7 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
   const [noteId, setNoteId] = useState(initialDraft.noteId)
   const [saved, setSaved] = useState<Saved>(initialDraft.saved)
   const [dirty, setDirty] = useState(initialDraft.dirty)
-  const [exportOptions, setExportOptions] = useState(() => initialDraft.exportOptions ?? { ...DEFAULT_SHEET_EXPORT })
+  const [exportOptions, setExportOptions] = useState(() => ({ ...DEFAULT_SHEET_EXPORT, ...initialDraft.exportOptions }))
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(initialDraft.reference ? '제품의 원료와 규격을 새 시트로 가져왔습니다.' : '')
   const [error, setError] = useState('')

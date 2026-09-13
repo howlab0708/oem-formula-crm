@@ -25,7 +25,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { createRequire } from 'node:module'
 
 const FIXTURE = 'fixtures/factory-quotes.local.json'
 const out = mkdtempSync(join(tmpdir(), 'oem-calc-'))
@@ -41,8 +41,8 @@ try {
       '--rootDir', 'src',
       '--outDir', out,
       '--target', 'es2022',
-      '--module', 'esnext',
-      '--moduleResolution', 'bundler',
+      '--module', 'commonjs',
+      '--moduleResolution', 'node',
       '--skipLibCheck',
     ],
     { stdio: ['ignore', 'ignore', 'inherit'] },
@@ -54,8 +54,9 @@ try {
 
 // 원료 출처 타입의 의존 파일까지 컴파일되므로 src 기준의 디렉터리 구조를 명시한다.
 const compiledFormula = join(out, 'lib', 'formulaDesign')
-const { calculate, calculateTiers, packageLabel, num } = await import(pathToFileURL(join(compiledFormula, 'calc.js')).href)
-const { tabletSheet, compactSheet } = await import(pathToFileURL(join(compiledFormula, 'preset.js')).href)
+const loadCompiled = createRequire(import.meta.url)
+const { calculate, calculateTiers, packageLabel, num } = loadCompiled(join(compiledFormula, 'calc.js'))
+const { tabletSheet, compactSheet } = loadCompiled(join(compiledFormula, 'preset.js'))
 
 const round = (value) => Math.round(value)
 const fixed = (value, digits) => Number(value.toFixed(digits))
@@ -107,7 +108,7 @@ function verifyIdentities(group, sheet) {
   const mode = sheet.quote.roundMode
   const step = (value) =>
     (mode === 'floor' ? Math.floor(value / unit) : mode === 'ceil' ? Math.ceil(value / unit) : Math.round(value / unit)) * unit
-  check(group, '제안가 = 절사 전 set당 공급가 + 부가세', t.proposalPerSet, step(t.supplyPerSet * (1 + num(sheet.quote.vatRate) / 100)))
+  check(group, '제안가 = 절사 전 set당 공급가 + 부가세 10%', t.proposalPerSet, step(t.supplyPerSet * 1.1))
   check(group, '제안가 합계 = 제안가 × 수량', t.proposalTotal, t.proposalPerSet * num(spec.setCount))
   check(group, '공급가 = 1~4 블록 + 재고비 + 간접비', round(t.supplyTotal), round(t.blockCost + t.stockCost + t.overheadCost))
   for (const item of t.overheads) {
@@ -149,8 +150,8 @@ function verifyIdentities(group, sheet) {
 const tablet = verifyIdentities('정제 60정', tabletSheet())
 const compact = verifyIdentities('정제 30정', compactSheet())
 
-// 절사 규칙이 실제로 다르게 동작하는지(원 단위 반올림 vs 10원 절사) 확인한다.
-check('절사', '원 단위 반올림 시트', tablet.totals.unitPrice % 1, 0)
+// 원 단위와 10원 단위의 절사 간격을 확인한다.
+check('절사', '원 단위 절사 시트', tablet.totals.unitPrice % 1, 0)
 check('절사', '10원 절사 시트', compact.totals.unitPrice % 10, 0)
 check('절사', '10원 절사는 올리지 않음', compact.totals.unitPrice <= compact.totals.supplyPerSet, true)
 

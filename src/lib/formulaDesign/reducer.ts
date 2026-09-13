@@ -123,13 +123,13 @@ function pasteInto<T extends { id: string }>(
 export function sheetReducer(state: FormulaSheet, action: SheetAction): FormulaSheet {
   switch (action.type) {
     case 'load':
-      return action.sheet
+      return { ...action.sheet, quote: { ...action.sheet.quote, vatRate: '10' } }
     case 'memo':
       return { ...state, memo: action.value }
     case 'spec':
       return { ...state, spec: { ...state.spec, [action.key]: action.value } }
     case 'quote':
-      return { ...state, quote: { ...state.quote, [action.key]: action.value } }
+      return { ...state, quote: { ...state.quote, [action.key]: action.value, vatRate: '10' } }
     case 'material': {
       const rows = replaceById(state.materials, action.id, materialPatch(action.patch))
       return { ...state, materials: rows.map((row) => row.id === action.id

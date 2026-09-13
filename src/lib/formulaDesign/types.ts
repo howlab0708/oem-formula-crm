@@ -190,7 +190,7 @@ export type QuoteTier = {
 /** 견적 마무리 설정. 간접비·부가세·최종 단가 절사·수량 구간. */
 export type QuoteSettings = {
   overheads: OverheadRow[]
-  /** 부가세율(%). 공급가는 VAT 별도이고 제안가는 이 비율을 더한 값이다. */
+  /** 저장 형식 호환용. 계산·저장은 10%로 고정하며 포함 여부는 내보내기에서 선택한다. */
   vatRate: string
   /**
    * 재고비(%). 공장 견적서 ‘포장단위당 견적금액’ 표에 있는 재고비 칸이다.
