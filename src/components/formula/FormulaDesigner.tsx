@@ -110,6 +110,6 @@ export default function FormulaDesigner({ referenceNames, initialProduct, editor
       <FormulaSheetEditor tabId={tab.id} active={tab.id === workspace.activeId}
       initialDraft={tab.initialDraft} referenceNames={referenceNames}
       editorRef={handle => { if (handle) editors.current.set(tab.id, handle); else editors.current.delete(tab.id) }}
-      onMetadata={updateMetadata} onNewSheet={newSheet} onOpenRecord={openRecord} onBackToReference={onBackToReference} /></div>)}
+      onMetadata={updateMetadata} onOpenRecord={openRecord} onBackToReference={onBackToReference} /></div>)}
   </>
 }

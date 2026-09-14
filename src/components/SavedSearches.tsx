@@ -21,6 +21,8 @@ export function SavedSearches({ current, onRestore, onNotice }: {
   const [name, setName] = useState(''), [scope, setScope] = useState<'private'|'team'>('private')
   const [busy, setBusy] = useState(false), [ready, setReady] = useState(false)
   const [message, setMessage] = useState(''), [open, setOpen] = useState(false)
+  // 목록을 못 불러온 사정은 한 줄로만 말한다. 조작 결과(`message`)와 섞어 두 번 쓰지 않는다.
+  const [loadError, setLoadError] = useState('')
   const [listOpen, setListOpen] = useState(false)
   const [selected, setSelected] = useState<SavedSearch | null>(null)
   const restoreRef = useRef(onRestore), noticeRef = useRef(onNotice)
@@ -58,9 +60,9 @@ export function SavedSearches({ current, onRestore, onNotice }: {
     }
     load().then(result => {
       if (cancelled) return
-      setItems(result.items); setHasMore(result.hasMore); setReady(true)
+      setItems(result.items); setHasMore(result.hasMore); setReady(true); setLoadError('')
       return loadLink()
-    }).catch(error => { if (!cancelled) { setMessage(error.message); if (new URL(window.location.href).searchParams.has('saved')) noticeRef.current(error.message) } })
+    }).catch(error => { if (!cancelled) { setLoadError(error.message); if (new URL(window.location.href).searchParams.has('saved')) noticeRef.current(error.message) } })
     window.addEventListener('popstate', loadLink)
     return () => { cancelled = true; window.removeEventListener('popstate', loadLink) }
   }, [refresh])
@@ -76,8 +78,8 @@ export function SavedSearches({ current, onRestore, onNotice }: {
     setSelected(null)
     setListOpen(false)
   }
-  return <section className="border-t border-line px-4 py-3 text-[13px]" aria-label="저장된 검색">
-    <div className="flex items-center justify-between gap-2"><h3 className="font-semibold text-ink">즐겨찾기</h3>
+  return <section className="text-[13px]" aria-label="저장된 검색">
+    <div className="flex items-center justify-between gap-2"><h3 className="text-[13px] font-medium text-ink-2">즐겨찾기</h3>
       <button type="button" className={button} aria-haspopup="dialog" onClick={() => setOpen(true)}>+ 현재 검색 저장</button></div>
     {open ? <Modal title="즐겨찾기 저장" onClose={() => setOpen(false)}><form className="mt-3 space-y-2" onSubmit={event => { event.preventDefault(); void run(async () => {
       await request('/api/favorites', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...current, name, scope }) })
@@ -95,8 +97,11 @@ export function SavedSearches({ current, onRestore, onNotice }: {
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-ink-3"><path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4V4.5Z" /></svg><span className="min-w-0 flex-1 truncate">{item.name}</span><span aria-hidden className="text-ink-3">›</span>
       </button>
     </li>)}</ul>
-    {!items.length ? <p className="py-1 text-[12px] text-ink-3">{ready ? '자주 쓰는 검색을 저장해 보세요.' : message ? '즐겨찾기를 불러오지 못했습니다.' : '즐겨찾기 불러오는 중…'}</p> : null}
-    <button type="button" aria-haspopup="dialog" onClick={() => setListOpen(true)} className="mt-1 text-[12px] text-ink-3 hover:text-accent-strong">즐겨찾기 전체 보기 ↗</button>
+    {loadError ? <p role="alert" className="py-1 text-[12px] leading-5 text-ink-2">즐겨찾기를 불러오지 못했습니다{' · '}
+      <button type="button" className="font-medium underline underline-offset-2 hover:text-ink"
+        onClick={() => { setLoadError(''); void refresh().catch((error: unknown) => setLoadError(error instanceof Error ? error.message : '즐겨찾기를 불러오지 못했습니다.')) }}>다시 시도</button></p>
+      : !items.length ? <p className="py-1 text-[12px] text-ink-3">{ready ? '자주 쓰는 검색을 저장해 보세요.' : '즐겨찾기 불러오는 중…'}</p> : null}
+    {items.length ? <button type="button" aria-haspopup="dialog" onClick={() => setListOpen(true)} className="mt-1 text-[12px] font-medium text-ink-2 hover:text-ink">즐겨찾기 전체 보기 ↗</button> : null}
     {listOpen ? <Modal title="즐겨찾기" onClose={() => setListOpen(false)}>
     <ul className="mt-3 space-y-2">{items.map(item => <li key={item.id} className="rounded border border-line p-2">
       <button type="button" className="w-full break-words text-left font-medium text-ink hover:underline" aria-haspopup="dialog" onClick={() => setSelected(item)}>{item.name}</button>

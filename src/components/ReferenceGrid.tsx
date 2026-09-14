@@ -63,7 +63,7 @@ export function ReferenceGrid({
           {actions}
         </div>
         {rows.length > 0 ? <PageNavigation position="상단" total={products.length} page={bounds.page} onChange={changePage} /> : null}
-        <div className={`hidden ${GRID_TEMPLATE} gap-4 border-t border-line bg-surface-muted px-5 py-2.5 text-[12px] font-medium text-ink-3 md:grid`}>
+        <div className={`hidden ${GRID_TEMPLATE} gap-4 border-t border-line bg-surface-muted px-5 py-2.5 text-[13px] font-medium text-ink-2 md:grid`}>
           <span>제품명 · 제조원</span>
           <span>제형</span>
           <span>1알 중량</span>
@@ -96,8 +96,8 @@ export function ReferenceGrid({
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-[14px] leading-5 font-medium text-ink" title={product.name}>{product.name}</span>
-                    <span className="mt-0.5 block truncate text-[12px] leading-4 text-ink-3" title={product.manufacturer}>{product.manufacturer}</span>
-                    {product.brand ? <span className="block truncate text-[12px] leading-4 text-ink-3">브랜드: {product.brand}</span> : null}
+                    <span className="mt-0.5 block truncate text-[13px] leading-5 text-ink-2" title={product.manufacturer}>{product.manufacturer}</span>
+                    {product.brand ? <span className="block truncate text-[12.5px] leading-4 text-ink-3">브랜드: {product.brand}</span> : null}
                   </span>
                   <span className="hidden text-[13px] text-ink-2 md:block">{product.form}</span>
                   <span className="hidden text-[13px] text-ink-2 tnum md:block">{formatMilligrams(product.unitWeightMg)}</span>
@@ -124,7 +124,7 @@ function PageNavigation({ position, total, page, onChange }: {
   const buttonClass = 'min-w-8 rounded-md border border-line px-2 py-1.5 text-[13px] text-ink-2 hover:bg-surface-sunken disabled:cursor-default disabled:opacity-40'
   return (
     <nav aria-label={`레퍼런스 페이지 ${position}`} className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3">
-      <p aria-live={position === '상단' ? 'polite' : undefined} className="text-[12px] text-ink-3 tnum">
+      <p aria-live={position === '상단' ? 'polite' : undefined} className="text-[13px] text-ink-2 tnum">
         {formatInt(bounds.start + 1)}–{formatInt(bounds.end)} / {formatInt(total)}건 · {formatInt(bounds.page)}/{formatInt(bounds.pages)}페이지
       </p>
       <div className="flex flex-wrap items-center gap-1">

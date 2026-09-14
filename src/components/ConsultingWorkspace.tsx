@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { WorkspaceTabs, type WorkspaceTab } from '@/components/WorkspaceTabs'
+import { WorkspaceSidebar, tabLabel, type WorkspaceTab } from '@/components/WorkspaceSidebar'
 import { ActiveFilters } from '@/components/ActiveFilters'
 import { BriefingDashboard } from '@/components/BriefingDashboard'
 import { DatasetSyncPanel } from '@/components/DatasetSyncPanel'
@@ -13,7 +13,7 @@ import type { DatasetProvenance } from '@/lib/datasetProvenance'
 import type { SavedSearch } from '@/lib/savedSearches'
 import type { DatasetMeta } from '@/lib/api/products'
 import { ExportActions } from '@/components/ExportActions'
-import { FilterRail } from '@/components/FilterRail'
+import { FilterBar } from '@/components/FilterBar'
 import { ReferenceGrid } from '@/components/ReferenceGrid'
 import { fetchStoredDataset, type StoredDataset } from '@/lib/api/products'
 import { markerCatalog } from '@/lib/analytics'
@@ -21,6 +21,7 @@ import { downloadProductsAsCsv } from '@/lib/export/download'
 import { buildBriefing } from '@/lib/export/briefing'
 import { DEFAULT_RDA_PROFILE } from '@/lib/rda'
 import { buildDashboardSummary } from '@/lib/dashboardSummary'
+import { useCollapsedCard } from '@/hooks/useCollapsedCard'
 import {
   activeFilterCount,
   applyFilters,
@@ -143,7 +144,10 @@ function LoadedConsultingWorkspace({
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
   }, [])
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [railOpen, setRailOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const gridRef = useRef<HTMLDivElement>(null)
+  // 제품 목록에 도착했는지. 조건 줄의 이동 단추가 갈 곳을 이 값으로 정한다.
+  const [atList, setAtList] = useState(false)
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('consulting')
   const [ingredientsVisited, setIngredientsVisited] = useState(false)
   const [notesVisited, setNotesVisited] = useState(false)
@@ -163,7 +167,7 @@ function LoadedConsultingWorkspace({
     setDesignProduct(product)
     setDesignVisited(true)
     setActiveTab('design')
-    setRailOpen(false)
+    setSidebarOpen(false)
     requestAnimationFrame(() => {
       designScrollRef.current?.scrollTo({ top: 0 })
       document.getElementById('workspace-tab-design')?.focus()
@@ -244,6 +248,47 @@ function LoadedConsultingWorkspace({
 
   const activeCount = activeFilterCount(filters)
 
+  /** 상단 제목 옆 한 줄. 무엇을 기준으로 보고 있는지 화면에서 잃지 않게 한다. */
+  const sourceWord = source === 'seed' ? '예시 레퍼런스' : source === 'db' ? '전체 레퍼런스' : '업로드 데이터'
+  const headline = activeCount === 0
+    ? `조건 없음 · ${sourceWord} ${formatInt(products.length)}건 기준`
+    : `조건 ${activeCount}개 · ${formatInt(products.length)}건 중 ${formatInt(filtered.length)}건`
+
+  /*
+   * 사이드바 접힘은 화면별로 따로 기억한다 - 배합 설계는 배합표 때문에 늘 접어 두고
+   * 검색은 즐겨찾기를 보려고 펴 두는 식으로 쓰임새가 갈린다.
+   */
+  const [sidebarCollapsed, setSidebarCollapsed] = useCollapsedCard(`workspace-sidebar:${activeTab}`)
+
+  // 목록 위치를 스크롤에서 읽는다. 이동 단추의 방향과 이름이 현재 위치를 따라간다.
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container || activeTab !== 'consulting') return
+    const onScroll = () => {
+      const target = gridRef.current
+      setAtList(Boolean(target) && container.scrollTop >= (target as HTMLDivElement).offsetTop - 24)
+    }
+    onScroll()
+    container.addEventListener('scroll', onScroll, { passive: true })
+    return () => container.removeEventListener('scroll', onScroll)
+  }, [activeTab, filtered.length])
+
+  const jump = useCallback(() => {
+    const container = scrollRef.current
+    const target = gridRef.current
+    if (!container) return
+    const top = atList || !target ? 0 : Math.max(target.offsetTop - 12, 0)
+    container.scrollTo({ top, behavior: 'smooth' })
+  }, [atList])
+
+  const changeTab = useCallback((tab: WorkspaceTab) => {
+    setActiveTab(tab)
+    setSidebarOpen(false)
+    if (tab === 'ingredients') setIngredientsVisited(true)
+    if (tab === 'notes') setNotesVisited(true)
+    if (tab === 'design') setDesignVisited(true)
+  }, [])
+
   const toggleForm = useCallback((form: FormType) => {
     setFilters((prev) => ({
       ...prev,
@@ -297,106 +342,114 @@ function LoadedConsultingWorkspace({
     setFilters(item.filters)
     // 과거 즐겨찾기의 성별·연령 선택값을 복원하지 않는다. 표시 기준은 항상 고정이다.
     setSelectedId(null)
-    setRailOpen(false)
+    setSidebarOpen(false)
     setActiveTab('consulting')
     setSavedNotice(`“${item.name}” 조건을 불러왔습니다.${!item.generation || item.generation !== datasetMeta?.generation ? ' 저장 당시와 데이터가 달라 현재 데이터로 다시 계산합니다.' : ''}`)
   }, [datasetMeta?.generation, setFilters])
 
 
   return (
-    <div className="h-workspace flex flex-col overflow-hidden">
-      <header className="z-30 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-3 lg:px-6">
-        <div className="flex min-w-0 items-center gap-3">
-          {activeTab === 'consulting' ? <button
-            type="button"
-            onClick={() => setRailOpen((prev) => !prev)}
-            className="rounded-md border border-line px-2.5 py-1.5 text-[13px] text-ink-2 transition-colors hover:bg-surface-sunken lg:hidden"
-          >
-            조건 {activeCount > 0 ? `(${activeCount})` : ''}
-          </button> : null}
-          <div className="min-w-0">
-            <h1 className="truncate text-[15px] leading-5 font-semibold text-ink">
-              {/* 회사 이름표를 제목 앞에 둔다. 좁아지면 뒤가 먼저 잘리므로 구분할 이름이 앞에 있어야 한다. */}
-              {deployLabel ? <span className="text-accent-strong">{deployLabel} · </span> : null}
-              건기식 OEM 배합비 솔루션
-            </h1>
-            <p className="truncate text-[12px] leading-4 text-ink-3">
-              {source === 'seed' ? '예시 레퍼런스' : source === 'db' ? '저장된 데이터' : '업로드 데이터'}{' '}
-              {formatInt(products.length)}건 · 조건 일치 {formatInt(filtered.length)}건
-            </p>
+    <div className="h-workspace flex overflow-hidden">
+      {sidebarOpen ? (
+        <button
+          type="button"
+          aria-label="메뉴 닫기"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px] lg:hidden"
+        />
+      ) : null}
+
+      <div
+        className={`${
+          sidebarOpen ? 'block' : 'hidden'
+        } fixed inset-y-0 left-0 z-40 w-[15.5rem] overflow-hidden transition-[width] lg:static lg:z-auto lg:block lg:h-full lg:shrink-0 ${
+          sidebarCollapsed ? 'lg:w-[3.5rem]' : 'lg:w-[15.5rem]'
+        }`}
+      >
+        <WorkspaceSidebar
+          deployLabel={deployLabel}
+          value={activeTab}
+          onChange={changeTab}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
+          freshness={freshness}
+          dateTitle={provenance?.updatedThrough ? `원본 LAST_UPDT_DTM 최댓값 · 날짜 확인 ${provenance.datedRows.toLocaleString('ko-KR')}건. CSV 다운로드 날짜는 아닙니다.` : undefined}
+          /* 즐겨찾기는 검색 조건을 담는 자리다. 다른 화면에서는 자리만 차지한다. */
+          favorites={activeTab === 'consulting'
+            ? <SavedSearches current={{ filters, rdaProfile, generation: datasetMeta?.generation ?? null, resultCount: filtered.length }} onRestore={restoreSaved} onNotice={setSavedNotice} />
+            : null}
+          importer={
+            <DatasetSyncPanel
+              productCount={products.length}
+              generation={datasetMeta?.generation ?? null}
+              onRefresh={refreshDataset}
+            />
+          }
+        />
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="z-20 flex shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-4 py-2.5 lg:px-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="shrink-0 rounded-md border border-line px-2.5 py-1.5 text-[13px] text-ink-2 transition-colors hover:bg-surface-sunken lg:hidden"
+            >
+              메뉴
+            </button>
+            <h2 className="shrink-0 text-[16px] leading-6 font-semibold text-ink">{tabLabel(activeTab)}</h2>
+            {/* 좁은 화면에서는 제목과 내보내기만 남긴다. 같은 요약이 아래 조건 줄에 다시 나온다. */}
+            {activeTab === 'consulting' ? <p className="hidden truncate text-[13px] leading-5 text-ink-3 sm:block">{headline}</p> : null}
           </div>
-        </div>
 
-        {activeTab === 'consulting' ? <ExportActions freshness={freshness} briefing={briefing} disabled={filtered.length === 0} /> : null}
-        {activeTab === 'consulting' ? <div className="w-full text-[12px] leading-4 text-ink-3" aria-label="데이터 출처와 최신성">
-          <p title={provenance?.updatedThrough ? `원본 LAST_UPDT_DTM 최댓값 · 날짜 확인 ${provenance.datedRows.toLocaleString('ko-KR')}건. CSV 다운로드 날짜는 아닙니다.` : undefined}>{freshness.date}</p>
-          <p>{freshness.url ? <a href={freshness.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">{freshness.source}</a> : freshness.source} · {freshness.schedule}</p>
-        </div> : null}
-      </header>
+          {activeTab === 'consulting' ? <ExportActions freshness={freshness} briefing={briefing} disabled={filtered.length === 0} /> : null}
+        </header>
 
-      <WorkspaceTabs value={activeTab} onChange={(tab) => {
-        setActiveTab(tab)
-        if (tab === 'ingredients') setIngredientsVisited(true)
-        if (tab === 'notes') setNotesVisited(true)
-        if (tab === 'design') setDesignVisited(true)
-      }} />
-
-      <div id="workspace-panel-consulting" role="tabpanel" aria-labelledby="workspace-tab-consulting"
-        hidden={activeTab !== 'consulting'} className={activeTab === 'consulting' ? 'flex min-h-0 flex-1 overflow-hidden' : 'hidden'}>
-        {railOpen ? (
-          <button
-            type="button"
-            aria-label="조건 패널 닫기"
-            onClick={() => setRailOpen(false)}
-            className="fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px] lg:hidden"
-          />
+        {/*
+          조건 줄은 스크롤 밖에 둔다. 제품 목록까지 내려간 뒤에도 검색창·조건·선택한 조건이
+          같은 자리에 있어야 조건을 고쳐 가며 결과를 볼 수 있다.
+        */}
+        {activeTab === 'consulting' ? (
+          <div className="z-10 shrink-0 border-b border-line bg-surface px-4 py-2.5 lg:px-6">
+            <div className="mx-auto flex max-w-[104rem] flex-col gap-2">
+              <FilterBar
+                filters={filters}
+                onChange={(next, group) => { setFilters(next, group); setSelectedId(null) }}
+                onReset={() => { setFilters(EMPTY_FILTERS); setSelectedId(null) }}
+                history={filterHistory.previous}
+                onRestore={(index) => {
+                  dispatchFilters({ type: 'restore', index })
+                  scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+                }}
+                onUndo={() => { dispatchFilters({ type: 'undo' }); setSelectedId(null) }}
+                onEndEdit={() => dispatchFilters({ type: 'end-edit' })}
+                onViewResults={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })}
+                options={railOptions}
+                markers={markers}
+                resultCount={filtered.length}
+                atList={atList}
+                onJump={jump}
+              />
+              <ActiveFilters
+                filters={filters}
+                onChange={(next) => { setFilters(next); setSelectedId(null) }}
+                onReset={() => { setFilters(EMPTY_FILTERS); setSelectedId(null) }}
+              />
+            </div>
+          </div>
         ) : null}
 
-        <div
-          className={`${
-            railOpen ? 'block' : 'hidden'
-          } fixed inset-y-0 left-0 z-40 w-[19rem] overflow-hidden lg:static lg:z-auto lg:block lg:h-full lg:w-[19rem] lg:shrink-0`}
-        >
-          <FilterRail
-            filters={filters}
-            onChange={(next, group) => { setFilters(next, group); setSelectedId(null) }}
-            onReset={() => { setFilters(EMPTY_FILTERS); setSelectedId(null) }}
-            history={filterHistory.previous}
-            onRestore={(index) => {
-              dispatchFilters({ type: 'restore', index })
-              scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
-              setRailOpen(false)
-            }}
-            onUndo={() => { dispatchFilters({ type: 'undo' }); setSelectedId(null); setRailOpen(false) }}
-            onEndEdit={() => dispatchFilters({ type: 'end-edit' })}
-            onViewResults={() => setRailOpen(false)}
-            activeCount={activeCount}
-            options={railOptions}
-            markers={markers}
-            savedSearches={<SavedSearches current={{ filters, rdaProfile, generation: datasetMeta?.generation ?? null, resultCount: filtered.length }} onRestore={restoreSaved} onNotice={setSavedNotice} />}
-            importer={
-              <DatasetSyncPanel
-                productCount={products.length}
-                generation={datasetMeta?.generation ?? null}
-                onRefresh={refreshDataset}
-              />
-            }
-          />
-        </div>
-
+        <div id="workspace-panel-consulting" role="tabpanel" aria-labelledby="workspace-tab-consulting"
+          hidden={activeTab !== 'consulting'} className={activeTab === 'consulting' ? 'min-h-0 flex-1 overflow-hidden' : 'hidden'}>
         <main
           ref={scrollRef}
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto scroll-contain"
+          className="h-full min-w-0 overflow-y-auto scroll-contain"
         >
           <div
-            className="mx-auto flex max-w-[104rem] flex-col gap-5 px-4 py-5 lg:px-6"
+            className="mx-auto flex max-w-[104rem] flex-col gap-4 px-4 py-4 lg:px-6"
           >
             {savedNotice ? <p role="status" className="rounded border border-line bg-surface p-3 text-[13px] text-ink-2">{savedNotice}<button type="button" className="ml-3 underline" onClick={() => setSavedNotice('')}>닫기</button></p> : null}
-            <ActiveFilters
-              filters={filters}
-              onChange={(next) => { setFilters(next); setSelectedId(null) }}
-              onReset={() => { setFilters(EMPTY_FILTERS); setSelectedId(null) }}
-            />
 
             <BriefingDashboard
               briefing={briefing}
@@ -412,6 +465,7 @@ function LoadedConsultingWorkspace({
               }))}
             />
 
+            <div ref={gridRef}>
             <ReferenceGrid
               active={activeTab === 'consulting'}
               products={filtered}
@@ -437,24 +491,26 @@ function LoadedConsultingWorkspace({
                 </button>
               }
             />
+            </div>
           </div>
         </main>
-      </div>
+        </div>
 
-      <div ref={designScrollRef} id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design"
-        hidden={activeTab !== 'design'} className={activeTab === 'design' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
-        {designVisited ? <FormulaDesigner referenceNames={referenceNames} initialProduct={designProduct}
-          editorRef={designerRef} onBackToReference={backToReference} /> : null}
-      </div>
+        <div ref={designScrollRef} id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design"
+          hidden={activeTab !== 'design'} className={activeTab === 'design' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
+          {designVisited ? <FormulaDesigner referenceNames={referenceNames} initialProduct={designProduct}
+            editorRef={designerRef} onBackToReference={backToReference} /> : null}
+        </div>
 
-      <div id="workspace-panel-ingredients" role="tabpanel" aria-labelledby="workspace-tab-ingredients"
-        hidden={activeTab !== 'ingredients'} className={activeTab === 'ingredients' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
-        {ingredientsVisited ? <FunctionalIngredientLibrary /> : null}
-      </div>
+        <div id="workspace-panel-ingredients" role="tabpanel" aria-labelledby="workspace-tab-ingredients"
+          hidden={activeTab !== 'ingredients'} className={activeTab === 'ingredients' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
+          {ingredientsVisited ? <FunctionalIngredientLibrary /> : null}
+        </div>
 
-      <div id="workspace-panel-notes" role="tabpanel" aria-labelledby="workspace-tab-notes"
-        hidden={activeTab !== 'notes'} className={activeTab === 'notes' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
-        {notesVisited ? <FormulaNotes /> : null}
+        <div id="workspace-panel-notes" role="tabpanel" aria-labelledby="workspace-tab-notes"
+          hidden={activeTab !== 'notes'} className={activeTab === 'notes' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
+          {notesVisited ? <FormulaNotes /> : null}
+        </div>
       </div>
 
       {activeTab === 'consulting' ? <DetailPanel

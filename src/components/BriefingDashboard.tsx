@@ -1,5 +1,8 @@
 'use client'
 
+import { useId } from 'react'
+import { useCollapsedCard } from '@/hooks/useCollapsedCard'
+import { FoldButton } from '@/components/FoldButton'
 import { ChartCard } from '@/components/charts/ChartCard'
 import { ColumnHistogram } from '@/components/charts/ColumnHistogram'
 import { HorizontalBars } from '@/components/charts/HorizontalBars'
@@ -10,6 +13,9 @@ import type { Briefing } from '@/lib/export/briefing'
 import type { MarkerFilter } from '@/lib/filters'
 import { formatDecimal, formatInt, formatMarkerValue, formatPercent } from '@/lib/format'
 import type { FormType } from '@/lib/types'
+
+/** 접힘 상태를 저장할 열쇠. 차트 카드와 같은 규칙으로 제목을 그대로 쓴다. */
+const CHARTS_PANEL = '시장 분석'
 
 type Props = {
   briefing: Briefing
@@ -31,6 +37,8 @@ export function BriefingDashboard({
   onSelectMains,
 }: Props) {
   const empty = briefing.referenceCount === 0
+  const chartsId = useId()
+  const [chartsCollapsed, setChartsCollapsed] = useCollapsedCard(CHARTS_PANEL)
 
   const subHistogram = briefing.subHistogram.map((bin) => ({
     key: bin.label,
@@ -51,6 +59,22 @@ export function BriefingDashboard({
     <section aria-label="상담 브리핑 대시보드" className="flex flex-col gap-4">
       <DashboardSummaryCards briefing={briefing} summary={summary} />
 
+      {/* 차트 묶음 전체를 한 번에 접는다 - 제품 목록만 볼 때 카드를 일곱 번 접지 않게. */}
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setChartsCollapsed(!chartsCollapsed)}
+          aria-expanded={!chartsCollapsed}
+          aria-controls={chartsId}
+          className="-mx-1.5 flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-left text-[14px] font-semibold text-ink transition-colors hover:bg-surface-sunken"
+        >
+          <span aria-hidden className={`grid h-5 w-5 shrink-0 place-items-center text-[13px] text-ink-3 transition-transform ${chartsCollapsed ? '' : 'rotate-90'}`}>▶</span>
+          시장 분석
+        </button>
+        <FoldButton collapsed={chartsCollapsed} onToggle={() => setChartsCollapsed(!chartsCollapsed)} label={CHARTS_PANEL} controls={chartsId} />
+      </div>
+
+      <div id={chartsId} className={chartsCollapsed ? 'hidden' : 'flex flex-col gap-4'}>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <ChartCard
           title="시장 다빈도 제형"
@@ -203,6 +227,7 @@ export function BriefingDashboard({
           />
         </ChartCard>
       ) : null}
+      </div>
     </section>
   )
 }

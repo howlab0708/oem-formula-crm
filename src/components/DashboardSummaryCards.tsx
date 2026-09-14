@@ -12,44 +12,45 @@ import { formatInt, formatMilligrams, formatPercent } from '@/lib/format'
 const amount = (value: number, unit: string) => `${value.toLocaleString('ko-KR', { maximumFractionDigits: 3 })}${unit}`
 
 /** 접힘 상태를 저장할 열쇠. 차트 카드와 같은 규칙으로 제목을 그대로 쓴다. */
-const RDA_PANEL = '성분별 1일 영양성분 기준치'
+const RDA_PANEL = '계산 기준 · 성분별 1일 영양성분 기준치'
 
 export function DashboardSummaryCards({ briefing, summary }: {
   briefing: Briefing; summary: DashboardSummary
 }) {
   const { unitWeight, content } = summary
   const empty = briefing.referenceCount === 0
-  const [collapsed, setCollapsed] = useCollapsedCard(RDA_PANEL)
+  // 기준치 설명은 길다. 기본은 접어 두고 필요할 때 편다 - 제품 목록이 화면 아래로 밀려나지 않게 한다.
+  const [collapsed, setCollapsed] = useCollapsedCard(RDA_PANEL, true)
   const bodyId = useId()
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="시장 배합비 핵심 지표">
-        <StatTile label="시장 표준 제형" value={briefing.standardForm?.label ?? '-'} context={briefing.standardForm
-          ? `${formatPercent(briefing.standardForm.share)} 채택 · ${formatInt(briefing.standardForm.count)}건` : '데이터 없음'} />
-        <StatTile label="표준 1회분 중량" value={formatMilligrams(unitWeight.median)} context={unitWeight.count
-          ? `최소 물리적 단위의 중앙값 · 확인 ${formatInt(unitWeight.count)} / ${formatInt(briefing.referenceCount)}건`
-          : empty ? '데이터 없음' : '1정·1캡슐·1포의 중량 확인 필요'} />
-        <div className="rounded-lg border border-accent/25 bg-surface px-5 py-4">
-          <p className="text-[12px] leading-4 font-medium text-ink-3">핵심원료 고함량 제품 비율</p>
-          <p className="mt-1.5 text-[24px] leading-8 font-semibold text-ink">{content.highShare === null ? '-' : formatPercent(content.highShare, 1)}</p>
-          <p className="mt-1 text-[12px] leading-4 text-ink-2">{empty ? '데이터 없음' : '1일 영양성분 기준치 100% 이상인 제품 비율'}</p>
-          <p className="mt-1 text-[12px] leading-4 text-ink-3">함량 확인 {formatInt(content.productCount)}건 · 기준치 비교 가능 {formatInt(content.comparableCount)}건</p>
-          <p className="mt-2 text-[12px] leading-5 text-ink-3">{DAILY_VALUE_LABEL} 적용</p>
-        </div>
+      {/*
+        핵심 지표 넉 장은 숫자와 한 줄 설명까지만 싣는다. 계산 방법과 표본 수는
+        아래 '계산 기준' 패널에 모은다 - 카드마다 설명을 달면 첫 화면이 설명으로 찬다.
+      */}
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="시장 배합비 핵심 지표">
+        <StatTile label="시장 표준 제형" value={briefing.standardForm?.label ?? null}
+          emptyLabel="조건에 맞는 제품 없음"
+          context={briefing.standardForm ? `${formatPercent(briefing.standardForm.share)} 채택 · ${formatInt(briefing.standardForm.count)}건` : undefined} />
+        <StatTile label="표준 1회분 중량" value={unitWeight.count ? formatMilligrams(unitWeight.median) : null}
+          emptyLabel={empty ? '조건에 맞는 제품 없음' : '1정·1캡슐·1포 중량이 확인된 제품 없음'}
+          context={unitWeight.count ? `확인 ${formatInt(unitWeight.count)} / ${formatInt(briefing.referenceCount)}건의 중앙값` : undefined} />
+        <StatTile label="핵심원료 고함량 제품" value={content.highShare === null ? null : formatPercent(content.highShare, 1)}
+          emptyLabel={empty ? '조건에 맞는 제품 없음' : '기준치와 비교할 수 있는 제품 없음'}
+          context={content.highShare === null ? undefined : `기준치 비교 가능 ${formatInt(content.comparableCount)}건`} />
         <StatTile label="데이터 규모" value={formatInt(briefing.referenceCount)} unit="건" context={`전체 ${formatInt(briefing.totalCount)}건 중 조건 일치`} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" aria-label="시장 참여 지표">
-        <div className="rounded-lg border border-line bg-surface px-6 py-5">
-          <p className="text-[14px] leading-5 font-medium text-ink-2">개별인정형 원료 포함</p>
-          <p className="mt-2 text-[32px] leading-10 font-semibold tabular-nums text-ink">{summary.recognizedShare === null ? '-' : formatPercent(summary.recognizedShare, 1)}</p>
-          <p className="mt-2 text-[13px] leading-5 text-ink-3">확인 {formatInt(summary.recognizedCount)} / {formatInt(briefing.referenceCount)}건</p>
-        </div>
-        <div className="rounded-lg border border-line bg-surface px-6 py-5">
-          <p className="text-[14px] leading-5 font-medium text-ink-2">제조사</p>
-          <p className="mt-2 text-[32px] leading-10 font-semibold tabular-nums text-ink">{formatInt(summary.manufacturerCount)}<span className="ml-1 text-[18px] font-medium text-ink-2">개</span></p>
-          <p className="mt-2 text-[13px] leading-5 text-ink-3">제조사 확인 {formatInt(summary.manufacturerKnownCount)}건</p>
-        </div>
+      {/* 숫자 하나짜리 보조 지표는 카드 대신 한 줄로 묶는다. */}
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 rounded-lg border border-line bg-surface px-4 py-2.5 text-[13px] leading-5" aria-label="시장 참여 지표">
+        <p className="text-ink-2">개별인정형 원료 포함{' '}
+          <span className="tnum font-semibold text-ink">{summary.recognizedShare === null ? '확인 가능한 자료 없음' : formatPercent(summary.recognizedShare, 1)}</span>
+          <span className="tnum ml-1.5 text-ink-3">확인 {formatInt(summary.recognizedCount)} / {formatInt(briefing.referenceCount)}건</span>
+        </p>
+        <p className="text-ink-2">제조사{' '}
+          <span className="tnum font-semibold text-ink">{formatInt(summary.manufacturerCount)}개</span>
+          <span className="tnum ml-1.5 text-ink-3">제조사 확인 {formatInt(summary.manufacturerKnownCount)}건</span>
+        </p>
       </div>
 
       <section className="rounded-lg border border-line bg-surface text-[13px] text-ink-2">
@@ -68,6 +69,7 @@ export function DashboardSummaryCards({ briefing, summary }: {
           <FoldButton collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} label={RDA_PANEL} controls={bodyId} />
         </div>
         <div id={bodyId} hidden={collapsed} className="border-t border-line px-5 py-4">
+          <p className="mb-2 leading-5 keep-all">핵심원료 고함량 제품 비율은 {DAILY_VALUE_LABEL} 100% 이상인 성분이 하나라도 있는 제품의 비율입니다. 함량 확인 {formatInt(content.productCount)}건 · 기준치 비교 가능 {formatInt(content.comparableCount)}건.</p>
           <p className="leading-5 keep-all">현재 조건에 맞는 제품의 지표성분 중 비타민·무기질만 모았습니다. 같은 영양소의 다른 표기는 하나로 합쳤습니다. 기준값은 {DAILY_VALUE_LABEL}로 고정하며, 가장 많이 쓴 함량은 이 조건에서 같은 1일 함량을 쓴 제품이 가장 많은 값과 그 제품 수입니다. 함량이 확인된 표본 수가 많은 순서입니다.</p>
           {content.rows.length ? <div className="mt-3 max-h-80 overflow-auto">
             <table className="w-full min-w-[560px] text-left text-[13px]">

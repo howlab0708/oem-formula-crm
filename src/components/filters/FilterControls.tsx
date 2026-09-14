@@ -1,13 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Modal } from '@/components/Modal'
 import { filterChips, type FilterState } from '@/lib/filters'
 
 type Props = {
   filters: FilterState
   history: FilterState[]
-  activeCount: number
   onChange: (next: FilterState) => void
   onReset: () => void
   onRestore: (index: number) => void
@@ -18,47 +17,29 @@ function describe(filters: FilterState) {
   return filterChips(filters).map((chip) => `${chip.group}: ${chip.label}`).join(' · ') || '전체 제품'
 }
 
-export function FilterControls({ filters, history, activeCount, onChange, onReset, onRestore, onUndo }: Props) {
+// 누를 수 있는 글자는 설명문보다 진하게 둔다. 둘이 같은 회색이면 구분이 안 된다.
+const link = 'rounded-md px-2 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-surface-sunken hover:underline disabled:pointer-events-none disabled:opacity-40'
+
+/**
+ * 조건 줄 오른쪽 끝의 되돌리기·기록·초기화.
+ *
+ * 걸린 조건을 낱개로 보여주는 일은 본문의 `ActiveFilters` 가 한다 -
+ * 여기서 한 번 더 나열하면 같은 목록이 화면에 두 벌 생긴다.
+ */
+export function FilterControls({ filters, history, onChange, onReset, onRestore, onUndo }: Props) {
   const [open, setOpen] = useState(false)
-  const listRef = useRef<HTMLUListElement>(null)
-  const undoRef = useRef<HTMLButtonElement>(null)
   const chips = filterChips(filters)
   const entries = history.map((snapshot, index) => ({ snapshot, index })).reverse()
 
   return (
-    <section aria-label="선택한 검색 조건" className="border-t border-line bg-surface-muted px-4 py-3">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-[13px] font-semibold text-ink">선택한 조건 {activeCount > 0 ? `${activeCount}개` : ''}</h3>
-        <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)}
-          className="rounded-md px-2 py-1 text-[12px] font-medium text-accent-strong hover:bg-accent-soft">기록 ↗</button>
-      </div>
-      {chips.length > 0 ? <>
-        <p className="mt-1 text-[12px] text-ink-3">체크를 해제하면 해당 조건만 풀립니다.</p>
-        <ul ref={listRef} className="mt-2 max-h-44 space-y-1 overflow-y-auto">
-          {chips.map((chip, index) => <li key={chip.key}>
-            <label className="flex cursor-pointer items-start gap-2 rounded-md border border-accent-line bg-surface px-2.5 py-2 hover:bg-accent-soft">
-              <input type="checkbox" checked aria-label={`${chip.group} ${chip.label}`} className="mt-0.5 size-4 shrink-0 accent-accent"
-                onChange={() => {
-                  onChange(chip.remove(filters))
-                  requestAnimationFrame(() => {
-                    const remaining = listRef.current?.querySelectorAll<HTMLInputElement>('input')
-                    if (remaining?.length) remaining[Math.min(index, remaining.length - 1)].focus()
-                    else undoRef.current?.focus()
-                  })
-                }} />
-              <span className="min-w-0 break-words text-[13px] leading-5 text-ink"><span className="mr-1 text-[12px] text-ink-3">{chip.group}</span>{chip.label}</span>
-            </label>
-          </li>)}
-        </ul>
-      </> : <p className="mt-2 text-[12px] text-ink-3">선택한 조건 없이 전체 제품을 보고 있습니다.</p>}
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <button ref={undoRef} type="button" disabled={!history.length} onClick={onUndo}
-          className="rounded-md border border-line-strong bg-surface px-2 py-2 text-[13px] font-medium text-ink-2 hover:bg-accent-soft disabled:opacity-40">
-          <span aria-hidden>← </span>이전 조건
-        </button>
-        <button type="button" disabled={!chips.length} onClick={onReset}
-          className="rounded-md border border-line-strong bg-surface px-2 py-2 text-[13px] font-medium text-ink-2 hover:bg-surface-sunken disabled:opacity-40">전체 초기화</button>
-      </div>
+    <div className="flex shrink-0 items-center gap-0.5">
+      {history.length ? (
+        <button type="button" onClick={onUndo} className={link}><span aria-hidden>← </span>이전 조건</button>
+      ) : null}
+      <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className={link}>검색 히스토리</button>
+      <span aria-hidden className="h-3 w-px bg-line" />
+      <button type="button" disabled={!chips.length} onClick={onReset} className={link}>초기화</button>
+
       {open ? <Modal title="검색 히스토리" onClose={() => setOpen(false)}>
         <section className="rounded-lg border border-accent-line bg-accent-soft p-4">
           <div className="flex items-center justify-between gap-3">
@@ -87,6 +68,6 @@ export function FilterControls({ filters, history, activeCount, onChange, onRese
         </ol>
         {!entries.length ? <p className="py-6 text-center text-[13px] text-ink-3">조건을 선택하면 검색 기록이 여기에 쌓입니다.</p> : null}
       </Modal> : null}
-    </section>
+    </div>
   )
 }

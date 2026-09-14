@@ -72,7 +72,7 @@ export function ChartCard({
           </button>
           {/* 설명은 차트가 무엇을 그렸는지 말하는 문장이라, 접었으면 함께 감춘다. */}
           {caption && !collapsed ? (
-            <p className="mt-1 pl-[26px] text-[13px] leading-4 text-ink-3 keep-all">{caption}</p>
+            <p className="mt-1 pl-[26px] text-[13px] leading-5 text-ink-2 keep-all">{caption}</p>
           ) : null}
         </div>
 

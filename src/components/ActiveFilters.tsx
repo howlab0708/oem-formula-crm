@@ -14,13 +14,8 @@ type Props = {
  */
 export function ActiveFilters({ filters, onChange, onReset }: Props) {
   const chips = filterChips(filters)
-  if (chips.length === 0) {
-    return (
-      <p className="text-[13px] text-ink-3">
-        조건 없음 · 전체 레퍼런스를 기준으로 시장 평균을 보여줍니다.
-      </p>
-    )
-  }
+  // 조건이 없다는 사실은 상단 제목 줄이 이미 말한다. 같은 문장을 한 번 더 쓰지 않는다.
+  if (chips.length === 0) return null
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -37,7 +32,7 @@ export function ActiveFilters({ filters, onChange, onReset }: Props) {
       <button
         type="button"
         onClick={onReset}
-        className="ml-1 text-[12px] text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+        className="ml-1 text-[13px] font-medium text-ink-2 underline-offset-2 hover:text-ink hover:underline"
       >
         전체 초기화
       </button>

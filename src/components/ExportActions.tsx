@@ -121,9 +121,10 @@ export function ExportActions({ briefing: original, disabled, freshness }: Props
 
   return (
     <div className="flex shrink-0 items-center gap-2">
+      {/* 이 화면의 주요 동작은 '검색 결과 보기' 다. 내보내기는 한 단계 약하게 둔다. */}
       <button type="button" aria-haspopup="dialog" aria-expanded={exportOpen} onClick={() => { setMessage(null); setExportOpen(true) }}
-        className={`inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-md border px-3 py-2 text-[14px] font-semibold transition-colors ${navyButton}`}>
-        <ExportIcon kind="download" />검색 결과 내보내기
+        className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-md border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surface-sunken hover:text-ink">
+        <ExportIcon kind="download" />내보내기
         <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {exportOpen ? <Modal title="검색 결과 내보내기" onClose={() => setExportOpen(false)}>

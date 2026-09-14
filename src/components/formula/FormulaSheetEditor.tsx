@@ -64,12 +64,11 @@ type Props = {
   referenceNames: string[]
   editorRef: Ref<FormulaSheetEditorHandle>
   onMetadata: (id: string, meta: FormulaTabMeta) => void
-  onNewSheet: () => void
   onOpenRecord: (record: FormulaRecord) => void
   onBackToReference?: (product: Product | null) => void
 }
 
-export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames, editorRef, onMetadata, onNewSheet, onOpenRecord, onBackToReference }: Props) {
+export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames, editorRef, onMetadata, onOpenRecord, onBackToReference }: Props) {
   const [sheet, dispatch] = useReducer(sheetReducer, initialDraft.sheet)
   const [reference, setReference] = useState(initialDraft.reference)
   const [company, setCompany] = useState(initialDraft.company)
@@ -288,19 +287,20 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
             <span aria-hidden>← </span>{reference ? '참고 제품 다시 보기' : '제품 검색으로'}
           </button> : null}
         </div>
-        <nav aria-label="견적 작성 순서" className="mt-4 grid gap-2 sm:grid-cols-3">
+        {/*
+          작성 순서는 한 줄로만 둔다. 처음에는 안내가 필요하지만 반복 작업에서는
+          '어디로 갈지' 만 남으면 되고, 설명 카드 석 장은 시트가 보일 자리를 먹는다.
+          각 단계의 상세 설명은 해당 구역의 제목이 그대로 말한다.
+        */}
+        <nav aria-label="견적 작성 순서" className="mt-3 flex flex-wrap items-center gap-1.5">
           {[
             ['quote-spec', '1. 규격·수량 확인', '1개 중량 · 포장 개수 · 발주 수량'],
             ['quote-materials', '2. 배합량·단가 입력', '낱개당 mg 입력 · 제작 수량별 kg·원가 계산'],
             ['quote-export', '3. 견적서 내보내기', '고객용 PDF 미리보기 · 저장'],
-          ].map(([id, label, hint]) => <div key={id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface-sunken px-3 py-3">
-            <div>
-              <p className="text-[13px] font-medium text-ink">{label}</p>
-              <p className="mt-1 text-[12px] text-ink-3">{hint}</p>
-            </div>
-            <button type="button" onClick={() => jumpTo(id)} aria-label={`${label} 바로가기`}
-              className="shrink-0 rounded-md border border-accent-line bg-surface px-3 py-2 text-[13px] font-semibold text-accent-strong hover:border-accent hover:bg-accent-soft">바로가기</button>
-          </div>)}
+          ].map(([id, label, hint]) => <button key={id} type="button" onClick={() => jumpTo(id)} title={hint}
+            className="rounded-md border border-line bg-surface px-3 py-1.5 text-[13px] font-medium text-ink-2 transition-colors hover:border-accent-line hover:bg-accent-soft hover:text-accent-strong">
+            {label}
+          </button>)}
         </nav>
       </section>
       <header className="rounded-lg border border-line bg-surface p-3">
@@ -363,14 +363,7 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
             <button type="button" className={primaryClass} onClick={save} disabled={busy}>
               {busy ? '처리 중…' : saved ? '새 버전으로 저장' : '배합비 저장'}
             </button>
-            <button
-              type="button"
-              className={buttonClass}
-              onClick={onNewSheet}
-              disabled={busy}
-            >
-              새 시트 만들기
-            </button>
+            {/* 새 시트는 위 시트 목록의 '+ 새 시트' 하나로 모았다. 같은 일을 두 곳에 두지 않는다. */}
             <button
               type="button"
               className={buttonClass}
