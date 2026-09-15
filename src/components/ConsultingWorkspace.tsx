@@ -22,6 +22,7 @@ import { buildBriefing } from '@/lib/export/briefing'
 import { DEFAULT_RDA_PROFILE } from '@/lib/rda'
 import { buildDashboardSummary } from '@/lib/dashboardSummary'
 import { useCollapsedCard } from '@/hooks/useCollapsedCard'
+import { useWorkspaceNavigation } from '@/hooks/useWorkspaceNavigation'
 import {
   activeFilterCount,
   applyFilters,
@@ -143,12 +144,11 @@ function LoadedConsultingWorkspace({
     // 이미 적용된 조합을 다시 선택한 경우에도 결과를 바로 보여준다.
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
   }, [])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const { activeTab, selectedId, setActiveTab, setSelectedId, resetSearch, goBack } = useWorkspaceNavigation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const gridRef = useRef<HTMLDivElement>(null)
   // 제품 목록에 도착했는지. 조건 줄의 이동 단추가 갈 곳을 이 값으로 정한다.
   const [atList, setAtList] = useState(false)
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>('consulting')
   const [ingredientsVisited, setIngredientsVisited] = useState(false)
   const [notesVisited, setNotesVisited] = useState(false)
   const [designVisited, setDesignVisited] = useState(false)
@@ -158,9 +158,7 @@ function LoadedConsultingWorkspace({
 
   const createQuote = async (product: Product) => {
     if (designerRef.current) {
-      setActiveTab('design')
       if (!(await designerRef.current.importProduct(product))) {
-        setActiveTab('consulting')
         return
       }
     }
@@ -172,11 +170,6 @@ function LoadedConsultingWorkspace({
       designScrollRef.current?.scrollTo({ top: 0 })
       document.getElementById('workspace-tab-design')?.focus()
     })
-  }
-
-  const backToReference = (product: Product | null) => {
-    setActiveTab('consulting')
-    setSelectedId(product?.id ?? null)
   }
 
   // 조건 반영이 끝난 화면의 상단으로 즉시 이동한다. 왼쪽 조건 목록의 스크롤은 유지한다.
@@ -287,7 +280,7 @@ function LoadedConsultingWorkspace({
     if (tab === 'ingredients') setIngredientsVisited(true)
     if (tab === 'notes') setNotesVisited(true)
     if (tab === 'design') setDesignVisited(true)
-  }, [])
+  }, [setActiveTab])
 
   const toggleForm = useCallback((form: FormType) => {
     setFilters((prev) => ({
@@ -324,7 +317,7 @@ function LoadedConsultingWorkspace({
       forms: [product.form],
     })
     setSelectedId(null)
-  }, [options.mains, setFilters])
+  }, [options.mains, setFilters, setSelectedId])
 
   const step = useCallback(
     (delta: number) => {
@@ -335,17 +328,16 @@ function LoadedConsultingWorkspace({
         setPagination({ results: filtered, page: Math.floor((selectedIndex + delta) / REFERENCE_PAGE_SIZE) + 1 })
       }
     },
-    [filtered, selectedIndex],
+    [filtered, selectedIndex, setSelectedId],
   )
 
   const restoreSaved = useCallback((item: SavedSearch) => {
     setFilters(item.filters)
     // 과거 즐겨찾기의 성별·연령 선택값을 복원하지 않는다. 표시 기준은 항상 고정이다.
-    setSelectedId(null)
     setSidebarOpen(false)
-    setActiveTab('consulting')
+    resetSearch()
     setSavedNotice(`“${item.name}” 조건을 불러왔습니다.${!item.generation || item.generation !== datasetMeta?.generation ? ' 저장 당시와 데이터가 달라 현재 데이터로 다시 계산합니다.' : ''}`)
-  }, [datasetMeta?.generation, setFilters])
+  }, [datasetMeta?.generation, setFilters, resetSearch])
 
 
   return (
@@ -398,7 +390,13 @@ function LoadedConsultingWorkspace({
             >
               메뉴
             </button>
+            {activeTab === 'design' ? <button type="button" onClick={goBack}
+              title="이전 화면으로 돌아갑니다. 작성 중인 시트는 유지됩니다."
+              className="shrink-0 rounded-md border border-line bg-surface px-3 py-2 text-[13px] font-medium text-ink hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-accent">
+              <span aria-hidden="true">← </span>뒤로가기
+            </button> : null}
             <h2 className="shrink-0 text-[16px] leading-6 font-semibold text-ink">{tabLabel(activeTab)}</h2>
+            {activeTab === 'design' ? <span className="hidden text-[12px] text-ink-3 sm:block">이전 화면으로 돌아가도 작성 내용은 유지됩니다.</span> : null}
             {/* 좁은 화면에서는 제목과 내보내기만 남긴다. 같은 요약이 아래 조건 줄에 다시 나온다. */}
             {activeTab === 'consulting' ? <p className="hidden truncate text-[13px] leading-5 text-ink-3 sm:block">{headline}</p> : null}
           </div>
@@ -499,7 +497,7 @@ function LoadedConsultingWorkspace({
         <div ref={designScrollRef} id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design"
           hidden={activeTab !== 'design'} className={activeTab === 'design' ? 'min-h-0 flex-1 overflow-y-auto scroll-contain' : 'hidden'}>
           {designVisited ? <FormulaDesigner referenceNames={referenceNames} initialProduct={designProduct}
-            editorRef={designerRef} onBackToReference={backToReference} /> : null}
+            editorRef={designerRef} /> : null}
         </div>
 
         <div id="workspace-panel-ingredients" role="tabpanel" aria-labelledby="workspace-tab-ingredients"

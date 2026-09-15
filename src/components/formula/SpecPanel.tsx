@@ -11,6 +11,7 @@ import { allowanceLabel, formatKg, num, packageLabel, unitNoun, validYield } fro
 import type { Totals } from '@/lib/formulaDesign/calc'
 import type { SheetAction } from '@/lib/formulaDesign/reducer'
 import type { PackagingSpec } from '@/lib/formulaDesign/types'
+import type { ReferenceSpec } from '@/lib/formulaDesign/fromProduct'
 import { FORM_TYPES } from '@/lib/types'
 
 const fieldClass =
@@ -30,14 +31,21 @@ function objectParticle(word: string): string {
   return (code - 0xac00) % 28 === 0 ? '를' : '을'
 }
 
-type Props = { spec: PackagingSpec; totals: Totals; dispatch: (action: SheetAction) => void }
+type Props = { spec: PackagingSpec; referenceSpec?: ReferenceSpec; totals: Totals; dispatch: (action: SheetAction) => void }
 
-export function SpecPanel({ spec, totals, dispatch }: Props) {
+export function SpecPanel({ spec, referenceSpec, totals, dispatch }: Props) {
   const set = (key: keyof PackagingSpec) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     dispatch({ type: 'spec', key, value: event.target.value })
 
   const label = packageLabel(spec)
   const noun = unitNoun(spec.form)
+  const sourceStatus = (key: keyof ReferenceSpec) => {
+    if (!referenceSpec) return undefined
+    const source = referenceSpec[key]
+    const current = spec[key].trim()
+    if (!source) return current ? '직접 입력' : '원본 미제공'
+    return current === source ? '제품 규격' : current ? '수정됨' : '직접 입력 필요'
+  }
 
   /*
    * 아래 표가 전부 0 으로 나오는 원인은 거의 늘 이 세 칸이다. 무엇이 비었는지 이름으로
@@ -104,10 +112,10 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
           </select>
         </Field>
 
-        <Field label={`1${noun} 중량 (mg)`} hint="원료별 mg 합계가 맞춰질 목표 중량">
+        <Field label={`1${noun} 중량 (mg)`} status={sourceStatus('unitWeightMg')} hint="원료별 mg 합계가 맞춰질 목표 중량">
           <input className={`${fieldClass} text-right tnum`} value={spec.unitWeightMg} onChange={set('unitWeightMg')} inputMode="decimal" placeholder="예: 800" />
         </Field>
-        <Field label="1세트 개수" hint={`한 세트에 들어가는 ${noun} 수`}>
+        <Field label="1세트 개수" status={sourceStatus('unitsPerSet')} hint={`한 세트에 들어가는 ${noun} 수`}>
           <input className={`${fieldClass} text-right tnum`} value={spec.unitsPerSet} onChange={set('unitsPerSet')} inputMode="numeric" placeholder="예: 60" />
         </Field>
         <Field label="제작 수량 (set)" hint={`총 ${totals.totalUnits.toLocaleString('ko-KR')}${noun} 제작 · 낱개로 주문 시 1세트 개수를 1로 입력`}>
@@ -132,13 +140,13 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
           {!validYield(spec) ? <p role="alert" className="text-[12px] text-danger">수율을 0 초과 100 이하로 입력해야 필요량을 계산할 수 있습니다.</p> : null}
         </div>
 
-        <Field label="포장 형태">
+        <Field label="포장 형태" status={sourceStatus('packaging')}>
           <input className={fieldClass} value={spec.packaging} onChange={set('packaging')} placeholder="예: PE병 / PTP 포장" />
         </Field>
-        <Field label="섭취방법">
+        <Field label="섭취방법" status={sourceStatus('intakeGuide')}>
           <input className={fieldClass} value={spec.intakeGuide} onChange={set('intakeGuide')} placeholder="예: 1일 1회, 1회 1정" />
         </Field>
-        <Field label="유통기한">
+        <Field label="유통기한" status={sourceStatus('shelfLife')}>
           <input className={fieldClass} value={spec.shelfLife} onChange={set('shelfLife')} placeholder="예: 제조일로부터 24개월" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -155,10 +163,12 @@ export function SpecPanel({ spec, totals, dispatch }: Props) {
   )
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, hint, status, children }: { label: string; hint?: string; status?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[12px] font-medium text-ink-2">{label}</span>
+      <span className="flex flex-wrap items-center justify-between gap-1 text-[12px] font-medium text-ink-2">{label}
+        {status ? <span className={`rounded px-1.5 py-0.5 text-[10px] ${status === '제품 규격' ? 'bg-accent-soft text-accent-strong' : 'bg-surface-sunken text-ink-3'}`}>{status}</span> : null}
+      </span>
       {children}
       {hint ? <span className="mt-0.5 block text-[11px] text-ink-3">{hint}</span> : null}
     </label>

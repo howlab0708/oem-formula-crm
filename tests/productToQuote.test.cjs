@@ -1,7 +1,7 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const load = require('./helpers/loadTs.cjs')()
-const { draftFromProduct } = load('src/lib/formulaDesign/fromProduct.ts')
+const { draftFromProduct, fillMissingReferenceSpecifications } = load('src/lib/formulaDesign/fromProduct.ts')
 const { sheetReducer } = load('src/lib/formulaDesign/reducer.ts')
 const { calculate } = load('src/lib/formulaDesign/calc.ts')
 const { filterHistoryReducer, INITIAL_FILTER_HISTORY } = load('src/lib/filterHistory.ts')
@@ -59,6 +59,37 @@ test('independent product drafts and normal edits feed the existing quote calcul
   assert.equal(calculate(sheet).materialCost, 480000)
   assert.equal(second.sheet.materials[0].ratio, '')
   assert.equal(first.sheet.materials[0].ratio, '')
+})
+
+test('이미 열린 시트에는 새로 확인된 규격의 빈칸만 채우며 사용자가 입력한 값은 보존한다', () => {
+  const { sheet } = draftFromProduct(product)
+  sheet.spec.unitWeightMg = '950'
+  sheet.spec.unitsPerSet = '90'
+  sheet.spec.intakeGuide = '고객 요청 섭취방법'
+  sheet.spec.setCount = '1000'
+  const p = { ...product, referenceDetails: { declaredWeight: product.weightLabel, packaging: 'PTP 포장', shelfLife: '24개월' } }
+  const updated = fillMissingReferenceSpecifications(sheet, p)
+  assert.equal(updated.spec.packaging, 'PTP 포장')
+  assert.equal(updated.spec.shelfLife, '24개월')
+  assert.equal(updated.spec.unitWeightMg, '950')
+  assert.equal(updated.spec.unitsPerSet, '90')
+  assert.equal(updated.spec.intakeGuide, '고객 요청 섭취방법')
+  assert.equal(updated.spec.setCount, '1000')
+  assert.equal(updated.materials, sheet.materials)
+  assert.equal(sheet.spec.packaging, '')
+  assert.equal(fillMissingReferenceSpecifications(updated, p), updated)
+})
+
+test('명확히 표시된 예시 제품은 견적 생성만으로 규격 다섯 항목을 채운다', () => {
+  const { SEED_PRODUCTS } = load('src/lib/seed.ts')
+  const demo = SEED_PRODUCTS.find(p => p.name === '[예시] 규격 자동 입력 유산균')
+  const { sheet } = draftFromProduct(demo)
+  assert.equal(sheet.spec.unitWeightMg, '2000')
+  assert.equal(sheet.spec.unitsPerSet, '30')
+  assert.equal(sheet.spec.packaging, '스틱포 포장')
+  assert.equal(sheet.spec.intakeGuide, demo.intakeMethod)
+  assert.equal(sheet.spec.shelfLife, '제조일로부터 18개월')
+  assert.equal(sheet.spec.setCount, '')
 })
 
 test('unchecking and reset can be undone step-by-step without alternating between the same two states', () => {

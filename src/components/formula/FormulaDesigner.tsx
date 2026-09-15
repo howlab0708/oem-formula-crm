@@ -14,12 +14,11 @@ type Props = {
   referenceNames: string[]
   initialProduct?: Product | null
   editorRef?: Ref<FormulaDesignerHandle>
-  onBackToReference?: (product: Product | null) => void
 }
 
 const buttonClass = 'shrink-0 rounded-md border border-line bg-surface px-3 py-2 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surface-sunken disabled:opacity-50'
 
-export default function FormulaDesigner({ referenceNames, initialProduct, editorRef, onBackToReference }: Props) {
+export default function FormulaDesigner({ referenceNames, initialProduct, editorRef }: Props) {
   const [workspace, dispatch] = useReducer(formulaWorkspaceReducer, initialProduct, product => createFormulaWorkspace(newFormulaDraft(product)))
   const editors = useRef(new Map<string, FormulaSheetEditorHandle>())
   const tabButtons = useRef(new Map<string, HTMLButtonElement>())
@@ -110,6 +109,6 @@ export default function FormulaDesigner({ referenceNames, initialProduct, editor
       <FormulaSheetEditor tabId={tab.id} active={tab.id === workspace.activeId}
       initialDraft={tab.initialDraft} referenceNames={referenceNames}
       editorRef={handle => { if (handle) editors.current.set(tab.id, handle); else editors.current.delete(tab.id) }}
-      onMetadata={updateMetadata} onOpenRecord={openRecord} onBackToReference={onBackToReference} /></div>)}
+      onMetadata={updateMetadata} onOpenRecord={openRecord} /></div>)}
   </>
 }

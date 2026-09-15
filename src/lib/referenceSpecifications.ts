@@ -22,8 +22,27 @@ function packageCount(text: string, product: Product): number | null {
     ...value.matchAll(new RegExp(`(?:mg|g)\\s*[(]\\s*${count}\\s*[)]`, 'gi')),
     ...value.matchAll(new RegExp(`(?:총\\s*(?:내용량|중량)\\s*[:：]?\\s*[\\d,.]+\\s*(?:mg|g)\\s*[,(/]\\s*|총\\s*)${count}`, 'gi')),
     ...value.matchAll(new RegExp(`^${count}(?:입)?$`, 'gi')),
+    ...value.matchAll(new RegExp(`(?:^|[\\s(,])${count}\\s*(?:입|포장|/\\s*(?:박스|세트|병|통))(?=$|[\\s),])`, 'gi')),
+    ...value.matchAll(new RegExp(`(?:1\\s*(?:박스|세트|병|통)\\s*[:：/]\\s*)${count}(?=$|[\\s),])`, 'gi')),
   ].map(m => positiveCount(m[1])).filter((n): n is number => n !== null)
   return matches.length && matches.every(n => n === matches[0]) ? matches[0] : null
+}
+
+/** Only explicit packaging words; a powder form alone does not imply a stick pouch. */
+function declaredPackaging(text: string): string {
+  const value = normalize(text)
+  if (/또는|혹은|선택|미정|아님|불가|없음/.test(value)) return ''
+  const types = [
+    [/\bPTP\b|피티피/i, 'PTP 포장'],
+    [/스틱\s*(?:포장|파우치)|스틱포(?:\s|[,)/]|$)/, '스틱포 포장'],
+    [/\bPE\s*병\b|PE병/i, 'PE병 포장'],
+    [/\bPET\s*병\b|PET병/i, 'PET병 포장'],
+    [/유리병/, '유리병 포장'],
+    [/파우치/, '파우치 포장'],
+  ] as const
+  const matches = types.filter(([pattern]) => pattern.test(value)).map(([, label]) => label)
+  const distinct = matches.filter(label => label !== '파우치 포장' || !matches.includes('스틱포 포장'))
+  return distinct.length === 1 ? distinct[0] : ''
 }
 
 /** Shared by product detail and quote import so displayed and transferred facts agree. */
@@ -46,13 +65,14 @@ export function referenceSpecifications(product: Product) {
   const unitWeightMg = mixedForm ? null : standardUnitWeightMg({ ...product, weightLabel: specifications.join(' ; ') })
   const counts = [
     ...(details.unitsPerSet ? [positiveCount(details.unitsPerSet) ?? packageCount(details.unitsPerSet, product)] : []),
-    ...specifications.map(raw => packageCount(raw, product)),
+    ...[...specifications, details.packaging ?? ''].map(raw => packageCount(raw, product)),
   ].filter((n): n is number => n !== null)
   const unitsPerSet = counts.length && counts.every(n => n === counts[0]) ? String(counts[0]) : ''
-  const packaging = details.packaging ?? ''
+  const packaging = details.packaging?.trim() || declaredPackaging(specifications.join(' ; '))
+  const intakeGuide = product.intakeMethod?.trim() ?? ''
   const shelfLife = details.shelfLife ?? ''
-  const missing = [unitWeightMg === null ? '1개 중량' : '', !unitsPerSet ? '포장 개수' : '', !packaging ? '포장 형태' : '', !shelfLife ? '소비기한' : ''].filter(Boolean)
-  return { unitWeightMg, unitsPerSet, packaging, shelfLife, missing, officialSource: official,
+  const missing = [unitWeightMg === null ? '1개 중량' : '', !unitsPerSet ? '포장 개수' : '', !packaging ? '포장 형태' : '', !intakeGuide ? '섭취방법' : '', !shelfLife ? '소비기한' : ''].filter(Boolean)
+  return { unitWeightMg, unitsPerSet, packaging, intakeGuide, shelfLife, missing, officialSource: official,
     evidence: [
       details.declaredWeight ? `내용량 원문: ${details.declaredWeight}` : '',
       official ? `${official.sourceTitle} · 확인 ${official.checkedAt}: ${official.sourceUrl}` : '',

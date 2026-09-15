@@ -16,7 +16,7 @@ import { useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRe
 import type { Product } from '@/lib/types'
 import { referenceSpecifications } from '@/lib/referenceSpecifications'
 import { DEFAULT_SHEET_EXPORT } from '@/lib/export/renderFormulaSheet'
-import { refreshProductProvenance } from '@/lib/formulaDesign/fromProduct'
+import { fillMissingReferenceSpecifications, refreshProductProvenance, specificationFromProduct } from '@/lib/formulaDesign/fromProduct'
 import { formulaReferenceKey, type FormulaDraft, type FormulaTabMeta } from '@/lib/formulaDesign/workspace'
 import { calculate, calculateTiers, formatWon } from '@/lib/formulaDesign/calc'
 import { emptySheet, SAMPLE_SHEETS } from '@/lib/formulaDesign/preset'
@@ -65,10 +65,9 @@ type Props = {
   editorRef: Ref<FormulaSheetEditorHandle>
   onMetadata: (id: string, meta: FormulaTabMeta) => void
   onOpenRecord: (record: FormulaRecord) => void
-  onBackToReference?: (product: Product | null) => void
 }
 
-export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames, editorRef, onMetadata, onOpenRecord, onBackToReference }: Props) {
+export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames, editorRef, onMetadata, onOpenRecord }: Props) {
   const [sheet, dispatch] = useReducer(sheetReducer, initialDraft.sheet)
   const [reference, setReference] = useState(initialDraft.reference)
   const [company, setCompany] = useState(initialDraft.company)
@@ -97,12 +96,12 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
   useImperativeHandle(editorRef, () => ({
     refreshReference(product) {
       if (busy || formulaReferenceKey(reference) !== formulaReferenceKey(product)) return false
-      const refreshed = refreshProductProvenance(sheet, product)
+      const refreshed = fillMissingReferenceSpecifications(refreshProductProvenance(sheet, product), product)
+      setReference(product)
       if (refreshed !== sheet) {
         dispatch({ type: 'load', sheet: refreshed })
-        setReference(product)
         setDirty(true)
-        setMessage('입력한 견적은 유지하고 참고 제품의 원료 출처를 갱신했습니다.')
+        setMessage('입력한 값은 유지하고, 비어 있는 규격과 제품의 원료 출처를 갱신했습니다.')
       }
       return true
     },
@@ -191,6 +190,7 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
   const index = useMemo(() => buildSuggestionIndex(prices, referenceNames), [prices, referenceNames])
   const totals = useMemo(() => calculate(sheet), [sheet])
   const tiers = useMemo(() => calculateTiers(sheet), [sheet])
+  const referenceSpec = useMemo(() => reference ? specificationFromProduct(reference) : undefined, [reference])
 
   const act = useCallback((action: SheetAction) => {
     setDirty(true)
@@ -283,9 +283,6 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
               {reference ? '원료·규격과 확인된 원료사·원산지를 함께 가져왔습니다. 원료사·원산지는 참고 제품 기준이며, 배합비율과 단가는 직접 입력해 주세요.' : '제품 검색에서 선택한 원료를 가져오거나, 아래에서 직접 작성할 수 있습니다.'}
             </p>
           </div>
-          {onBackToReference ? <button type="button" className={buttonClass} onClick={() => onBackToReference(reference)}>
-            <span aria-hidden>← </span>{reference ? '참고 제품 다시 보기' : '제품 검색으로'}
-          </button> : null}
         </div>
         {/*
           작성 순서는 한 줄로만 둔다. 처음에는 안내가 필요하지만 반복 작업에서는
@@ -467,8 +464,12 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
       ) : null}
 
       <div id="quote-spec" tabIndex={-1} aria-label="1. 규격·수량 확인" className={destinationClass('quote-spec')}>{destinationNotice('quote-spec', '1. 규격·수량 확인')}
-        {reference ? <p className="border-x border-accent-line bg-surface px-3 py-2 text-[12px] leading-5 text-ink-2">참고 제품에서 확인된 규격을 가져왔습니다. {referenceSpecifications(reference).missing.length ? `원본에 명확히 기재되지 않은 ${referenceSpecifications(reference).missing.join('·')}은 직접 입력해 주세요. ` : ''}발주 수량은 새 견적 조건으로 입력합니다.</p> : null}
-        <SpecPanel spec={sheet.spec} totals={totals} dispatch={(action) => {
+        {reference ? <div className="border-x border-accent-line bg-surface px-3 py-2 text-[12px] leading-5 text-ink-2">
+          <p>제품에 등록된 중량·포장 개수·섭취방법·포장형태를 자동으로 입력합니다. 가져온 값은 새 견적에 맞게 수정할 수 있습니다. 제작 수량은 직접 입력해 주세요.</p>
+          {referenceSpecifications(reference).missing.length ? <p className="mt-1 text-ink-3">원본에서 확인되지 않은 항목: {referenceSpecifications(reference).missing.join(' · ')}. 해당 칸은 직접 입력해 주세요.</p> : null}
+          {reference.weightLabel && reference.weightLabel !== '-' ? <p className="mt-1 text-ink-3">원본 규격: {reference.referenceDetails?.declaredWeight || reference.weightLabel}{!referenceSpec?.unitWeightMg ? ' · 낱개 중량을 확인할 수 없어 자동 입력하지 않았습니다.' : ''}</p> : null}
+        </div> : null}
+        <SpecPanel spec={sheet.spec} referenceSpec={referenceSpec} totals={totals} dispatch={(action) => {
         if (action.type === 'spec' && action.key === 'customer') { setCompany(action.value); setNoteId(null) }
         act(action)
       }} /></div>

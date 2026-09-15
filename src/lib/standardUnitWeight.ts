@@ -27,10 +27,14 @@ export function standardUnitWeightMg(product: Product): number | null {
     for (const m of text.matchAll(new RegExp(`${N}\\s*${M}\\s*/\\s*${C}\\s*${I}`, 'gi'))) {
       if (usableItem(m[4])) found.push(mg(m[1], m[2]) / count(m[3]))
     }
-    for (const m of text.matchAll(new RegExp(`${C}\\s*${I}\\s*(?:당\\s*|[([]\\s*)${N}\\s*${M}\\s*[)\\]]?`, 'gi'))) {
+    for (const m of text.matchAll(new RegExp(`${C}\\s*${I}\\s*(?:당\\s*|(?:의\\s*)?(?:중량|무게)\\s*[:：=]?\\s*|[([]\\s*)${N}\\s*${M}\\s*[)\\]]?`, 'gi'))) {
       const tail = text.slice((m.index ?? 0) + m[0].length)
-      if (/^\s*[/x×*+]|^\s*[,，]\s*\d/.test(tail)) continue
+      if (/^\s*[/x×*+]|^\s*[,，]\s*\d[\d,.]*\s*(?:mg|g)\b/i.test(tail)) continue
       if (usableItem(m[2])) found.push(mg(m[3], m[4]) / count(m[1]))
+    }
+    // A named single unit, e.g. 2g/포 or 800mg/정, is an explicit unit weight.
+    for (const m of text.matchAll(new RegExp(`${N}\\s*${M}\\s*/\\s*${I}(?![가-힣])`, 'gi'))) {
+      if (usableItem(m[3])) found.push(mg(m[1], m[2]))
     }
     for (const m of text.matchAll(new RegExp(`${N}\\s*${M}\\s*[x×*]\\s*${C}\\s*${I}`, 'gi'))) {
       if (usableItem(m[4]) && count(m[3]) > 0) found.push(mg(m[1], m[2]))

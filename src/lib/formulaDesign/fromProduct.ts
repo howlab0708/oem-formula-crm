@@ -3,7 +3,28 @@ import { referenceSpecifications } from '../referenceSpecifications'
 import { declaredNutrientIngredients } from '../ingredientSource'
 import { currentProvenance, provenanceForIngredient, provenanceKey } from '../ingredientProvenance'
 import { emptySheet, newMaterialRow } from './preset'
-import type { FormulaSheet, MaterialRow } from './types'
+import type { FormulaSheet, MaterialRow, PackagingSpec } from './types'
+
+export type ReferenceSpec = Pick<PackagingSpec, 'unitWeightMg' | 'unitsPerSet' | 'packaging' | 'intakeGuide' | 'shelfLife'>
+
+export function specificationFromProduct(product: Product): ReferenceSpec {
+  const specs = referenceSpecifications(product)
+  return {
+    unitWeightMg: specs.unitWeightMg === null ? '' : String(specs.unitWeightMg),
+    unitsPerSet: specs.unitsPerSet, packaging: specs.packaging,
+    intakeGuide: specs.intakeGuide, shelfLife: specs.shelfLife,
+  }
+}
+
+/** Reopening an existing draft fills newly available facts only into empty fields. */
+export function fillMissingReferenceSpecifications(sheet: FormulaSheet, product: Product): FormulaSheet {
+  const values = specificationFromProduct(product)
+  const patch: Partial<ReferenceSpec> = {}
+  for (const key of Object.keys(values) as (keyof ReferenceSpec)[]) {
+    if (!sheet.spec[key].trim() && values[key]) patch[key] = values[key]
+  }
+  return Object.keys(patch).length ? { ...sheet, spec: { ...sheet.spec, ...patch } } : sheet
+}
 
 /** Refresh the same reference without erasing quote inputs or restoring claims on renamed rows. */
 export function refreshProductProvenance(sheet: FormulaSheet, product: Product): FormulaSheet {
@@ -38,11 +59,7 @@ export function draftFromProduct(product: Product): { title: string; sheet: Form
   sheet.materials = materials.size ? [...materials.values()] : [newMaterialRow()]
   sheet.spec.productName = product.name
   sheet.spec.form = product.form
-  sheet.spec.unitWeightMg = specs.unitWeightMg === null ? '' : String(specs.unitWeightMg)
-  sheet.spec.unitsPerSet = specs.unitsPerSet
-  sheet.spec.packaging = specs.packaging
-  sheet.spec.intakeGuide = product.intakeMethod ?? ''
-  sheet.spec.shelfLife = specs.shelfLife
+  Object.assign(sheet.spec, specificationFromProduct(product))
   sheet.processItems[0].label = '혼합 · 제조 · 포장 · 품질검사'
   sheet.processItems[0].unit = product.form === '정제' ? '정' : product.form.includes('캡슐') ? '캡슐' : '개'
   sheet.memo = [

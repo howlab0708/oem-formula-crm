@@ -5,6 +5,7 @@ import type { SavedSearch, SavedSearchInput } from '@/lib/savedSearches'
 import { copyText } from '@/lib/export/download'
 import { Modal } from '@/components/Modal'
 import { filterChips } from '@/lib/filters'
+import { WORKSPACE_HISTORY_KEY } from '@/lib/workspaceNavigation'
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { cache: 'no-store', ...init })
@@ -34,6 +35,9 @@ export function SavedSearches({ current, onRestore, onNotice }: {
   useEffect(() => {
     let cancelled = false
     const loadLink = async () => {
+      // Returning to a detail/formula screen must not reopen the saved search over it.
+      const view = window.history.state?.[WORKSPACE_HISTORY_KEY]?.view
+      if (view && (view.tab !== 'consulting' || view.selectedId !== null)) return
       const id = new URL(window.location.href).searchParams.get('saved')
       if (!id) return
       try {

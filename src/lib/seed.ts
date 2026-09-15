@@ -7,7 +7,7 @@
  */
 
 import { normalizeForm, parseMarkers, parseWeightMg } from './normalize'
-import type { Product } from './types'
+import type { Product, ReferenceDetails } from './types'
 
 type SeedRow = {
   name: string
@@ -17,6 +17,8 @@ type SeedRow = {
   main: string[]
   detail: string
   sub: string[]
+  intakeMethod?: string
+  referenceDetails?: ReferenceDetails
 }
 
 const SEED_ROWS: SeedRow[] = [
@@ -410,6 +412,14 @@ const SEED_ROWS: SeedRow[] = [
   },
 ]
 
+// Deliberately fictional complete record for trying the product-to-quote flow without a DB.
+SEED_ROWS.push({
+  name: '[예시] 규격 자동 입력 유산균', manufacturer: '예시 제조원', form: '분말',
+  weight: '60g (2g × 30포)', main: ['프로바이오틱스'], detail: '', sub: ['프락토올리고당'],
+  intakeMethod: '1일 1회, 1회 1포를 섭취하십시오.',
+  referenceDetails: { declaredWeight: '60g (2g × 30포)', unitsPerSet: '30', packaging: '스틱포 포장', shelfLife: '제조일로부터 18개월' },
+})
+
 export const SEED_PRODUCTS: Product[] = SEED_ROWS.map((row, index) => ({
   id: `seed-${index}`,
   name: row.name,
@@ -422,4 +432,6 @@ export const SEED_PRODUCTS: Product[] = SEED_ROWS.map((row, index) => ({
   mainDetail: row.detail,
   markers: parseMarkers(row.detail),
   subIngredients: row.sub,
+  ...(row.intakeMethod ? { intakeMethod: row.intakeMethod } : {}),
+  ...(row.referenceDetails ? { referenceDetails: row.referenceDetails } : {}),
 }))

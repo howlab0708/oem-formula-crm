@@ -94,3 +94,31 @@ test('명시된 CSV 포장 정보가 중량·섭취방법 열과 혼동되지 �
   assert.equal(specs(p).unitWeightMg, 800)
   assert.equal(specs(p).packaging, '병')
 })
+
+test('분말의 낱개 중량·포장 개수와 명시된 포장형태를 함께 자동 입력한다', () => {
+  for (const declaredWeight of ['1포 중량: 2g, 30포입, 스틱포 포장', '2g/포, 30포/박스, 스틱포 포장', '1포 중량: 2g, 1박스: 30포, 스틱포 포장']) {
+    const p = { ...product, form: '분말', intakeMethod: '1일 1회, 1회 1포를 섭취하십시오.', referenceDetails: { declaredWeight } }
+    const { sheet } = draftFromProduct(p)
+    assert.equal(sheet.spec.unitWeightMg, '2000', declaredWeight)
+    assert.equal(sheet.spec.unitsPerSet, '30', declaredWeight)
+    assert.equal(sheet.spec.packaging, '스틱포 포장', declaredWeight)
+    assert.equal(sheet.spec.intakeGuide, p.intakeMethod)
+    assert.equal(sheet.spec.setCount, '')
+  }
+})
+
+test('정제의 명시된 1정 규격과 PTP 포장을 읽고 포장 선택지는 확정하지 않는다', () => {
+  const p = { ...product, intakeMethod: '', referenceDetails: { declaredWeight: '800mg/정, 60정입, PTP 포장' } }
+  assert.equal(specs(p).unitWeightMg, 800)
+  assert.equal(specs(p).unitsPerSet, '60')
+  assert.equal(specs(p).packaging, 'PTP 포장')
+  assert.equal(specs({ ...p, referenceDetails: { declaredWeight: '800mg/정, PTP 또는 PE병 선택' } }).packaging, '')
+})
+
+test('분말이라는 제형·제품명·섭취 횟수에서 포장 규격을 만들어 내지 않는다', () => {
+  const p = { ...product, form: '분말', name: '유산균 스틱', weightLabel: '2,000mg', intakeMethod: '1일 1회 1포' }
+  assert.equal(specs(p).unitWeightMg, null)
+  assert.equal(specs(p).unitsPerSet, '')
+  assert.equal(specs(p).packaging, '')
+  assert.ok(specs({ ...p, intakeMethod: '' }).missing.includes('섭취방법'))
+})
