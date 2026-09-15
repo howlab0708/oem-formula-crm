@@ -51,7 +51,7 @@ function FilterGroup({ title, summary, count, children, onViewResults }: {
   const active = count > 0
   return <>
     <button type="button" aria-haspopup="dialog" title={summary} onClick={() => setOpen(true)}
-      className={`flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-3 text-[13px] transition-colors ${active
+      className={`flex h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-[13px] transition-colors ${active
         ? 'border-accent-line bg-accent-soft font-medium text-accent-strong'
         : 'border-line text-ink hover:bg-surface-sunken'}`}>
       <span className="whitespace-nowrap">{title}</span>
@@ -67,13 +67,7 @@ function FilterGroup({ title, summary, count, children, onViewResults }: {
   </>
 }
 
-/**
- * 본문 맨 위의 조건 줄.
- *
- * 예전 좌측 조건 레일이 하던 일을 그대로 한다 - 자유 검색, 조건 묶음 4개,
- * 되돌리기·히스토리·초기화. 레일이 차지하던 한 칸을 본문에 돌려주고
- * 사이드바(화면 전환·즐겨찾기·데이터)와 역할이 겹치지 않게 갈랐다.
- */
+/** 검색어와 결과 이동을 먼저 보여주고, 상세 조건은 아래에 모은다. */
 export function FilterBar({ filters, onChange, onReset, history, onRestore, onUndo, onEndEdit, onViewResults, options, markers, resultCount, atList, onJump }: Props) {
   const patch = (next: Partial<FilterState>, group?: string) => onChange({ ...filters, ...next }, group)
   const markerKey = filters.marker ? `${filters.marker.name}|${filters.marker.unit}` : ''
@@ -82,22 +76,44 @@ export function FilterBar({ filters, onChange, onReset, history, onRestore, onUn
   const sourceCount = filters.sourceForms.length + filters.sourceFormExclude.length + filters.sourceOrigins.length
   const extraCount = filters.manufacturers.length + Number(!!filters.marker) + Number(filters.weightMin !== null || filters.weightMax !== null)
 
-  /*
-   * 한 줄에 다 들어가지 않으면 아무 데서나 접히지 않고 두 줄로 나뉜다 -
-   * 위는 '무엇으로 찾을지'(검색어·조건), 아래는 '찾은 다음 할 일'(기록·초기화·결과 보기).
-   */
+  const showResults = () => {
+    onEndEdit()
+    if (!atList) onJump()
+  }
+
   return (
-    <section aria-label="검색 조건" onBlurCapture={onEndEdit} className="flex flex-col gap-2 2xl:flex-row 2xl:items-center">
-      <div className="flex flex-wrap items-center gap-2 2xl:flex-1">
-      <label htmlFor="query" className="sr-only">제품명 · 브랜드명 · 제조원 검색</label>
-      <input id="query" type="search" value={filters.query}
-        onChange={(event) => patch({ query: event.target.value }, 'query')}
-        placeholder="성분명, 제품명, 회사명 검색"
-        className="h-9 w-full min-w-0 rounded-md border border-line-strong bg-surface px-3 text-[13px] text-ink placeholder:text-ink-3 sm:w-[17rem]" />
+    <section aria-label="검색 조건" onBlurCapture={onEndEdit} className="flex flex-col gap-3 py-1">
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor="query" className="text-[14px] font-semibold text-ink">제품·성분 검색</label>
+        <span id="query-hint" className="hidden text-[12px] text-ink-3 sm:block">검색어와 조건은 입력 즉시 반영됩니다</span>
+      </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+        <div className="relative min-w-0 flex-1">
+          <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-accent">
+            <circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" />
+          </svg>
+          <input id="query" type="search" value={filters.query} aria-describedby="query-hint"
+            onChange={(event) => patch({ query: event.target.value }, 'query')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                event.preventDefault()
+                showResults()
+              }
+            }}
+            placeholder="성분명, 제품명, 회사명으로 검색하세요"
+            className="h-14 w-full min-w-0 rounded-xl border-2 border-accent-line bg-surface py-3 pr-4 pl-12 text-[16px] text-ink transition-colors placeholder:text-ink-3 hover:border-accent focus:border-accent focus:bg-accent-soft/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/20" />
+        </div>
+        <button type="button" onClick={showResults}
+          className="flex h-14 shrink-0 items-center justify-center gap-3 rounded-xl border-2 border-accent-line bg-surface px-6 text-[15px] font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft/30">
+          <span>검색 결과 보기</span>
+          <span className="tnum border-l border-line pl-3 text-[13px] font-medium text-ink-2">{formatInt(resultCount)}건</span>
+          <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-accent"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+        </button>
+      </div>
 
-      <div aria-hidden className="hidden h-5 w-px bg-line sm:block" />
-
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-[12px] font-medium text-ink-2">상세 조건</span>
         <FilterGroup title="주원료 · 제형" onViewResults={onViewResults} count={mainSummary.length}
           summary={mainSummary.join(' · ') || '성분 조합과 제품 형태'}>
           <div>
@@ -144,18 +160,11 @@ export function FilterBar({ filters, onChange, onReset, history, onRestore, onUn
           <div><TokenMultiSelect label="제조원" options={options.manufacturers} selected={filters.manufacturers} onChange={(manufacturers) => patch({ manufacturers })} searchPlaceholder="제조원 검색" visibleCount={5} /></div>
         </FilterGroup>
       </div>
-      </div>
 
-      <div className="flex shrink-0 items-center justify-end gap-2">
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
         <FilterControls filters={filters} history={history} onChange={onChange} onReset={onReset} onRestore={onRestore} onUndo={onUndo} />
-        {/* 조건을 고른 다음 할 일. 이 화면에서 가장 중요한 단추이므로 색을 채운다. */}
-        <button type="button" onClick={onJump}
-          className="flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-accent px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-accent-strong">
-          {atList ? '시장 분석 보기' : `검색 결과 ${formatInt(resultCount)}건 보기`}
-          <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-            {atList ? <><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></> : <><path d="M12 5v14" /><path d="M6 13l6 6 6-6" /></>}
-          </svg>
-        </button>
+        {atList ? <button type="button" onClick={onJump} className="rounded-md px-2 py-2 text-[13px] font-medium text-accent-strong hover:bg-accent-soft">시장 분석 보기 ↑</button> : null}
+      </div>
       </div>
     </section>
   )

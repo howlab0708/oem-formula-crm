@@ -97,7 +97,7 @@ export function DetailPanel({
               {trace.loading ? '원료 정보 확인 중…' : <>이 제품으로 견적 만들기 <span aria-hidden>→</span></>}
             </button>
             <p className="mt-2 text-[12px] leading-4 text-ink-3 keep-all">
-              원료·규격과 확인된 원료사·원산지를 함께 가져옵니다. 배합비율·단가를 입력해 견적을 완성하세요.
+              {rendered.companyFormula ? '회사 견적서의 배합비율·단가·비용표를 함께 가져옵니다. 원본 합계와 비교한 뒤 새 견적으로 저장하세요.' : '원료·규격과 확인된 원료사·원산지를 함께 가져옵니다. 배합비율·단가를 입력해 견적을 완성하세요.'}
             </p>
             <button type="button" onClick={() => onMatchFormula(rendered)}
               className="mt-3 w-full rounded-md border border-line px-3 py-2 text-[13px] text-ink-2 hover:bg-surface-sunken">
@@ -122,6 +122,7 @@ export function DetailPanel({
           </header>
 
           <div ref={panelRef} className="py-4">
+            {rendered.companySource ? <p className="mb-4 rounded-lg border border-line bg-surface-sunken p-3 text-[13px] text-ink-2">회사 데이터 · {rendered.companySource.fileName}{rendered.companyFormula ? <span className="mt-1 block">원료 {rendered.companyFormula.materials.length}개 · 배합비율·단가·비용표를 배합 설계로 가져옵니다.</span> : null}</p> : null}
             <Row label="제조원" value={rendered.manufacturer} />
             {rendered.brand ? <Row label="브랜드명" value={rendered.brand} /> : null}
             <Row
@@ -157,7 +158,7 @@ export function DetailPanel({
               )}
             </Block>
 
-            <ProductProvenanceSection key={rendered.id} product={rendered} loading={trace.loading} refreshing={trace.refreshing} error={trace.error} onRetry={trace.retry} />
+            {!rendered.companySource ? <ProductProvenanceSection key={rendered.id} product={rendered} loading={trace.loading} refreshing={trace.refreshing} error={trace.error} onRetry={trace.retry} /> : null}
 
             <Block label="지표성분 상세 함량">
               {rendered.markers.length ? (

@@ -51,7 +51,7 @@ export function ReferenceGrid({
       <div className="rounded-t-lg border-b border-line bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
           <div>
-            <h2 className="text-[14px] font-semibold text-ink">품목제조보고 레퍼런스</h2>
+            <h2 className="text-[14px] font-semibold text-ink">제품 레퍼런스</h2>
             <p className="mt-1 text-[13px] text-ink-3 tnum">
               {formatInt(products.length)}건{products.length !== totalCount ? ` / 전체 ${formatInt(totalCount)}건` : ''}
               <span className="ml-2">페이지당 50개 · 제품을 누르면 상세 확인</span>
@@ -96,6 +96,7 @@ export function ReferenceGrid({
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-[14px] leading-5 font-medium text-ink" title={product.name}>{product.name}</span>
+                    {product.companySource ? <span className="mt-1 inline-block rounded border border-accent-line px-1.5 text-[11px] text-accent-strong">회사 {product.companyFormula ? '견적서' : '데이터'}</span> : null}
                     <span className="mt-0.5 block truncate text-[13px] leading-5 text-ink-2" title={product.manufacturer}>{product.manufacturer}</span>
                     {product.brand ? <span className="block truncate text-[12.5px] leading-4 text-ink-3">브랜드: {product.brand}</span> : null}
                   </span>

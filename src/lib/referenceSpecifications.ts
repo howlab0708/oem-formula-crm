@@ -48,7 +48,7 @@ function declaredPackaging(text: string): string {
 /** Shared by product detail and quote import so displayed and transferred facts agree. */
 export function referenceSpecifications(product: Product) {
   const key = (text: string) => normalize(text).replace(/\s+/g, '').toLowerCase()
-  const official = PRODUCT_SPECIFICATION_EVIDENCE.find(entry => product.reportNo === entry.reportNo
+  const official = PRODUCT_SPECIFICATION_EVIDENCE.find(entry => !product.companySource && product.reportNo === entry.reportNo
     && key(product.name) === key(entry.productName) && traceCompanyMatches(product.manufacturer, entry.manufacturer)
     && (!product.sourceUpdatedAt || product.sourceUpdatedAt.slice(0, 10) <= entry.checkedAt)
     && (product.unitWeightMg == null || product.unitWeightMg === entry.unitWeightMg)

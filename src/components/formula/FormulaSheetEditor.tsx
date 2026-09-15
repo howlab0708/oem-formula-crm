@@ -280,7 +280,7 @@ export function FormulaSheetEditor({ tabId, active, initialDraft, referenceNames
               {reference ? `${reference.name} 기준으로 견적 만들기` : '원료와 규격을 입력해 견적을 만드세요'}
             </h2>
             <p className="mt-1 text-[13px] leading-5 text-ink-2">
-              {reference ? '원료·규격과 확인된 원료사·원산지를 함께 가져왔습니다. 원료사·원산지는 참고 제품 기준이며, 배합비율과 단가는 직접 입력해 주세요.' : '제품 검색에서 선택한 원료를 가져오거나, 아래에서 직접 작성할 수 있습니다.'}
+              {reference?.companyFormula ? '회사 견적서에서 규격·배합비율·단가·비용표를 가져왔습니다. 고정 수량과 별도 청구 항목을 확인하고 원본 합계와 비교해 주세요.' : reference ? '원료·규격과 확인된 원료사·원산지를 함께 가져왔습니다. 원료사·원산지는 참고 제품 기준이며, 배합비율과 단가는 직접 입력해 주세요.' : '제품 검색에서 선택한 원료를 가져오거나, 아래에서 직접 작성할 수 있습니다.'}
             </p>
           </div>
         </div>

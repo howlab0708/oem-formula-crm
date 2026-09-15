@@ -18,7 +18,7 @@ function describe(filters: FilterState) {
 }
 
 // 누를 수 있는 글자는 설명문보다 진하게 둔다. 둘이 같은 회색이면 구분이 안 된다.
-const link = 'rounded-md px-2 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-surface-sunken hover:underline disabled:pointer-events-none disabled:opacity-40'
+const link = 'rounded-md px-2 py-2 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surface-sunken hover:underline disabled:pointer-events-none disabled:opacity-40'
 
 /**
  * 조건 줄 오른쪽 끝의 되돌리기·기록·초기화.
@@ -36,11 +36,11 @@ export function FilterControls({ filters, history, onChange, onReset, onRestore,
       {history.length ? (
         <button type="button" onClick={onUndo} className={link}><span aria-hidden>← </span>이전 조건</button>
       ) : null}
-      <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className={link}>검색 히스토리</button>
+      <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className={link}>최근 검색</button>
       <span aria-hidden className="h-3 w-px bg-line" />
       <button type="button" disabled={!chips.length} onClick={onReset} className={link}>초기화</button>
 
-      {open ? <Modal title="검색 히스토리" onClose={() => setOpen(false)}>
+      {open ? <Modal title="최근 검색" onClose={() => setOpen(false)}>
         <section className="rounded-lg border border-accent-line bg-accent-soft p-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-[14px] font-semibold text-accent-strong">현재 검색</h3>

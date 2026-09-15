@@ -39,6 +39,8 @@ export type Marker = {
 export type ReferenceDetails = Partial<Record<'declaredWeight' | 'unitsPerSet' | 'packaging' | 'shelfLife' | 'storageGuide' | 'appearance' | 'intakeCaution', string>>
 
 export type Product = {
+  companySource?: { fileId: string; fileName: string; importedAt: string }
+  companyFormula?: import('./formulaDesign/types').FormulaSheet
   referenceDetails?: ReferenceDetails
   /** Loaded on demand from a matched public production record, not part of the CSV dataset. */
   traceability?: import('./server/foodTraceability').TraceLookup

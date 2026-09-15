@@ -44,6 +44,9 @@ export function refreshProductProvenance(sheet: FormulaSheet, product: Product):
 
 /** Transfer reference facts only. Ingredient purity and marker content are not formulation ratios. */
 export function draftFromProduct(product: Product): { title: string; sheet: FormulaSheet } {
+  if (product.companySource && product.companyFormula) {
+    return { title: `${product.name} · 가져온 견적`.slice(0, 150), sheet: structuredClone(product.companyFormula) }
+  }
   const sheet = emptySheet()
   const specs = referenceSpecifications(product)
   const declared = declaredNutrientIngredients(product)

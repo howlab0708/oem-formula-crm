@@ -14,6 +14,9 @@ import type { SavedSearch } from '@/lib/savedSearches'
 import type { DatasetMeta } from '@/lib/api/products'
 import { ExportActions } from '@/components/ExportActions'
 import { FilterBar } from '@/components/FilterBar'
+import { CompanyDataPanel } from '@/components/CompanyDataPanel'
+import { loadCompanyLibrary } from '@/lib/api/companyData'
+import type { CompanyLibrary } from '@/lib/companyCsv'
 import { ReferenceGrid } from '@/components/ReferenceGrid'
 import { fetchStoredDataset, type StoredDataset } from '@/lib/api/products'
 import { markerCatalog } from '@/lib/analytics'
@@ -124,12 +127,41 @@ function LoadedConsultingWorkspace({
   deployLabel: string
 }) {
   const [rawProducts, setProducts] = useState<Product[]>(initialProducts)
+  const [companyLibrary, setCompanyLibrary] = useState<CompanyLibrary>({ files: [], products: [], local: false })
+  const [companyError, setCompanyError] = useState('')
+  const [companyLoading, setCompanyLoading] = useState(true)
+  const [dataScope, setDataScope] = useState<'all' | 'public' | 'company'>('all')
+  const companyLoadVersion = useRef(0)
+  const reloadCompany = useCallback(async () => {
+    const version = ++companyLoadVersion.current
+    setCompanyLoading(true)
+    try {
+      const library = await loadCompanyLibrary()
+      if (version === companyLoadVersion.current) { setCompanyLibrary(library); setCompanyError('') }
+    } catch {
+      if (version === companyLoadVersion.current) setCompanyError('회사 데이터를 불러오지 못했습니다.')
+    } finally { if (version === companyLoadVersion.current) setCompanyLoading(false) }
+  }, [])
+  useEffect(() => {
+    let cancelled = false
+    const version = companyLoadVersion.current
+    loadCompanyLibrary().then(library => {
+      if (!cancelled && version === companyLoadVersion.current) { setCompanyLibrary(library); setCompanyError('') }
+    }).catch(() => {
+      if (!cancelled && version === companyLoadVersion.current) setCompanyError('회사 데이터를 불러오지 못했습니다.')
+    }).finally(() => {
+      if (!cancelled && version === companyLoadVersion.current) setCompanyLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [])
   /**
    * 제조원 표기를 통일하고 메이저 제조사부터 보이도록 순서를 다시 세운다.
    * 데이터셋이 바뀔 때만 한 번 돌고, 아래의 모든 필터·통계·내보내기가 이 결과를
    * 그대로 물려받는다(`applyFilters`는 걸러내기만 하고 순서를 건드리지 않는다).
    */
-  const products = useMemo(() => prepareReferences(rawProducts), [rawProducts])
+  const publicProducts = useMemo(() => prepareReferences(rawProducts), [rawProducts])
+  const allProducts = useMemo(() => [...companyLibrary.products, ...publicProducts], [companyLibrary.products, publicProducts])
+  const products = dataScope === 'public' ? publicProducts : dataScope === 'company' ? companyLibrary.products : allProducts
   const [source, setSource] = useState<'seed' | 'csv' | 'db'>(initialSource)
   const [datasetMeta, setDatasetMeta] = useState(initialMeta)
   const [provenance, setProvenance] = useState<DatasetProvenance | null>(initialMeta?.provenance ?? null)
@@ -242,7 +274,7 @@ function LoadedConsultingWorkspace({
   const activeCount = activeFilterCount(filters)
 
   /** 상단 제목 옆 한 줄. 무엇을 기준으로 보고 있는지 화면에서 잃지 않게 한다. */
-  const sourceWord = source === 'seed' ? '예시 레퍼런스' : source === 'db' ? '전체 레퍼런스' : '업로드 데이터'
+  const sourceWord = dataScope === 'company' ? '회사 데이터' : dataScope === 'all' && companyLibrary.products.length ? '공개·회사 데이터' : source === 'seed' ? '예시 레퍼런스' : '공개 레퍼런스'
   const headline = activeCount === 0
     ? `조건 없음 · ${sourceWord} ${formatInt(products.length)}건 기준`
     : `조건 ${activeCount}개 · ${formatInt(products.length)}건 중 ${formatInt(filtered.length)}건`
@@ -359,6 +391,9 @@ function LoadedConsultingWorkspace({
         }`}
       >
         <WorkspaceSidebar
+          companyData={compact => <CompanyDataPanel compact={compact} library={companyLibrary} error={companyError} loading={companyLoading} onReload={reloadCompany} onShowCompany={() => {
+            setDataScope('company'); setFilters(EMPTY_FILTERS); setSelectedId(null); changeTab('consulting')
+          }} />}
           deployLabel={deployLabel}
           value={activeTab}
           onChange={changeTab}
@@ -372,7 +407,7 @@ function LoadedConsultingWorkspace({
             : null}
           importer={
             <DatasetSyncPanel
-              productCount={products.length}
+              productCount={publicProducts.length}
               generation={datasetMeta?.generation ?? null}
               onRefresh={refreshDataset}
             />
@@ -434,6 +469,11 @@ function LoadedConsultingWorkspace({
                 onChange={(next) => { setFilters(next); setSelectedId(null) }}
                 onReset={() => { setFilters(EMPTY_FILTERS); setSelectedId(null) }}
               />
+              <div className="flex flex-wrap items-center gap-1.5 border-t border-line pt-2" role="group" aria-label="검색 데이터 범위">
+                <span className="mr-2 text-[12px] text-ink-2">검색 범위</span>
+                {([['all', '전체', allProducts.length], ['public', source === 'seed' ? '예시 데이터' : '식약처 데이터', publicProducts.length], ['company', '회사 데이터', companyLibrary.products.length]] as const).map(([scope, label, count]) =>
+                  <button type="button" key={scope} aria-pressed={dataScope === scope} onClick={() => { setDataScope(scope); setSelectedId(null); scrollRef.current?.scrollTo({ top: 0 }) }} className={`rounded-md border px-2.5 py-1 text-[12px] ${dataScope === scope ? 'border-accent-line bg-accent-soft font-medium text-accent-strong' : 'border-transparent text-ink-2 hover:bg-surface-sunken'}`}>{label} <span className="ml-1 tnum">{count.toLocaleString()}</span></button>)}
+              </div>
             </div>
           </div>
         ) : null}

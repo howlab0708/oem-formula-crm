@@ -85,6 +85,7 @@ export function WorkspaceSidebar({
   dateTitle,
   favorites,
   importer,
+  companyData,
   collapsed,
   onToggleCollapsed,
 }: {
@@ -98,6 +99,7 @@ export function WorkspaceSidebar({
   /** 검색 조건 즐겨찾기. 배합비 검색 화면에서만 쓰므로 없을 수 있다. */
   favorites: ReactNode
   importer: ReactNode
+  companyData?: (compact: boolean) => ReactNode
   /** 넓은 화면에서 아이콘 줄로 접은 상태. */
   collapsed: boolean
   onToggleCollapsed: () => void
@@ -190,12 +192,13 @@ export function WorkspaceSidebar({
           <RailButton label="데이터 상태와 출처" onClick={() => setRailPanel('data')}>
             <svg {...iconProps} className="h-[17px] w-[17px]"><ellipse cx="12" cy="6" rx="7.5" ry="3" /><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6" /><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3" /></svg>
           </RailButton>
+          {companyData?.(true)}
         </div>
       ) : (
         <>
-          {/* 가운데는 즐겨찾기. 남는 여백은 그대로 둔다. */}
-          <div className={`min-h-0 flex-1 overflow-y-auto scroll-contain ${favorites ? `pt-4 ${SIDE}` : ''}`}>
+          <div className={`min-h-0 flex-1 overflow-y-auto pb-4 scroll-contain pt-4 ${SIDE}`}>
             {favorites}
+            {companyData?.(false)}
           </div>
 
           <div className={`shrink-0 border-t border-line py-3.5 text-[12px] leading-4 text-ink-3 ${SIDE}`}>

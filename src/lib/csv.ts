@@ -54,6 +54,8 @@ export function detectDelimiter(text: string): string {
 }
 
 export type ParseCsvOptions = {
+  /** Reject truncated quoted fields for company uploads instead of importing damaged rows. */
+  strict?: boolean
   delimiter?: string
   /** rowsParsed, charIndex 를 받아 진행률을 보고한다. */
   onProgress?: (rowsParsed: number, charIndex: number) => void
@@ -130,6 +132,7 @@ export function parseCsv(text: string, options: ParseCsvOptions = {}): string[][
     if (ch.trim() !== '') hasContent = true
   }
 
+  if (options.strict && inQuotes) throw new Error('닫히지 않은 따옴표가 있습니다. CSV 파일을 확인해 주세요.')
   if (field.length > 0 || row.length > 0) pushRow()
 
   return rows

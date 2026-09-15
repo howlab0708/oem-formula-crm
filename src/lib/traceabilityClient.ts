@@ -9,7 +9,7 @@ type Job = { key: string; foreground: boolean; started: boolean }
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem'>
 
 export function traceabilityPayload(product: Product | null) {
-  return product ? JSON.stringify({ name: product.name, manufacturer: product.manufacturer,
+  return product && !product.companySource ? JSON.stringify({ name: product.name, manufacturer: product.manufacturer,
     reportNo: product.reportNo, mainIngredients: product.mainIngredients, subIngredients: product.subIngredients }) : ''
 }
 

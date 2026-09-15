@@ -121,7 +121,8 @@ export async function copyText(text: string): Promise<boolean> {
 const CSV_HEADER = ['제품명', '제조원', '제형', '규격', '주원료', '지표성분 함량', '부원료', '1알 중량(mg)', '섭취방법', '브랜드명', '포장 개수', '포장 형태', '소비기한', '보관방법', '성상', '섭취 시 주의사항']
 
 function escapeCsv(value: string): string {
-  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+  const safe = /^[\s]*[=+@-]|^[\t\r]/.test(value) ? `'${value}` : value
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe
 }
 
 /** 원본 규격과 별도로 1알 환산 중량·섭취방법을 보존하여 다시 읽을 수 있게 한다. */

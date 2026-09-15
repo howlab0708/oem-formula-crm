@@ -29,6 +29,7 @@ const TENANT_MODULES = [
   'src/lib/server/formulas.ts',
   'src/lib/server/formulaNotes.ts',
   'src/lib/server/savedSearches.ts',
+  'src/lib/server/companyData.ts',
 ]
 const A = 'tenant_verify_a'
 const B = 'tenant_verify_b'
